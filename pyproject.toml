@@ -3,14 +3,11 @@ requires = ["flit_core>=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "slurm-flow"
+name = "reflow"
 dynamic = ["version"]
-description = "Decorator-based Slurm DAG engine with auto-generated CLI, cancel, retry, and status tracking"
+description = "Decorator-based HPC workflow engine with Result-based data wiring, reusable Flows, and an auto-generated CLI"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = [
-  "SQLAlchemy>=2.0",
-]
 license = {file = "LICENSE"}
 authors = [
     {name = "DKRZ", email = "freva@dkrz.de"},
@@ -18,23 +15,45 @@ authors = [
 maintainers = [
     {name = "DKRZ", email = "freva@dkrz.de"},
 ]
+dependencies = [
+    "tomli>=1.0; python_version < '3.11'",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: System :: Distributed Computing",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/FREVA-CLINT/reflow"
+Documentation = "https://reflow.readthedocs.io"
+Repository = "https://github.com/FREVA-CLINT/reflow"
+Issues = "https://github.com/FREVA-CLINT/reflow/issues"
+
+[project.scripts]
+reflow = "reflow.cli:main"
 
 [project.optional-dependencies]
-postgresql = [
-  "psycopg[binary]>=3.1",
-]
-mariadb = [
-  "mariadb>=1.1",
-]
 dev = [
-  "pytest>=7",
-  "pytest-cov",
-  "ruff",
-  "mypy",
+    "pytest>=7",
+    "pytest-cov",
+    "ruff",
+    "mypy",
 ]
 
-[tool.setuptools.packages.find]
-include = ["slurm_flow*"]
+[tool.flit.module]
+name = "reflow"
 
 [tool.ruff]
 line-length = 99

@@ -1,69 +1,73 @@
 #!/usr/bin/env python
-"""Demo DAG showing the Annotated + Param API.
-
-This demonstrates how parameters are declared Typer-style using
-``Annotated[type, Param(...)]``.  Global params are shared across tasks;
-local params are prefixed with the task name on the CLI.
+"""Demo workflow for CLI usage.
 
 Run::
 
-    python demo_flow.py --help
-    python demo_flow.py submit --help
     python demo_flow.py dag
+    python demo_flow.py submit --help
+
+    export REFLOW_MODE=dry-run
+    python demo_flow.py submit \\
+        --run-dir /tmp/demo \\
+        --start 2025-01-01 \\
+        --end 2025-01-31 \\
+        --bucket my-bucket \\
+        --s3-secret /path/to/creds.json
 """
 
 from __future__ import annotations
 
-from typing import Annotated, Dict, List
+from typing import Annotated, Literal
 
-from slurm_flow import Graph, Param
+from reflow import Param, Result, RunDir, Workflow
 
-graph = Graph("demo")
+wf = Workflow("demo")
 
 
-@graph.job(cpus=2, time="00:05:00")
+@wf.job()
 def prepare(
     start: Annotated[str, Param(help="Start date, ISO-8601")],
     end: Annotated[str, Param(help="End date, ISO-8601")],
     s3_secret: Annotated[str, Param(help="Path to S3 credential file")],
-    run_dir: str,
-) -> Dict[str, List[str]]:
+    model: Annotated[Literal["era5", "icon", "cmip6"], Param(help="Model")] = "era5",
+    run_dir: RunDir = RunDir(),
+) -> list[str]:
     """Discover input files for the date range."""
-    print(f"prepare: {start} -> {end}")
-    print(f"  s3_secret = {s3_secret}")
-    return {"files": ["a.nc", "b.nc", "c.nc"]}
+    print(f"prepare: {start} -> {end} (model={model})")
+    return ["a.nc", "b.nc", "c.nc"]
 
 
-@graph.array_job(expand="prepare.files", cpus=4, time="00:10:00")
+@wf.array_job(cpus=4, time="00:10:00")
 def convert(
-    item: str,
+    nc_file: Annotated[str, Result(step="prepare")],
     bucket: Annotated[str, Param(help="Target S3 bucket")],
-    chunk_size: Annotated[int, Param(
-        help="Chunk size in MB (convert-specific)",
-        namespace="local",
-    )] = 256,
-    run_dir: str = "",
-) -> Dict[str, str]:
-    """Convert one file and upload to the bucket."""
-    print(f"convert: {item} -> s3://{bucket}/ (chunk={chunk_size})")
-    return {"item": item, "status": "uploaded"}
+    run_dir: RunDir = RunDir(),
+) -> str:
+    """Convert one netCDF to zarr."""
+    print(f"convert: {nc_file} -> s3://{bucket}/")
+    return f"/data/{nc_file}.zarr"
 
 
-@graph.job(after=["convert"])
+@wf.array_job()
+def validate(
+    zarr_path: Annotated[str, Result(step="convert")],
+    run_dir: RunDir = RunDir(),
+) -> str:
+    """Validate one zarr file (1:1 chain)."""
+    print(f"validate: {zarr_path}")
+    return f"ok:{zarr_path}"
+
+
+@wf.job()
 def finalize(
+    validated: Annotated[list[str], Result(step="validate")],
     bucket: Annotated[str, Param(help="Target S3 bucket")],
-    notification_email: Annotated[str, Param(
-        short="-n",
-        help="Email for completion notification",
-    )] = "",
-    run_dir: str = "",
-) -> Dict[str, str]:
-    """Write a completion marker after all conversions finish."""
-    print(f"finalize: bucket={bucket}")
-    if notification_email:
-        print(f"  would notify {notification_email}")
-    return {"status": "ok"}
+    run_dir: RunDir = RunDir(),
+) -> str:
+    """Write completion marker."""
+    print(f"finalize: {len(validated)} files, bucket={bucket}")
+    return "done"
 
 
 if __name__ == "__main__":
-    raise SystemExit(graph.cli())
+    raise SystemExit(wf.cli())
