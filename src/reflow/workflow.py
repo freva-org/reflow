@@ -14,10 +14,12 @@ import os
 import sys
 import traceback
 import uuid
+from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Sequence, get_type_hints
+from typing import Any, get_type_hints
 
+from ._types import RunState, TaskState
 from .cache import (
     compute_identity,
     compute_input_hash,
@@ -25,10 +27,9 @@ from .cache import (
     verify_cached_output,
 )
 from .config import Config, load_config
-from ._types import RunState, TaskState
 from .executors import Executor, JobResources
 from .executors.slurm import SlurmExecutor
-from .flow import Flow, JobConfig, TaskSpec
+from .flow import Flow, TaskSpec
 from .manifest import (
     CliParamDescription,
     TaskDescription,
@@ -84,6 +85,7 @@ class Workflow(Flow):
         wf.include(conversion)
         run = wf.submit(run_dir="/scratch/run1", start="2025-01-01")
         run.status()
+
     """
 
     def __init__(self, name: str, config: Config | None = None) -> None:
@@ -102,6 +104,7 @@ class Workflow(Flow):
         prefix : str or None
             Optional name prefix.  Internal Result/after references
             within the flow are rewritten automatically.
+
         """
         new_tasks, new_order = flow._prefixed_tasks(prefix)
         for task_name, spec in new_tasks.items():
@@ -124,6 +127,7 @@ class Workflow(Flow):
             Unresolved references or cycles.
         TypeError
             Incompatible wired types.
+
         """
         for spec in self.tasks.values():
             for pname, result in spec.result_deps.items():
@@ -255,6 +259,7 @@ class Workflow(Flow):
         ------
         TypeError
             If required parameters are missing.
+
         """
         real_executor = _resolve_executor(executor)
         self.validate()
@@ -388,11 +393,20 @@ class Workflow(Flow):
 
         Parameters
         ----------
+        run_id : str
+            Workflow run identifier.
+        store : Store
+            Manifest store used to read and update task state.
+        run_dir : Path
+            Run directory containing logs and task artefacts.
+        executor : Executor or None
+            Executor used for submission. ``None`` uses the default Slurm executor.
         verify : bool
             If ``True``, verify cached outputs (file existence for
             Path types, custom callables) before accepting cache hits.
             Default is ``False`` -- the Merkle identity is trusted.
             Set to ``True`` during retry to catch stale outputs.
+
         """
         exc = executor or SlurmExecutor.from_environment()
         for task_name in self._topological_order():
@@ -546,6 +560,7 @@ class Workflow(Flow):
         -------
         bool
             True if cache hit (instance created as SUCCESS).
+
         """
         if not spec.config.cache:
             return False
@@ -563,7 +578,8 @@ class Workflow(Flow):
         if cached is None:
             return False
 
-        # Only verify when explicitly requested (retry path, or submit with verify=True).
+        # Only verify when explicitly requested
+        # (retry path, or submit with verify=True).
         if verify:
             if not verify_cached_output(
                 cached["output"], spec.return_type, spec.verify
@@ -821,6 +837,7 @@ class Workflow(Flow):
         task_name: str | None = None,
         executor: Executor | None = None,
     ) -> int:
+        """Cancel active instances for a run or a single task."""
         exc = executor or SlurmExecutor.from_environment()
         instances = store.list_task_instances(
             run_id,
@@ -853,11 +870,22 @@ class Workflow(Flow):
 
         Parameters
         ----------
+        run_id : str
+            Workflow run identifier.
+        store : Store
+            Manifest store used to update retry state.
+        run_dir : Path
+            Run directory containing logs and task artefacts.
+        task_name : str or None
+            Restrict the retry to one task name. ``None`` retries all retriable tasks.
+        executor : Executor or None
+            Executor used for resubmission. ``None`` uses the default Slurm executor.
         verify : bool
             If ``True`` (the default for retry), verify cached
             upstream outputs before resubmitting.  This catches
             stale intermediate files that were deleted after the
             original run.
+
         """
         instances = store.list_task_instances(
             run_id,
@@ -875,6 +903,7 @@ class Workflow(Flow):
         return retried
 
     def run_status(self, run_id: str, store: Store) -> dict[str, Any]:
+        """Return run metadata, task summary counts, and all task instances."""
         run_row = store.get_run(run_id)
         if run_row is None:
             raise KeyError(f"Unknown run_id: {run_id!r}")

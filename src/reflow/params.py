@@ -19,7 +19,6 @@ import types as _types
 from datetime import datetime
 from pathlib import Path
 from typing import (
-    Annotated,
     Any,
     Literal,
     Union,
@@ -27,7 +26,6 @@ from typing import (
     get_origin,
     get_type_hints,
 )
-
 
 # --- user-facing descriptor types ------------------------------------------
 
@@ -44,6 +42,7 @@ class RunDir:
     ... def ingest(work_dir: RunDir, start: str) -> list[str]:
     ...     output = work_dir / "output"
     ...     ...
+
     """
 
 
@@ -71,6 +70,7 @@ class Result:
     Multiple upstreams (concatenated)::
 
         item: Annotated[str, Result(steps=["prepare_a", "prepare_b"])]
+
     """
 
     def __init__(
@@ -107,6 +107,7 @@ class Param:
     --------
     >>> start: Annotated[str, Param(help="Start date, ISO-8601")]
     >>> chunk: Annotated[int, Param(help="Chunk size", namespace="local")] = 256
+
     """
 
     def __init__(
@@ -210,6 +211,7 @@ def get_literal_values(annotation: Any) -> tuple[Any, ...] | None:
     -------
     tuple or None
         The literal values, or ``None`` if not a Literal type.
+
     """
     if get_origin(annotation) is Literal:
         return get_args(annotation)
@@ -237,6 +239,7 @@ class WireMode(enum.Enum):
     CHAIN_FLATTEN : str
         Array returns ``list[T]``, array parameter is ``T``.
         Gather + flatten + re-fan-out.
+
     """
 
     DIRECT = "direct"
@@ -259,6 +262,7 @@ def infer_wire_mode(
     ------
     TypeError
         If the types are incompatible.
+
     """
     up_is_list = is_list_type(upstream_return_type)
 
@@ -340,17 +344,21 @@ class ResolvedParam:
 
     @property
     def namespace(self) -> str:
+        """Return the CLI namespace used for this bound parameter."""
         return self.param.namespace if self.param is not None else "global"
 
     @property
     def help_text(self) -> str:
+        """Return the human-readable help text for the parameter."""
         return self.param.help if self.param is not None and self.param.help else ""
 
     @property
     def short_flag(self) -> str | None:
+        """Return the short CLI flag, if one is defined."""
         return self.param.short if self.param is not None else None
 
     def cli_flag(self) -> str:
+        """Return the long CLI flag for this bound parameter."""
         base = self.name.replace("_", "-")
         if self.namespace == "local":
             prefix = self.task_name.replace("_", "-")
@@ -358,6 +366,7 @@ class ResolvedParam:
         return f"--{base}"
 
     def dest_name(self) -> str:
+        """Return the argparse destination name for this parameter."""
         if self.namespace == "local":
             return f"{self.task_name}_{self.name}"
         return self.name

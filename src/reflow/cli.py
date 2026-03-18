@@ -74,7 +74,10 @@ def _add_store_flags(
         required=require_run_dir,
         default=None,
         type=str,
-        help="Working directory. Optional when the run already exists in the shared manifest store.",
+        help=(
+            "Working directory. Optional when the run already exists in the "
+            "shared manifest store."
+        ),
     )
     parser.add_argument(
         "--store-path", default=None, type=str, help="SQLite manifest path."

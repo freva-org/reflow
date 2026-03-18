@@ -21,23 +21,21 @@ Example config file::
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 from typing import Any
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 
 def _load_toml(path: Path) -> dict[str, Any]:
     """Load a TOML file, using tomllib (3.11+) or tomli (3.10)."""
-    if sys.version_info >= (3, 11):
-        import tomllib
-    else:
-        try:
-            import tomli as tomllib  # type: ignore[no-redef]
-        except ImportError:
-            return {}
     try:
         with open(path, "rb") as fh:
-            return tomllib.load(fh)
+            config: dict[str, Any] = tomllib.load(fh)
+            return config
     except FileNotFoundError:
         return {}
 
@@ -90,6 +88,7 @@ class Config:
         Server URL for future registration.
     default_store_path : str
         Default path to the shared SQLite manifest database.
+
     """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
@@ -106,42 +105,52 @@ class Config:
 
     @property
     def executor_partition(self) -> str | None:
+        """Return the default executor partition."""
         return self._get("executor", "partition", "REFLOW_PARTITION")
 
     @property
     def executor_account(self) -> str | None:
+        """Return the default executor account."""
         return self._get("executor", "account", "REFLOW_ACCOUNT")
 
     @property
     def executor_python(self) -> str | None:
+        """Return the default Python interpreter for workers."""
         return self._get("executor", "python", "REFLOW_PYTHON")
 
     @property
     def executor_mode(self) -> str | None:
+        """Return the default executor submission mode."""
         return self._get("executor", "mode", "REFLOW_MODE")
 
     @property
     def mail_user(self) -> str | None:
+        """Return the notification email recipient."""
         return self._get("notifications", "mail_user", "REFLOW_MAIL_USER")
 
     @property
     def mail_type(self) -> str | None:
+        """Return the configured Slurm mail event types."""
         return self._get("notifications", "mail_type", "REFLOW_MAIL_TYPE")
 
     @property
     def signal(self) -> str | None:
+        """Return the signal specification used for job warnings."""
         return self._get("executor", "signal", "REFLOW_SIGNAL")
 
     @property
     def default_run_dir(self) -> str | None:
+        """Return the default run directory root."""
         return self._get("defaults", "run_dir")
 
     @property
     def server_url(self) -> str | None:
+        """Return the future service endpoint URL, if configured."""
         return self._get("server", "url", "REFLOW_SERVER_URL")
 
     @property
     def default_store_path(self) -> str:
+        """Return the default path to the shared manifest database."""
         configured = self._get("defaults", "store_path", "REFLOW_STORE_PATH")
         if configured is not None:
             return configured
@@ -160,6 +169,7 @@ def load_config(path: Path | str | None = None) -> Config:
     Returns
     -------
     Config
+
     """
     p = Path(path) if path is not None else _config_path()
     data = _load_toml(p)

@@ -6,17 +6,17 @@ annotations, and submit to Slurm with an auto-generated CLI.
 
 __version__ = "1.0.0a1"
 
-from .flow import Flow, JobConfig, TaskSpec
-from .workflow import Workflow
-from .run import Run
-from .params import Param, Result, RunDir
 from ._types import RunState, TaskState
-from .signals import TaskInterrupted
-from .executors import Executor, JobResources
-from .executors.slurm import SlurmExecutor
-from .executors.local import LocalExecutor
 from .config import Config, load_config
+from .executors import Executor, JobResources
+from .executors.local import LocalExecutor
+from .executors.slurm import SlurmExecutor
+from .flow import Flow, JobConfig, TaskSpec
 from .manifest import ManifestCodec, WorkflowDescription
+from .params import Param, Result, RunDir
+from .run import Run
+from .signals import TaskInterrupted
+from .workflow import Workflow
 
 __all__ = [
     "Flow",

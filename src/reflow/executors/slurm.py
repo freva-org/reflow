@@ -28,6 +28,7 @@ class SlurmExecutor(Executor):
         Path to the ``sacct`` binary.
     python : str
         Python interpreter used inside ``sbatch --wrap``.
+
     """
 
     def __init__(
@@ -65,6 +66,7 @@ class SlurmExecutor(Executor):
         )
 
     def submit(self, resources: JobResources, command: list[str]) -> str:
+        """Submit a command to Slurm and return the job identifier."""
         cmd = self._build_sbatch(resources, command)
         if self.mode == "dry-run":
             logger.info("DRY-RUN: %s", " ".join(cmd))
@@ -75,6 +77,7 @@ class SlurmExecutor(Executor):
         return output
 
     def cancel(self, job_id: str) -> None:
+        """Cancel a previously submitted Slurm job."""
         if job_id == "DRYRUN":
             return
         try:
@@ -83,6 +86,7 @@ class SlurmExecutor(Executor):
             logger.warning("scancel %s returned %d", job_id, exc.returncode)
 
     def job_state(self, job_id: str) -> str | None:
+        """Return the current Slurm state for a job, if available."""
         if job_id == "DRYRUN":
             return None
         try:

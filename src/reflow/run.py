@@ -35,6 +35,7 @@ class Run:
     >>> run.status()
     >>> run.cancel()
     >>> run.retry("convert")
+
     """
 
     def __init__(
@@ -68,6 +69,7 @@ class Run:
             Filter by task name.
         as_dict : bool
             If ``True``, return the raw dict instead of printing.
+
         """
         info = self.workflow.run_status(self.run_id, self.store)
 
@@ -127,6 +129,7 @@ class Run:
         -------
         int
             Number of instances cancelled.
+
         """
         n = self.workflow.cancel_run(
             self.run_id,
@@ -163,6 +166,7 @@ class Run:
         -------
         int
             Number of instances marked for retry.
+
         """
         n = self.workflow.retry_failed(
             self.run_id,

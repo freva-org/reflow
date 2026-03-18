@@ -67,15 +67,43 @@ name = "reflow"
 line-length = 88
 target-version = "py310"
 
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "D"]
+ignore = ["D105", "D107", "D102"]
 
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
+strict = true
+warn_unused_ignores = true
+warn_unreachable = true
+show_error_codes = true
+install_types = true
+non_interactive = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_redundant_casts = true
+ignore_missing_imports = true
+allow_untyped_calls = true
 
+[tool.ty.src]
+include = ["src"]
+
+[tool.ty.environment]
+root = ["./src"]
+
+[tool.ty.rules]
+all = "error"
+unused-ignore-comment = "error"
+unused-type-ignore-comment = "error"
+redundant-cast = "warn"
+
+[tool.ty.terminal]
+error-on-warning = true
 
 
 [tool.tox]
@@ -88,9 +116,35 @@ env_list = docs, types, lint
 passenv = *
 parallel_show_output = false
 
+[testenv:lint]
+description = "Check code quality."
+deps = ruff
+       flake8
+       codespell
+       bandit[toml]
+
+commands =
+    python3 -m ruff check src/reflow/
+    python3 -m flake8 src --count --max-complexity=20 --ignore=W503 --max-line-length=110 --statistics --show-source
+    codespell {posargs: --quiet-level=2} src/
+    python3 -m bandit -r src/reflow --severity-level medium --confidence-level high
+[testenv:test]
+setenv =
+    VIRTUALENV_SYSTEM_SITE_PACKAGES=true
+description = "Run the unit tests."
+deps = -e .[dev]
+commands =
+    python3 -m pytest -vv --cov=reflow --cov-report=html:coverage_report --junitxml report.xml --cov-report xml tests/
+    python3 -m coverage report --fail-under=65 --precision=2
+[testenv:types]
+description = "Static type checking."
+deps = mypy
+commands = python3 -m mypy --install-types --non-interactive src/reflow
+
 [testenv:docs]
 description = Build the documentation with mkdocs
-deps = .[docs]
+deps = codespell
+       .[docs]
 commands =
     codespell {posargs: --quiet-level=2} docs
     mkdocs build --strict {posargs}

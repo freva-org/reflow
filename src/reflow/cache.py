@@ -17,8 +17,9 @@ additionally verified by checking that the files still exist on disk.
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, get_args, get_origin
+from typing import Any, get_args, get_origin
 
 from .manifest import canonical_manifest_dumps
 
@@ -43,6 +44,7 @@ def compute_input_hash(
     -------
     str
         Hex digest (sha256, truncated to 16 chars).
+
     """
     blob = canonical_manifest_dumps(
         {"task": task_name, "version": version, "inputs": direct_inputs}
@@ -67,6 +69,7 @@ def compute_identity(
     -------
     str
         Hex digest (sha256, truncated to 16 chars).
+
     """
     blob = (input_hash + "|" + "|".join(sorted(upstream_output_hashes))).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
@@ -84,6 +87,7 @@ def compute_output_hash(output: Any) -> str:
     -------
     str
         Hex digest (sha256, truncated to 16 chars).
+
     """
     blob = canonical_manifest_dumps(output).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
@@ -117,6 +121,7 @@ def verify_cached_output(
     -------
     bool
         ``True`` if the cached output is still valid.
+
     """
     # User-supplied callable takes priority.
     if verify is not None:

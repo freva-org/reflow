@@ -64,9 +64,14 @@ markdown_extensions:
 
 
 nav:
-  - Home: index.md
+  - Overview: index.md
+  - Getting started: getting-started.md
+  - Concepts: concepts.md
+  - CLI: cli.md
+  - Python API: python-api.md
+  - Executors and stores: executors-and-stores.md
   - Tutorial: tutorial.md
-  - Parameters and CLI: parameters-and-cli.md
+  - Parameters: parameters-and-cli.md
   - Dependencies and data wiring: dependencies-and-wiring.md
   - Array jobs: array-jobs.md
   - Caching and retries: caching-and-retries.md
@@ -74,9 +79,12 @@ nav:
   - CLI reference: cli-reference.md
   - Python reference: python-reference.md
   - Architecture: architecture.md
+  - Development: development.md
+  - Future service API: future-service-api.md
   - Python API:
       - API overview: api/index.md
       - Core workflow objects: api/core.md
       - Parameters and results: api/params.md
       - Executors: api/executors.md
       - Stores: api/stores.md
+      - Other: api/other.md

@@ -26,11 +26,11 @@ close to the point where they are produced.
 
 from __future__ import annotations
 
+import importlib
+import json
 from dataclasses import dataclass, fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-import importlib
-import json
 from pathlib import Path
 from typing import Any, ClassVar
 from uuid import UUID
@@ -195,7 +195,8 @@ class ManifestCodec:
             return {key: self.dump_value(item) for key, item in value.items()}
 
         raise TypeError(
-            f"Unsupported manifest value type: {type(value).__module__}.{type(value).__qualname__}"
+            "Unsupported manifest value type: "
+            f"{type(value).__module__}.{type(value).__qualname__}"
         )
 
     def load_value(self, value: Any) -> Any:
@@ -271,7 +272,8 @@ class ManifestCodec:
         value = mapping.get(key)
         if not isinstance(value, expected):
             raise TypeError(
-                f"Manifest field {key!r} must be {expected.__name__}, got {type(value).__name__}"
+                f"Manifest field {key!r} must be {expected.__name__}, got "
+                "{type(value).__name__}"
             )
         return value
 

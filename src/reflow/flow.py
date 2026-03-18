@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import copy
 import inspect
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from .params import Result, collect_result_deps, get_return_type
 
@@ -60,6 +61,7 @@ class Flow:
     ----------
     name : str
         Flow name.
+
     """
 
     def __init__(self, name: str) -> None:
@@ -122,6 +124,7 @@ class Flow:
             Signal spec sent before timeout, e.g. ``"B:INT@60"``
             (send SIGINT 60 seconds before walltime).  Falls back to
             config / ``REFLOW_SIGNAL``.
+
         """
 
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -203,6 +206,7 @@ class Flow:
             Notification type.
         signal : str or None
             Signal spec sent before timeout.
+
         """
 
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:

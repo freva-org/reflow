@@ -17,9 +17,9 @@ exception is raised.
 from __future__ import annotations
 
 import signal
-import sys
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any
 
 
 class TaskInterrupted(Exception):
@@ -31,6 +31,7 @@ class TaskInterrupted(Exception):
         The signal that triggered the interruption.
     signal_name : str
         Human-readable signal name.
+
     """
 
     def __init__(self, signal_number: int) -> None:
@@ -60,6 +61,7 @@ def graceful_shutdown() -> Generator[None, None, None]:
     --------
     >>> with graceful_shutdown():
     ...     result = expensive_computation()
+
     """
     old_sigterm = signal.getsignal(signal.SIGTERM)
     old_sigint = signal.getsignal(signal.SIGINT)
