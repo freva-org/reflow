@@ -27,7 +27,7 @@ _FIXED = frozenset({"run_dir", "store_path"})
 
 def _add_submit_parser(subparsers: Any, workflow: Any) -> None:
     parser = subparsers.add_parser(
-        "submit", help="Create a new run and submit the dispatcher.",
+        "submit", help="Create a new run and submit the workflow coordinator.",
     )
     parser.add_argument(
         "--run-dir", required=True, type=str,

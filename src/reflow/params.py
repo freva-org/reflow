@@ -19,6 +19,7 @@ import types as _types
 from datetime import datetime
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Literal,
     Union,
@@ -26,6 +27,7 @@ from typing import (
     get_origin,
     get_type_hints,
 )
+
 
 # --- user-facing descriptor types ------------------------------------------
 
@@ -163,9 +165,7 @@ def is_run_dir(annotation: Any) -> bool:
     """Check whether *annotation* is ``RunDir``."""
     base = extract_base_type(annotation)
     try:
-        return base is RunDir or (
-            isinstance(base, type) and issubclass(base, RunDir)
-        )
+        return base is RunDir or (isinstance(base, type) and issubclass(base, RunDir))
     except TypeError:
         return False
 
@@ -300,10 +300,8 @@ def check_type_compatibility(
     """Validate and return the wire mode, with descriptive errors."""
     try:
         return infer_wire_mode(
-            upstream_return_type,
-            upstream_is_array,
-            downstream_param_type,
-            downstream_is_array,
+            upstream_return_type, upstream_is_array,
+            downstream_param_type, downstream_is_array,
         )
     except TypeError as exc:
         raise TypeError(
@@ -344,9 +342,7 @@ class ResolvedParam:
 
     @property
     def help_text(self) -> str:
-        return (
-            self.param.help if self.param is not None and self.param.help else ""
-        )
+        return self.param.help if self.param is not None and self.param.help else ""
 
     @property
     def short_flag(self) -> str | None:
@@ -379,9 +375,7 @@ class ResolvedParam:
 
         if self.literal_choices is not None:
             kw["choices"] = list(self.literal_choices)
-            kw["type"] = (
-                type(self.literal_choices[0]) if self.literal_choices else str
-            )
+            kw["type"] = type(self.literal_choices[0]) if self.literal_choices else str
         else:
             kw["type"] = argparse_type_callable(self.base_type)
 
@@ -436,14 +430,11 @@ def collect_cli_params(
             has_default = p.default is not inspect.Parameter.empty
             results.append(
                 ResolvedParam(
-                    name=pname,
-                    task_name=task_name,
+                    name=pname, task_name=task_name,
                     base_type=type(literal_vals[0]) if literal_vals else str,
-                    is_list=False,
-                    required=not has_default,
+                    is_list=False, required=not has_default,
                     default=p.default if has_default else None,
-                    param=param_meta,
-                    literal_choices=literal_vals,
+                    param=param_meta, literal_choices=literal_vals,
                 )
             )
             continue
@@ -452,8 +443,7 @@ def collect_cli_params(
         has_default = p.default is not inspect.Parameter.empty
         results.append(
             ResolvedParam(
-                name=pname,
-                task_name=task_name,
+                name=pname, task_name=task_name,
                 base_type=list_elem if list_elem is not None else base,
                 is_list=list_elem is not None,
                 required=not has_default,
@@ -498,18 +488,12 @@ def _parse_datetime(value: str) -> datetime:
     try:
         return datetime.fromisoformat(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(
-            f"Invalid datetime: {value!r} ({exc})"
-        ) from exc
+        raise argparse.ArgumentTypeError(f"Invalid datetime: {value!r} ({exc})") from exc
 
 
 _TYPE_MAP: dict[Any, Any] = {
-    str: str,
-    int: int,
-    float: float,
-    bool: _parse_bool,
-    Path: Path,
-    datetime: _parse_datetime,
+    str: str, int: int, float: float,
+    bool: _parse_bool, Path: Path, datetime: _parse_datetime,
 }
 
 

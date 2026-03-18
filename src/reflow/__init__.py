@@ -16,6 +16,7 @@ from .executors import Executor, JobResources
 from .executors.slurm import SlurmExecutor
 from .executors.local import LocalExecutor
 from .config import Config, load_config
+from .manifest import ManifestCodec, WorkflowDescription
 
 __all__ = [
     "Flow",
@@ -35,4 +36,6 @@ __all__ = [
     "JobResources",
     "SlurmExecutor",
     "LocalExecutor",
+    "ManifestCodec",
+    "WorkflowDescription",
 ]

@@ -17,9 +17,10 @@ additionally verified by checking that the files still exist on disk.
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
 from typing import Any, Callable, get_args, get_origin
+
+from .manifest import canonical_manifest_dumps
 
 
 def compute_input_hash(
@@ -43,10 +44,8 @@ def compute_input_hash(
     str
         Hex digest (sha256, truncated to 16 chars).
     """
-    blob = json.dumps(
-        {"task": task_name, "version": version, "inputs": direct_inputs},
-        sort_keys=True,
-        default=str,
+    blob = canonical_manifest_dumps(
+        {"task": task_name, "version": version, "inputs": direct_inputs}
     ).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
 
@@ -86,7 +85,7 @@ def compute_output_hash(output: Any) -> str:
     str
         Hex digest (sha256, truncated to 16 chars).
     """
-    blob = json.dumps(output, sort_keys=True, default=str).encode()
+    blob = canonical_manifest_dumps(output).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
 
 

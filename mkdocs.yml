@@ -1,0 +1,38 @@
+site_name: Reflow
+site_description: Decorator-based HPC workflow engine
+repo_url: https://github.com/your-org/reflow
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: white
+      accent: blue
+  font:
+    text: false
+    code: false
+
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - Getting started: getting-started.md
+  - Concepts: concepts.md
+  - CLI: cli.md
+  - Python API: python-api.md
+  - Executors and stores: executors-and-stores.md
+  - Architecture: architecture.md
+  - Development: development.md
+
+extra_css:
+  - stylesheets/github-like.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - fenced_code
+  - tables
+  - toc:
+      permalink: true

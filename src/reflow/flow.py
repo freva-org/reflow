@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import copy
 import inspect
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from .params import Result, collect_result_deps, get_return_type
 
@@ -32,7 +33,7 @@ class JobConfig:
     cache: bool = True
     mail_user: str | None = None
     mail_type: str | None = None  # e.g. "FAIL", "END", "FAIL,END", "ALL"
-    signal: str | None = None     # e.g. "B:INT@60" (send SIGINT 60s before timeout)
+    signal: str | None = None  # e.g. "B:INT@60" (send SIGINT 60s before timeout)
     # verify is stored on TaskSpec, not here (not serialisable).
 
 
@@ -127,13 +128,21 @@ class Flow:
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             task_name = name or func.__name__
             self._register(
-                task_name, func,
+                task_name,
+                func,
                 JobConfig(
-                    cpus=cpus, time=time, mem=mem, partition=partition,
-                    account=account, after=list(after or []),
-                    array=False, extra=dict(extra or {}),
-                    version=version, cache=cache,
-                    mail_user=mail_user, mail_type=mail_type,
+                    cpus=cpus,
+                    time=time,
+                    mem=mem,
+                    partition=partition,
+                    account=account,
+                    after=list(after or []),
+                    array=False,
+                    extra=dict(extra or {}),
+                    version=version,
+                    cache=cache,
+                    mail_user=mail_user,
+                    mail_type=mail_type,
                     signal=signal,
                 ),
                 verify=verify,
@@ -200,14 +209,22 @@ class Flow:
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             task_name = name or func.__name__
             self._register(
-                task_name, func,
+                task_name,
+                func,
                 JobConfig(
-                    cpus=cpus, time=time, mem=mem, partition=partition,
-                    account=account, after=list(after or []),
-                    array=True, array_parallelism=array_parallelism,
+                    cpus=cpus,
+                    time=time,
+                    mem=mem,
+                    partition=partition,
+                    account=account,
+                    after=list(after or []),
+                    array=True,
+                    array_parallelism=array_parallelism,
                     extra=dict(extra or {}),
-                    version=version, cache=cache,
-                    mail_user=mail_user, mail_type=mail_type,
+                    version=version,
+                    cache=cache,
+                    mail_user=mail_user,
+                    mail_type=mail_type,
                     signal=signal,
                 ),
                 verify=verify,
@@ -232,15 +249,19 @@ class Flow:
                 f"annotated with Result(step=...)."
             )
         self.tasks[task_name] = TaskSpec(
-            name=task_name, func=func, config=config,
+            name=task_name,
+            func=func,
+            config=config,
             signature=inspect.signature(func),
-            result_deps=result_deps, return_type=get_return_type(func),
+            result_deps=result_deps,
+            return_type=get_return_type(func),
             verify=verify,
         )
         self._registration_order.append(task_name)
 
     def _prefixed_tasks(
-        self, prefix: str | None,
+        self,
+        prefix: str | None,
     ) -> tuple[dict[str, TaskSpec], list[str]]:
         """Return deep copies of tasks with prefixed names and references."""
         if prefix is None:
@@ -268,9 +289,12 @@ class Flow:
                     steps=[_px(s) if s in internal else s for s in result.steps],
                 )
             tasks[new_name] = TaskSpec(
-                name=new_name, func=old_spec.func, config=new_config,
+                name=new_name,
+                func=old_spec.func,
+                config=new_config,
                 signature=old_spec.signature,
-                result_deps=new_deps, return_type=old_spec.return_type,
+                result_deps=new_deps,
+                return_type=old_spec.return_type,
             )
             order.append(new_name)
 

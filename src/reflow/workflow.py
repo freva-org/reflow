@@ -14,9 +14,10 @@ import os
 import sys
 import traceback
 import uuid
+from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Sequence, get_type_hints
+from typing import Any, get_type_hints
 
 from ._types import RunState, TaskState
 from .cache import (
@@ -29,6 +30,11 @@ from .config import Config, load_config
 from .executors import Executor, JobResources
 from .executors.slurm import SlurmExecutor
 from .flow import Flow, TaskSpec
+from .manifest import (
+    CliParamDescription,
+    TaskDescription,
+    WorkflowDescription,
+)
 from .params import (
     WireMode,
     check_type_compatibility,
@@ -391,18 +397,12 @@ class Workflow(Flow):
         for task_name in self._topological_order():
             spec = self.tasks[task_name]
             if spec.config.array:
-                self._dispatch_array(
-                    run_id, run_dir, spec, store, exc, verify=verify
-                )
+                self._dispatch_array(run_id, run_dir, spec, store, exc, verify=verify)
             else:
-                self._dispatch_single(
-                    run_id, run_dir, spec, store, exc, verify=verify
-                )
+                self._dispatch_single(run_id, run_dir, spec, store, exc, verify=verify)
         self._maybe_finalise_run(run_id, store)
 
-    def _all_deps_satisfied(
-        self, store: Store, run_id: str, spec: TaskSpec
-    ) -> bool:
+    def _all_deps_satisfied(self, store: Store, run_id: str, spec: TaskSpec) -> bool:
         return all(
             store.dependency_is_satisfied(run_id, dep)
             for dep in self._effective_dependencies(spec)
@@ -463,9 +463,7 @@ class Workflow(Flow):
             elif wire == WireMode.CHAIN:
                 resolved[pname] = all_values
             else:
-                resolved[pname] = (
-                    all_values[0] if len(all_values) == 1 else all_values
-                )
+                resolved[pname] = all_values[0] if len(all_values) == 1 else all_values
 
         return resolved
 
@@ -569,9 +567,7 @@ class Workflow(Flow):
             if not verify_cached_output(
                 cached["output"], spec.return_type, spec.verify
             ):
-                logger.info(
-                    "Cache stale for %s (identity=%s)", spec.name, identity
-                )
+                logger.info("Cache stale for %s (identity=%s)", spec.name, identity)
                 return False
 
         # Cache hit: create instance as SUCCESS with cached output.
@@ -629,9 +625,7 @@ class Workflow(Flow):
             ):
                 return
 
-            input_hash = compute_input_hash(
-                spec.name, spec.config.version, payload
-            )
+            input_hash = compute_input_hash(spec.name, spec.config.version, payload)
             identity = compute_identity(input_hash, up_hashes)
             store.insert_task_instance(
                 run_id,
@@ -668,9 +662,7 @@ class Workflow(Flow):
 
         existing = store.list_task_instances(run_id, task_name=spec.name)
         retrying = [
-            r
-            for r in existing
-            if TaskState(str(r["state"])) == TaskState.RETRYING
+            r for r in existing if TaskState(str(r["state"])) == TaskState.RETRYING
         ]
         if retrying:
             arr = ",".join(str(int(r["array_index"])) for r in retrying)
@@ -715,9 +707,7 @@ class Workflow(Flow):
             ):
                 continue  # cache hit, no Slurm job needed
 
-            input_hash = compute_input_hash(
-                spec.name, spec.config.version, payload
-            )
+            input_hash = compute_input_hash(spec.name, spec.config.version, payload)
             identity = compute_identity(input_hash, up_hashes)
             store.insert_task_instance(
                 run_id,
@@ -733,9 +723,7 @@ class Workflow(Flow):
         if not pending_indices:
             # All instances resolved from cache.
             logger.info(
-                "All %d instances of %s resolved from cache.",
-                len(fan_items),
-                spec.name,
+                "All %d instances of %s resolved from cache.", len(fan_items), spec.name
             )
             return
 
@@ -897,38 +885,33 @@ class Workflow(Flow):
 
     # --- describe (for future server registration) -------------------------
 
-    def describe(self) -> dict[str, Any]:
-        """Return a JSON-serialisable description of the workflow.
+    def describe_typed(self) -> WorkflowDescription:
+        """Return a typed workflow description.
 
-        Includes task names, types, resource configs, dependencies,
-        and CLI parameters -- everything a server would need to
-        reconstruct the submit form and dispatch logic.
-
-        Returns
-        -------
-        dict[str, Any]
+        This is the canonical manifest description used by external tooling and
+        future service integrations.  :meth:`describe` converts it into a
+        JSON-safe dictionary.
         """
         self.validate()
-        tasks_desc = []
+        tasks_desc: list[TaskDescription] = []
         for name in self._topological_order():
             spec = self.tasks[name]
             tasks_desc.append(
-                {
-                    "name": spec.name,
-                    "is_array": spec.config.array,
-                    "config": asdict(spec.config),
-                    "dependencies": self._effective_dependencies(spec),
-                    "result_deps": {
-                        p: {"steps": r.steps} for p, r in spec.result_deps.items()
+                TaskDescription(
+                    name=spec.name,
+                    is_array=spec.config.array,
+                    config=asdict(spec.config),
+                    dependencies=self._effective_dependencies(spec),
+                    result_deps={
+                        pname: {"steps": result.steps}
+                        for pname, result in spec.result_deps.items()
                     },
-                    "return_type": (
-                        str(spec.return_type) if spec.return_type else None
-                    ),
-                    "has_verify": spec.verify is not None,
-                }
+                    return_type=str(spec.return_type) if spec.return_type else None,
+                    has_verify=spec.verify is not None,
+                )
             )
 
-        cli_params = []
+        cli_params: list[CliParamDescription] = []
         all_resolved = []
         for spec in self.tasks.values():
             all_resolved.extend(
@@ -936,29 +919,36 @@ class Workflow(Flow):
             )
         for rp in merge_resolved_params(all_resolved):
             cli_params.append(
-                {
-                    "name": rp.name,
-                    "task": rp.task_name,
-                    "flag": rp.cli_flag(),
-                    "type": str(rp.base_type),
-                    "required": rp.required,
-                    "default": rp.default,
-                    "namespace": rp.namespace,
-                    "help": rp.help_text,
-                    "choices": (
-                        list(rp.literal_choices) if rp.literal_choices else None
-                    ),
-                }
+                CliParamDescription(
+                    name=rp.name,
+                    task=rp.task_name,
+                    flag=rp.cli_flag(),
+                    type_repr=str(rp.base_type),
+                    required=rp.required,
+                    default=rp.default,
+                    namespace=rp.namespace,
+                    help=rp.help_text,
+                    choices=list(rp.literal_choices) if rp.literal_choices else None,
+                )
             )
 
-        return {
-            "name": self.name,
-            "entrypoint": str(Path(sys.argv[0]).expanduser().resolve()),
-            "python": sys.executable,
-            "working_dir": str(Path.cwd()),
-            "tasks": tasks_desc,
-            "cli_params": cli_params,
-        }
+        return WorkflowDescription(
+            name=self.name,
+            entrypoint=Path(sys.argv[0]).expanduser().resolve(),
+            python=Path(sys.executable),
+            working_dir=Path.cwd(),
+            tasks=tasks_desc,
+            cli_params=cli_params,
+        )
+
+    def describe(self) -> dict[str, Any]:
+        """Return a JSON-safe description of the workflow.
+
+        Includes task names, types, resource configs, dependencies, and CLI
+        parameters -- everything a server would need to reconstruct the submit
+        form and dispatch logic.
+        """
+        return self.describe_typed().to_manifest_dict()
 
     # --- internal helpers --------------------------------------------------
 
@@ -1084,9 +1074,7 @@ def _resolve_executor(executor: Executor | str | None) -> Executor | None:
             from .executors.local import LocalExecutor
 
             return LocalExecutor()
-        raise ValueError(
-            f"Unknown executor shorthand {executor!r}.  Use 'local'."
-        )
+        raise ValueError(f"Unknown executor shorthand {executor!r}.  Use 'local'.")
     return executor
 
 
