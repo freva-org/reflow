@@ -1,7 +1,7 @@
 """Runnable workflow (extends Flow with execution machinery).
 
-:class:`Workflow` adds validation, submission, dispatch, worker
-execution, cancellation, retry, and status queries to :class:`Flow`.
+[`Workflow`][reflow.Workflow] adds validation, submission, dispatch, worker
+execution, cancellation, retry, and status queries to [`Flow`][Flow].
 """
 
 from __future__ import annotations
@@ -14,12 +14,10 @@ import os
 import sys
 import traceback
 import uuid
-from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, get_type_hints
+from typing import Any, Sequence, get_type_hints
 
-from ._types import RunState, TaskState
 from .cache import (
     compute_identity,
     compute_input_hash,
@@ -27,9 +25,10 @@ from .cache import (
     verify_cached_output,
 )
 from .config import Config, load_config
+from ._types import RunState, TaskState
 from .executors import Executor, JobResources
 from .executors.slurm import SlurmExecutor
-from .flow import Flow, TaskSpec
+from .flow import Flow, JobConfig, TaskSpec
 from .manifest import (
     CliParamDescription,
     TaskDescription,
@@ -54,7 +53,7 @@ logger = logging.getLogger(__name__)
 class Workflow(Flow):
     """Runnable HPC workflow.
 
-    Extends :class:`Flow` with execution: validation, CLI, submission,
+    Extends [`Flow`][Flow] with execution: validation, CLI, submission,
     dispatch, worker, cancel, retry, status.
 
     Parameters
@@ -221,17 +220,19 @@ class Workflow(Flow):
         verify: bool = False,
         **parameters: Any,
     ) -> Run:
-        """Create a new run and return an interactive :class:`Run` handle.
+        """Create a new run and return an interactive [`Run`][Run] handle.
 
         Parameters
         ----------
         run_dir : str or Path
             Shared working directory.
         store : Store or None
-            Manifest store.  Defaults to :class:`SqliteStore` in *run_dir*.
+            Manifest store. Defaults to the shared
+            [`SqliteStore`][reflow.stores.sqlite.SqliteStore] in the user
+            cache directory.
         executor : Executor, str, or None
             Workload-manager executor.  ``"local"`` is a shorthand
-            for :class:`~reflow.LocalExecutor`.
+            for [`reflow.LocalExecutor`][reflow.LocalExecutor].
         force : bool
             If ``True``, skip the Merkle cache entirely and run all
             tasks fresh.
@@ -263,7 +264,7 @@ class Workflow(Flow):
         rd.mkdir(parents=True, exist_ok=True)
         (rd / "logs").mkdir(parents=True, exist_ok=True)
 
-        st = store or SqliteStore.for_run_dir(rd)
+        st = store or SqliteStore.default(self.config)
         st.init()
 
         run_id = _make_run_id(self.name)
@@ -338,7 +339,7 @@ class Workflow(Flow):
         rd.mkdir(parents=True, exist_ok=True)
         (rd / "logs").mkdir(parents=True, exist_ok=True)
 
-        st = store or SqliteStore.for_run_dir(rd)
+        st = store or SqliteStore.default(self.config)
         st.init()
 
         run_id = _make_run_id(self.name)
@@ -775,8 +776,8 @@ class Workflow(Flow):
         """Execute one task instance and re-dispatch.
 
         Signal handling: SIGTERM and SIGINT are converted to
-        :class:`~reflow.signals.TaskInterrupted` so that the
-        existing error handler stores the traceback and marks
+        [`reflow.signals.TaskInterrupted`][reflow.signals.TaskInterrupted]
+        so that the existing error handler stores the traceback and marks
         the instance as FAILED.
         """
         from .signals import graceful_shutdown
@@ -889,7 +890,7 @@ class Workflow(Flow):
         """Return a typed workflow description.
 
         This is the canonical manifest description used by external tooling and
-        future service integrations.  :meth:`describe` converts it into a
+        future service integrations.  [`describe`][describe] converts it into a
         JSON-safe dictionary.
         """
         self.validate()

@@ -23,7 +23,10 @@ class LocalExecutor(Executor):
         logger.info("LOCAL [%s]: %s", job_id, " ".join(command))
         try:
             proc = subprocess.run(
-                command, text=True, capture_output=self.capture_output, check=False,
+                command,
+                text=True,
+                capture_output=self.capture_output,
+                check=False,
             )
             self._procs[job_id] = proc
         except Exception:

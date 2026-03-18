@@ -87,7 +87,14 @@ class SlurmExecutor(Executor):
             return None
         try:
             output = subprocess.check_output(
-                [self.sacct, "-j", job_id, "--noheader", "--parsable2", "--format=State"],
+                [
+                    self.sacct,
+                    "-j",
+                    job_id,
+                    "--noheader",
+                    "--parsable2",
+                    "--format=State",
+                ],
                 text=True,
             ).strip()
         except subprocess.CalledProcessError:
@@ -97,12 +104,18 @@ class SlurmExecutor(Executor):
 
     def _build_sbatch(self, resources: JobResources, command: list[str]) -> list[str]:
         parts: list[str] = [
-            self.sbatch, "--parsable",
-            "--job-name", resources.job_name,
-            "--cpus-per-task", str(resources.cpus),
-            "--time", resources.time_limit,
-            "--mem", resources.mem,
-            "--partition", resources.partition,
+            self.sbatch,
+            "--parsable",
+            "--job-name",
+            resources.job_name,
+            "--cpus-per-task",
+            str(resources.cpus),
+            "--time",
+            resources.time_limit,
+            "--mem",
+            resources.mem,
+            "--partition",
+            resources.partition,
         ]
         if resources.account:
             parts.extend(["-A", resources.account])

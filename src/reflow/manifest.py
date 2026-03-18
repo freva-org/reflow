@@ -13,13 +13,13 @@ The default codec preserves these types across JSON storage:
 - JSON primitives: ``None``, ``bool``, ``int``, ``float``, ``str``
 - ``list`` and ``dict`` (string keys only)
 - ``tuple``
-- :class:`pathlib.Path`
-- :class:`datetime.datetime`
-- :class:`uuid.UUID`
-- :class:`enum.Enum`
+- `pathlib.Path`
+- `datetime.datetime`
+- `uuid.UUID`
+- `enum.Enum`
 - dataclass instances
 
-Unknown values raise :class:`TypeError` instead of being silently flattened.
+Unknown values raise `TypeError` instead of being silently flattened.
 This keeps the manifest schema predictable and surfaces unsupported payloads
 close to the point where they are produced.
 """
@@ -137,7 +137,13 @@ class ManifestCodec:
     marker_key: str = _MARKER
     schema_version: int = SCHEMA_VERSION
 
-    _json_scalar_types: ClassVar[tuple[type[Any], ...]] = (type(None), bool, int, float, str)
+    _json_scalar_types: ClassVar[tuple[type[Any], ...]] = (
+        type(None),
+        bool,
+        int,
+        float,
+        str,
+    )
 
     def dump_value(self, value: Any) -> Any:
         """Convert a Python value into a JSON-safe representation."""
@@ -257,8 +263,8 @@ class ManifestCodec:
         }
 
     @staticmethod
-    def _qualname(cls: type[Any]) -> str:
-        return f"{cls.__module__}.{cls.__qualname__}"
+    def _qualname(this: type[Any]) -> str:
+        return f"{this.__module__}.{this.__qualname__}"
 
     @staticmethod
     def _require(mapping: dict[str, Any], key: str, expected: type[Any]) -> Any:

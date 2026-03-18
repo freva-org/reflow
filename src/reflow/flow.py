@@ -1,17 +1,16 @@
 """Reusable task registry for reflow.
 
-A :class:`Flow` holds task definitions (registered via decorators) but
+A [`Flow`][Flow] holds task definitions (registered via decorators) but
 has no execution machinery.  Attach a flow to a
-:class:`~reflow.Workflow` with :meth:`Workflow.include`.
+[`Workflow`][reflow.Workflow] with [`Workflow.include`][reflow.Workflow.include].
 """
 
 from __future__ import annotations
 
 import copy
 import inspect
-from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from .params import Result, collect_result_deps, get_return_type
 
@@ -53,9 +52,9 @@ class TaskSpec:
 class Flow:
     """Reusable collection of task definitions.
 
-    Register tasks with :meth:`job` and :meth:`array_job`.  A flow has
-    no execution machinery -- attach it to a :class:`~reflow.Workflow`
-    via :meth:`Workflow.include`.
+    Register tasks with [`job`][job] and [`array_job`][array_job].  A flow has
+    no execution machinery -- attach it to a [`reflow.Workflow`][reflow.Workflow]
+    via [`Workflow.include`][Workflow.include].
 
     Parameters
     ----------

@@ -1,7 +1,8 @@
 """SQLite-backed manifest store with Merkle-DAG caching.
 
-Zero external dependencies.  The database is a single file in the run
-directory (default: ``<run_dir>/manifest.db``).
+Zero external dependencies. By default the database lives in the
+user cache directory so cached task outputs and run metadata can be
+reused across multiple run directories.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .._types import RunState, TaskState
+from ..config import Config
 from ..manifest import DEFAULT_CODEC
 from . import Store
 from .records import RunRecord, TaskInstanceRecord, TaskSpecRecord
@@ -39,10 +41,31 @@ class SqliteStore(Store):
 
     @classmethod
     def for_run_dir(cls, run_dir: Path | str) -> SqliteStore:
-        """Create a store at ``<run_dir>/manifest.db``."""
+        """Create a store at ``<run_dir>/manifest.db``.
+
+        This remains available for callers that want a run-local store,
+        but the default reflow behaviour uses [`default`][default] instead so
+        one manifest database can serve multiple run directories.
+        """
         rd = Path(run_dir).expanduser().resolve()
         rd.mkdir(parents=True, exist_ok=True)
         return cls(rd / "manifest.db")
+
+    @classmethod
+    def default_path(cls, config: Config | None = None) -> Path:
+        """Return the default shared manifest path.
+
+        By default this is the user cache directory, typically
+        ``~/.cache/reflow/manifest.db`` on Linux, unless overridden by
+        config or ``REFLOW_STORE_PATH``.
+        """
+        cfg = config or Config()
+        return Path(cfg.default_store_path).expanduser().resolve()
+
+    @classmethod
+    def default(cls, config: Config | None = None) -> SqliteStore:
+        """Create a store using the shared default manifest path."""
+        return cls(cls.default_path(config))
 
     @property
     def conn(self) -> sqlite3.Connection:
@@ -122,7 +145,8 @@ class SqliteStore(Store):
         )
 
     def _decode_task_instance_record(
-        self, row: sqlite3.Row | None,
+        self,
+        row: sqlite3.Row | None,
     ) -> TaskInstanceRecord | None:
         if row is None:
             return None
@@ -130,12 +154,16 @@ class SqliteStore(Store):
             id=int(row["id"]),
             run_id=str(row["run_id"]),
             task_name=str(row["task_name"]),
-            array_index=int(row["array_index"]) if row["array_index"] is not None else None,
+            array_index=int(row["array_index"])
+            if row["array_index"] is not None
+            else None,
             state=TaskState(str(row["state"])),
             job_id=str(row["job_id"]) if row["job_id"] is not None else None,
             input=DEFAULT_CODEC.loads(str(row["input"])) if row["input"] else {},
             output=DEFAULT_CODEC.loads(str(row["output"])) if row["output"] else None,
-            error_text=str(row["error_text"]) if row["error_text"] is not None else None,
+            error_text=str(row["error_text"])
+            if row["error_text"] is not None
+            else None,
             identity=str(row["identity"]),
             input_hash=str(row["input_hash"]),
             output_hash=str(row["output_hash"]),
@@ -144,7 +172,9 @@ class SqliteStore(Store):
         )
 
     def _decode_task_spec_record(
-        self, row: sqlite3.Row | None, dependencies: list[str],
+        self,
+        row: sqlite3.Row | None,
+        dependencies: list[str],
     ) -> TaskSpecRecord | None:
         if row is None:
             return None
@@ -159,20 +189,30 @@ class SqliteStore(Store):
     # --- runs --------------------------------------------------------------
 
     def insert_run(
-        self, run_id: str, graph_name: str, user_id: str,
+        self,
+        run_id: str,
+        graph_name: str,
+        user_id: str,
         parameters: dict[str, Any],
     ) -> None:
         self.conn.execute(
             "INSERT INTO runs (run_id, graph_name, user_id, created_at, status, parameters) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            (run_id, graph_name, user_id, _utcnow(), RunState.RUNNING.value,
-             DEFAULT_CODEC.dumps(parameters)),
+            (
+                run_id,
+                graph_name,
+                user_id,
+                _utcnow(),
+                RunState.RUNNING.value,
+                DEFAULT_CODEC.dumps(parameters),
+            ),
         )
         self.conn.commit()
 
     def get_run_record(self, run_id: str) -> RunRecord | None:
         row = self.conn.execute(
-            "SELECT * FROM runs WHERE run_id = ?", (run_id,),
+            "SELECT * FROM runs WHERE run_id = ?",
+            (run_id,),
         ).fetchone()
         return self._decode_run_record(row)
 
@@ -182,7 +222,8 @@ class SqliteStore(Store):
 
     def get_run_parameters(self, run_id: str) -> dict[str, Any]:
         row = self.conn.execute(
-            "SELECT parameters FROM runs WHERE run_id = ?", (run_id,),
+            "SELECT parameters FROM runs WHERE run_id = ?",
+            (run_id,),
         ).fetchone()
         if row is None:
             raise KeyError(f"Unknown run_id: {run_id}")
@@ -196,7 +237,9 @@ class SqliteStore(Store):
         self.conn.commit()
 
     def list_run_records(
-        self, graph_name: str | None = None, user_id: str | None = None,
+        self,
+        graph_name: str | None = None,
+        user_id: str | None = None,
     ) -> list[RunRecord]:
         clauses: list[str] = []
         params: list[Any] = []
@@ -208,20 +251,34 @@ class SqliteStore(Store):
             params.append(user_id)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
         rows = self.conn.execute(
-            f"SELECT * FROM runs{where} ORDER BY created_at DESC", params,
+            f"SELECT * FROM runs{where} ORDER BY created_at DESC",
+            params,
         ).fetchall()
-        return [record for row in rows if (record := self._decode_run_record(row)) is not None]
+        return [
+            record
+            for row in rows
+            if (record := self._decode_run_record(row)) is not None
+        ]
 
     def list_runs(
-        self, graph_name: str | None = None, user_id: str | None = None,
+        self,
+        graph_name: str | None = None,
+        user_id: str | None = None,
     ) -> list[dict[str, Any]]:
-        return [record.to_public_dict() for record in self.list_run_records(graph_name, user_id)]
+        return [
+            record.to_public_dict()
+            for record in self.list_run_records(graph_name, user_id)
+        ]
 
     # --- task specs --------------------------------------------------------
 
     def insert_task_spec(
-        self, run_id: str, task_name: str, is_array: bool,
-        config_json: dict[str, Any], dependencies: list[str],
+        self,
+        run_id: str,
+        task_name: str,
+        is_array: bool,
+        config_json: dict[str, Any],
+        dependencies: list[str],
     ) -> None:
         c = self.conn
         c.execute(
@@ -241,7 +298,9 @@ class SqliteStore(Store):
             )
         c.commit()
 
-    def get_task_spec_record(self, run_id: str, task_name: str) -> TaskSpecRecord | None:
+    def get_task_spec_record(
+        self, run_id: str, task_name: str
+    ) -> TaskSpecRecord | None:
         row = self.conn.execute(
             "SELECT * FROM task_specs WHERE run_id = ? AND task_name = ?",
             (run_id, task_name),
@@ -260,9 +319,14 @@ class SqliteStore(Store):
     # --- task instances -----------------------------------------------------
 
     def insert_task_instance(
-        self, run_id: str, task_name: str, array_index: int | None,
-        state: TaskState, input_payload: dict[str, Any],
-        identity: str = "", input_hash: str = "",
+        self,
+        run_id: str,
+        task_name: str,
+        array_index: int | None,
+        state: TaskState,
+        input_payload: dict[str, Any],
+        identity: str = "",
+        input_hash: str = "",
     ) -> int:
         now = _utcnow()
         cur = self.conn.execute(
@@ -270,14 +334,26 @@ class SqliteStore(Store):
             "(run_id, task_name, array_index, state, job_id, input, output, "
             " error_text, identity, input_hash, output_hash, created_at, updated_at) "
             "VALUES (?, ?, ?, ?, NULL, ?, NULL, NULL, ?, ?, '', ?, ?)",
-            (run_id, task_name, array_index, state.value,
-             DEFAULT_CODEC.dumps(input_payload), identity, input_hash, now, now),
+            (
+                run_id,
+                task_name,
+                array_index,
+                state.value,
+                DEFAULT_CODEC.dumps(input_payload),
+                identity,
+                input_hash,
+                now,
+                now,
+            ),
         )
         self.conn.commit()
         return cur.lastrowid or 0
 
     def get_task_instance_record(
-        self, run_id: str, task_name: str, array_index: int | None,
+        self,
+        run_id: str,
+        task_name: str,
+        array_index: int | None,
     ) -> TaskInstanceRecord | None:
         if array_index is None:
             row = self.conn.execute(
@@ -294,13 +370,18 @@ class SqliteStore(Store):
         return self._decode_task_instance_record(row)
 
     def get_task_instance(
-        self, run_id: str, task_name: str, array_index: int | None,
+        self,
+        run_id: str,
+        task_name: str,
+        array_index: int | None,
     ) -> dict[str, Any] | None:
         record = self.get_task_instance_record(run_id, task_name, array_index)
         return None if record is None else record.to_public_dict()
 
     def list_task_instance_records(
-        self, run_id: str, task_name: str | None = None,
+        self,
+        run_id: str,
+        task_name: str | None = None,
         states: list[TaskState] | None = None,
     ) -> list[TaskInstanceRecord]:
         clauses = ["run_id = ?"]
@@ -317,13 +398,22 @@ class SqliteStore(Store):
             "ORDER BY task_name, array_index",
             params,
         ).fetchall()
-        return [record for row in rows if (record := self._decode_task_instance_record(row)) is not None]
+        return [
+            record
+            for row in rows
+            if (record := self._decode_task_instance_record(row)) is not None
+        ]
 
     def list_task_instances(
-        self, run_id: str, task_name: str | None = None,
+        self,
+        run_id: str,
+        task_name: str | None = None,
         states: list[TaskState] | None = None,
     ) -> list[dict[str, Any]]:
-        return [record.to_public_dict() for record in self.list_task_instance_records(run_id, task_name, states)]
+        return [
+            record.to_public_dict()
+            for record in self.list_task_instance_records(run_id, task_name, states)
+        ]
 
     def count_task_instances(self, run_id: str, task_name: str) -> int:
         row = self.conn.execute(
@@ -353,7 +443,9 @@ class SqliteStore(Store):
         ).fetchall()
         return [DEFAULT_CODEC.loads(r[0]) if r[0] else None for r in rows]
 
-    def get_output_hash(self, run_id: str, task_name: str, array_index: int | None = None) -> str:
+    def get_output_hash(
+        self, run_id: str, task_name: str, array_index: int | None = None
+    ) -> str:
         """Get the output hash for a specific task instance.
 
         Parameters
@@ -411,13 +503,23 @@ class SqliteStore(Store):
     # --- state transitions --------------------------------------------------
 
     def update_task_submitted(
-        self, run_id: str, task_name: str, job_id: str,
+        self,
+        run_id: str,
+        task_name: str,
+        job_id: str,
     ) -> None:
         self.conn.execute(
             "UPDATE task_instances SET state = ?, job_id = ?, updated_at = ? "
             "WHERE run_id = ? AND task_name = ? AND state IN (?, ?)",
-            (TaskState.SUBMITTED.value, job_id, _utcnow(),
-             run_id, task_name, TaskState.PENDING.value, TaskState.RETRYING.value),
+            (
+                TaskState.SUBMITTED.value,
+                job_id,
+                _utcnow(),
+                run_id,
+                task_name,
+                TaskState.PENDING.value,
+                TaskState.RETRYING.value,
+            ),
         )
         self.conn.commit()
 
@@ -429,13 +531,21 @@ class SqliteStore(Store):
         self.conn.commit()
 
     def update_task_success(
-        self, instance_id: int, output: Any, output_hash: str = "",
+        self,
+        instance_id: int,
+        output: Any,
+        output_hash: str = "",
     ) -> None:
         self.conn.execute(
             "UPDATE task_instances SET state = ?, output = ?, output_hash = ?, "
             "updated_at = ? WHERE id = ?",
-            (TaskState.SUCCESS.value, DEFAULT_CODEC.dumps(output), output_hash,
-             _utcnow(), instance_id),
+            (
+                TaskState.SUCCESS.value,
+                DEFAULT_CODEC.dumps(output),
+                output_hash,
+                _utcnow(),
+                instance_id,
+            ),
         )
         self.conn.commit()
 
@@ -466,7 +576,9 @@ class SqliteStore(Store):
     # --- cache lookup -------------------------------------------------------
 
     def find_cached_record(
-        self, task_name: str, identity: str,
+        self,
+        task_name: str,
+        identity: str,
     ) -> TaskInstanceRecord | None:
         """Find the most recent successful instance matching the identity.
 
@@ -483,7 +595,9 @@ class SqliteStore(Store):
         return self._decode_task_instance_record(row)
 
     def find_cached(
-        self, task_name: str, identity: str,
+        self,
+        task_name: str,
+        identity: str,
     ) -> dict[str, Any] | None:
         record = self.find_cached_record(task_name, identity)
         return None if record is None else record.to_public_dict()
@@ -502,4 +616,3 @@ class SqliteStore(Store):
         return summary
 
     # --- helpers ------------------------------------------------------------
-

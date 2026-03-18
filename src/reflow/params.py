@@ -300,8 +300,10 @@ def check_type_compatibility(
     """Validate and return the wire mode, with descriptive errors."""
     try:
         return infer_wire_mode(
-            upstream_return_type, upstream_is_array,
-            downstream_param_type, downstream_is_array,
+            upstream_return_type,
+            upstream_is_array,
+            downstream_param_type,
+            downstream_is_array,
         )
     except TypeError as exc:
         raise TypeError(
@@ -430,11 +432,14 @@ def collect_cli_params(
             has_default = p.default is not inspect.Parameter.empty
             results.append(
                 ResolvedParam(
-                    name=pname, task_name=task_name,
+                    name=pname,
+                    task_name=task_name,
                     base_type=type(literal_vals[0]) if literal_vals else str,
-                    is_list=False, required=not has_default,
+                    is_list=False,
+                    required=not has_default,
                     default=p.default if has_default else None,
-                    param=param_meta, literal_choices=literal_vals,
+                    param=param_meta,
+                    literal_choices=literal_vals,
                 )
             )
             continue
@@ -443,7 +448,8 @@ def collect_cli_params(
         has_default = p.default is not inspect.Parameter.empty
         results.append(
             ResolvedParam(
-                name=pname, task_name=task_name,
+                name=pname,
+                task_name=task_name,
                 base_type=list_elem if list_elem is not None else base,
                 is_list=list_elem is not None,
                 required=not has_default,
@@ -488,12 +494,18 @@ def _parse_datetime(value: str) -> datetime:
     try:
         return datetime.fromisoformat(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(f"Invalid datetime: {value!r} ({exc})") from exc
+        raise argparse.ArgumentTypeError(
+            f"Invalid datetime: {value!r} ({exc})"
+        ) from exc
 
 
 _TYPE_MAP: dict[Any, Any] = {
-    str: str, int: int, float: float,
-    bool: _parse_bool, Path: Path, datetime: _parse_datetime,
+    str: str,
+    int: int,
+    float: float,
+    bool: _parse_bool,
+    Path: Path,
+    datetime: _parse_datetime,
 }
 
 

@@ -50,6 +50,14 @@ def _config_dir() -> Path:
     return Path.home() / ".config" / "reflow"
 
 
+def _cache_dir() -> Path:
+    """Return the XDG cache directory for reflow."""
+    xdg = os.getenv("XDG_CACHE_HOME")
+    if xdg:
+        return Path(xdg) / "reflow"
+    return Path.home() / ".cache" / "reflow"
+
+
 def _config_path() -> Path:
     """Return the default config file path."""
     return _config_dir() / "config.toml"
@@ -80,6 +88,8 @@ class Config:
         Default run directory.
     server_url : str or None
         Server URL for future registration.
+    default_store_path : str
+        Default path to the shared SQLite manifest database.
     """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
@@ -129,6 +139,13 @@ class Config:
     @property
     def server_url(self) -> str | None:
         return self._get("server", "url", "REFLOW_SERVER_URL")
+
+    @property
+    def default_store_path(self) -> str:
+        configured = self._get("defaults", "store_path", "REFLOW_STORE_PATH")
+        if configured is not None:
+            return configured
+        return str(_cache_dir() / "manifest.db")
 
 
 def load_config(path: Path | str | None = None) -> Config:

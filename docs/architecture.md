@@ -1,49 +1,55 @@
 # Architecture
 
-At a high level, the project is split into four concerns.
+Reflow has four main layers.
 
-## 1. Definition
+## 1. Definition layer
 
-`Flow` and task decorators define the workflow graph.
+- `Flow`
+- `Workflow`
+- task decorators such as `job()` and `array_job()`
 
-## 2. Orchestration
+This is where you describe the DAG.
 
-`Workflow` validates the graph, resolves dependencies, decides what can run, and
-coordinates cache lookup and backend submission.
+## 2. Parameter and typing layer
 
-## 3. Persistence
+- `Param`
+- `Result`
+- `RunDir`
+- type inspection helpers in `params.py`
 
-`SqliteStore` stores runs, task specs, task instances, states, outputs, and
-cache metadata.
+This is where Reflow turns Python signatures into CLI flags and typed data edges.
 
-## 4. Execution backends
+## 3. Persistence layer
 
-Executors translate runnable work into real execution.
+- `manifest.py`
+- `stores/sqlite.py`
+- `stores/records.py`
 
-## Component view
+This layer persists run metadata, task specs, task instances, cache identities, and outputs.
 
-![Reflow architecture](assets/reflow-architecture.svg)
+## 4. Execution layer
 
-## Submit / execution flow
+- `executors/slurm.py`
+- `executors/local.py`
+- worker entrypoints in `Workflow`
 
-![Reflow submit flow](assets/reflow-submit-flow.svg)
+This layer translates runnable tasks into backend jobs and writes their final state back to the store.
 
-## Typical runtime path
+## Execution flow
 
-1. `Workflow.submit()` creates a run
-2. task specs and instances are persisted
-3. dispatch checks dependency readiness
-4. cache is consulted
-5. runnable work is submitted through the executor
-6. worker execution updates task state and outputs
-7. run status is aggregated from stored task states
+1. `wf.submit(...)` validates the graph
+2. Reflow opens the shared manifest database
+3. it inserts a run row and task specs
+4. it creates initial task instances
+5. a dispatch job examines which tasks are runnable
+6. workers execute Python callables
+7. outputs and state changes are written back into the manifest store
 
-## Future direction
+## Why the shared store matters
 
-The current codebase already points toward a future service-backed deployment:
+A run directory is good for logs and files, but a separate database in every run directory makes inspection and cache reuse harder.
 
-- stronger persistence models
-- additional backends
-- authenticated users
-- web-based run inspection and control
-- a proper database behind the manifest store
+Using one shared manifest store gives you a cleaner split:
+
+- **run directory** = files, logs, outputs
+- **manifest store** = workflow history, task states, cache records

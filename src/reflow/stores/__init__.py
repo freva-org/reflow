@@ -29,7 +29,10 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def insert_run(
-        self, run_id: str, graph_name: str, user_id: str,
+        self,
+        run_id: str,
+        graph_name: str,
+        user_id: str,
         parameters: dict[str, Any],
     ) -> None:
         """Insert a new run."""
@@ -48,7 +51,9 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def list_runs(
-        self, graph_name: str | None = None, user_id: str | None = None,
+        self,
+        graph_name: str | None = None,
+        user_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """List runs, optionally filtered."""
 
@@ -56,8 +61,12 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def insert_task_spec(
-        self, run_id: str, task_name: str, is_array: bool,
-        config_json: dict[str, Any], dependencies: list[str],
+        self,
+        run_id: str,
+        task_name: str,
+        is_array: bool,
+        config_json: dict[str, Any],
+        dependencies: list[str],
     ) -> None:
         """Persist one task specification and its dependencies."""
 
@@ -90,13 +99,18 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def get_task_instance(
-        self, run_id: str, task_name: str, array_index: int | None,
+        self,
+        run_id: str,
+        task_name: str,
+        array_index: int | None,
     ) -> dict[str, Any] | None:
         """Load one task instance."""
 
     @abc.abstractmethod
     def list_task_instances(
-        self, run_id: str, task_name: str | None = None,
+        self,
+        run_id: str,
+        task_name: str | None = None,
         states: list[TaskState] | None = None,
     ) -> list[dict[str, Any]]:
         """List task instances with optional filters."""
@@ -117,7 +131,10 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def get_output_hash(
-        self, run_id: str, task_name: str, array_index: int | None = None,
+        self,
+        run_id: str,
+        task_name: str,
+        array_index: int | None = None,
     ) -> str:
         """Get the output hash for a specific successful task instance."""
 
@@ -135,7 +152,10 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def update_task_submitted(
-        self, run_id: str, task_name: str, job_id: str,
+        self,
+        run_id: str,
+        task_name: str,
+        job_id: str,
     ) -> None:
         """Mark pending/retrying instances as submitted."""
 
@@ -145,7 +165,10 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def update_task_success(
-        self, instance_id: int, output: Any, output_hash: str = "",
+        self,
+        instance_id: int,
+        output: Any,
+        output_hash: str = "",
     ) -> None:
         """Mark one instance as successful.
 
@@ -171,7 +194,9 @@ class Store(abc.ABC):
 
     @abc.abstractmethod
     def find_cached(
-        self, task_name: str, identity: str,
+        self,
+        task_name: str,
+        identity: str,
     ) -> dict[str, Any] | None:
         """Find a successful task instance with a matching Merkle identity.
 

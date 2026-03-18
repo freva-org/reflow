@@ -468,6 +468,13 @@ class TestSubmitAndRun:
         assert run.run_id
         assert "submit_test" in run.run_id
 
+    def test_submit_uses_shared_store(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        os.environ["REFLOW_MODE"] = "dry-run"
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache-home"))
+        wf = self._make_wf()
+        run = wf.submit(run_dir=tmp_path / "r", start="2025-01-01", bucket="b")
+        assert run.store.path == (tmp_path / "cache-home" / "reflow" / "manifest.db").resolve()
+
     def test_submit_missing_required(self, tmp_path: Path) -> None:
         wf = self._make_wf()
         with pytest.raises(TypeError, match="missing required"):
@@ -546,8 +553,13 @@ class TestCLI:
         from reflow.cli import build_parser, parse_args
         wf = self._make_wf()
         assert "dispatch" not in build_parser(wf).format_help()
-        args = parse_args(wf, ["dispatch", "--run-id", "x", "--run-dir", "/tmp"])
+        args = parse_args(wf, ["dispatch", "--run-id", "x"])
         assert args._command == "dispatch"
+
+    def test_status_without_run_dir(self) -> None:
+        from reflow.cli import build_parser
+        args = build_parser(self._make_wf()).parse_args(["status", "run-123"])
+        assert args.run_dir is None
 
     def test_describe_command(self) -> None:
         from reflow.cli import parse_args
@@ -602,6 +614,12 @@ class TestConfig:
         monkeypatch.setenv("REFLOW_PARTITION", "gpu")
         cfg = load_config(Path("/nonexistent"))
         assert cfg.executor_partition == "gpu"
+
+    def test_default_store_path_uses_xdg_cache(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        from reflow.config import load_config
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache-home"))
+        cfg = load_config(Path("/nonexistent"))
+        assert cfg.default_store_path == str((tmp_path / "cache-home" / "reflow" / "manifest.db"))
 
 
 # --- cache -----------------------------------------------------------------

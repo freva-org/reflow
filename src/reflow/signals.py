@@ -10,7 +10,7 @@ Usage::
     with graceful_shutdown():
         result = task_func(**kwargs)
 
-If a signal is received during execution, a :class:`TaskInterrupted`
+If a signal is received during execution, a [`TaskInterrupted`][TaskInterrupted]
 exception is raised.
 """
 
@@ -43,8 +43,10 @@ class TaskInterrupted(Exception):
 
 def _make_handler(sig_num: int) -> Any:
     """Create a signal handler that raises TaskInterrupted."""
+
     def handler(signum: int, frame: Any) -> None:
         raise TaskInterrupted(signum)
+
     return handler
 
 

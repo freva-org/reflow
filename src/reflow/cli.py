@@ -27,22 +27,25 @@ _FIXED = frozenset({"run_dir", "store_path"})
 
 def _add_submit_parser(subparsers: Any, workflow: Any) -> None:
     parser = subparsers.add_parser(
-        "submit", help="Create a new run and submit the workflow coordinator.",
+        "submit",
+        help="Create a new run and submit the workflow coordinator.",
     )
     parser.add_argument(
-        "--run-dir", required=True, type=str,
+        "--run-dir",
+        required=True,
+        type=str,
         help="Shared working directory.",
     )
     parser.add_argument(
-        "--store-path", default=None, type=str,
-        help="Explicit path to SQLite manifest.  [default: <run-dir>/manifest.db]",
+        "--store-path",
+        default=None,
+        type=str,
+        help="Explicit path to SQLite manifest.  [default: shared user cache DB]",
     )
 
     all_resolved: list[ResolvedParam] = []
     for spec in workflow.tasks.values():
-        all_resolved.extend(
-            collect_cli_params(spec.name, spec.func, spec.signature)
-        )
+        all_resolved.extend(collect_cli_params(spec.name, spec.func, spec.signature))
     merged = merge_resolved_params(all_resolved)
 
     local_map: dict[str, tuple[str, str]] = {}
@@ -61,9 +64,21 @@ def _add_submit_parser(subparsers: Any, workflow: Any) -> None:
 # --- static subcommands ----------------------------------------------------
 
 
-def _add_store_flags(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--run-dir", required=True, type=str, help="Working directory.")
-    parser.add_argument("--store-path", default=None, type=str, help="SQLite manifest path.")
+def _add_store_flags(
+    parser: argparse.ArgumentParser,
+    *,
+    require_run_dir: bool = False,
+) -> None:
+    parser.add_argument(
+        "--run-dir",
+        required=require_run_dir,
+        default=None,
+        type=str,
+        help="Working directory. Optional when the run already exists in the shared manifest store.",
+    )
+    parser.add_argument(
+        "--store-path", default=None, type=str, help="SQLite manifest path."
+    )
 
 
 def _add_status_parser(sp: Any) -> None:
@@ -71,7 +86,9 @@ def _add_status_parser(sp: Any) -> None:
     p.add_argument("run_id", type=str, help="Run identifier.")
     _add_store_flags(p)
     p.add_argument("--task", default=None, type=str, help="Filter by task.")
-    p.add_argument("--json", dest="output_json", action="store_true", help="JSON output.")
+    p.add_argument(
+        "--json", dest="output_json", action="store_true", help="JSON output."
+    )
     p.set_defaults(_command="status")
 
 
@@ -88,8 +105,13 @@ def _add_retry_parser(sp: Any) -> None:
     p.add_argument("run_id", type=str, help="Run identifier.")
     _add_store_flags(p)
     p.add_argument("--task", default=None, type=str)
-    p.add_argument("--no-verify", dest="verify", action="store_false", default=True,
-                   help="Skip output verification on cached upstream tasks.")
+    p.add_argument(
+        "--no-verify",
+        dest="verify",
+        action="store_false",
+        default=True,
+        help="Skip output verification on cached upstream tasks.",
+    )
     p.set_defaults(_command="retry")
 
 
@@ -116,8 +138,12 @@ def _build_dispatch_parser(prog: str) -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog=f"{prog} dispatch")
     p.add_argument("--run-id", required=True, type=str)
     _add_store_flags(p)
-    p.add_argument("--verify", action="store_true", default=False,
-                   help="Verify cached outputs before accepting cache hits.")
+    p.add_argument(
+        "--verify",
+        action="store_true",
+        default=False,
+        help="Verify cached outputs before accepting cache hits.",
+    )
     p.set_defaults(_command="dispatch")
     return p
 
@@ -141,11 +167,15 @@ _HIDDEN = frozenset({"dispatch", "worker"})
 def build_parser(workflow: Any) -> argparse.ArgumentParser:
     """Build the public CLI parser."""
     from . import __version__
+
     parser = argparse.ArgumentParser(
-        prog=workflow.name, description=f"reflow workflow: {workflow.name}",
+        prog=workflow.name,
+        description=f"reflow workflow: {workflow.name}",
     )
     parser.add_argument(
-        "--version", action="version", version=f"%(prog)s (reflow {__version__})",
+        "--version",
+        action="version",
+        version=f"%(prog)s (reflow {__version__})",
     )
     sp = parser.add_subparsers(dest="_command", required=True)
     _add_submit_parser(sp, workflow)
@@ -171,21 +201,39 @@ def parse_args(workflow: Any, argv: list[str] | None = None) -> argparse.Namespa
     return build_parser(workflow).parse_args(argv)
 
 
-def _make_store(args: argparse.Namespace) -> SqliteStore:
+def _make_store(args: argparse.Namespace, workflow: Any) -> SqliteStore:
     """Create a SqliteStore from parsed args."""
     if getattr(args, "store_path", None):
         return SqliteStore(args.store_path)
-    return SqliteStore.for_run_dir(Path(args.run_dir))
+    return SqliteStore.default(getattr(workflow, "config", None))
+
+
+def _resolve_run_dir(args: argparse.Namespace, store: SqliteStore) -> Path:
+    """Resolve the working directory from args or stored run parameters."""
+    if getattr(args, "run_dir", None):
+        return Path(args.run_dir)
+    run_id = getattr(args, "run_id", None)
+    if not run_id:
+        raise ValueError("run_dir is required when no run_id is available.")
+    params = store.get_run_parameters(run_id)
+    run_dir = params.get("run_dir")
+    if not run_dir:
+        raise KeyError(f"Run {run_id!r} has no stored run_dir.")
+    return Path(str(run_dir))
 
 
 def run_command(workflow: Any, args: argparse.Namespace) -> int:
     """Execute the parsed command."""
     handlers = {
-        "submit": _cmd_submit, "status": _cmd_status,
-        "cancel": _cmd_cancel, "retry": _cmd_retry,
-        "runs": _cmd_runs, "dag": _cmd_dag,
+        "submit": _cmd_submit,
+        "status": _cmd_status,
+        "cancel": _cmd_cancel,
+        "retry": _cmd_retry,
+        "runs": _cmd_runs,
+        "dag": _cmd_dag,
         "describe": _cmd_describe,
-        "dispatch": _cmd_dispatch, "worker": _cmd_worker,
+        "dispatch": _cmd_dispatch,
+        "worker": _cmd_worker,
     }
     handler = handlers.get(args._command)
     return handler(workflow, args) if handler else 1
@@ -193,16 +241,24 @@ def run_command(workflow: Any, args: argparse.Namespace) -> int:
 
 # --- command implementations -----------------------------------------------
 
-_INTERNAL_KEYS = frozenset({
-    "_command", "_local_map", "run_dir", "store_path",
-    "run_id", "task", "index", "output_json",
-})
+_INTERNAL_KEYS = frozenset(
+    {
+        "_command",
+        "_local_map",
+        "run_dir",
+        "store_path",
+        "run_id",
+        "task",
+        "index",
+        "output_json",
+    }
+)
 
 
 def _cmd_submit(wf: Any, args: argparse.Namespace) -> int:
     run_dir = Path(args.run_dir)
     local_map: dict[str, tuple[str, str]] = getattr(args, "_local_map", {})
-    store = _make_store(args) if getattr(args, "store_path", None) else None
+    store = _make_store(args, wf) if getattr(args, "store_path", None) else None
 
     parameters: dict[str, Any] = {}
     task_local: dict[str, dict[str, Any]] = {}
@@ -224,7 +280,7 @@ def _cmd_submit(wf: Any, args: argparse.Namespace) -> int:
 
 
 def _cmd_status(wf: Any, args: argparse.Namespace) -> int:
-    store = _make_store(args)
+    store = _make_store(args, wf)
     store.init()
     info = wf.run_status(args.run_id, store)
     if getattr(args, "output_json", False):
@@ -243,7 +299,9 @@ def _cmd_status(wf: Any, args: argparse.Namespace) -> int:
         ordered = wf._topological_order()
     except ValueError:
         ordered = sorted(summary)
-    ordered = [t for t in ordered if t in summary] + [t for t in summary if t not in ordered]
+    ordered = [t for t in ordered if t in summary] + [
+        t for t in summary if t not in ordered
+    ]
     task_filter = getattr(args, "task", None)
     for tname in ordered:
         if task_filter and tname != task_filter:
@@ -266,7 +324,7 @@ def _cmd_status(wf: Any, args: argparse.Namespace) -> int:
 
 
 def _cmd_cancel(wf: Any, args: argparse.Namespace) -> int:
-    store = _make_store(args)
+    store = _make_store(args, wf)
     store.init()
     n = wf.cancel_run(args.run_id, store, task_name=getattr(args, "task", None))
     print(f"Cancelled {n} task instance(s).")
@@ -274,10 +332,12 @@ def _cmd_cancel(wf: Any, args: argparse.Namespace) -> int:
 
 
 def _cmd_retry(wf: Any, args: argparse.Namespace) -> int:
-    store = _make_store(args)
+    store = _make_store(args, wf)
     store.init()
     n = wf.retry_failed(
-        args.run_id, store, Path(args.run_dir),
+        args.run_id,
+        store,
+        _resolve_run_dir(args, store),
         task_name=getattr(args, "task", None),
         verify=getattr(args, "verify", True),
     )
@@ -286,7 +346,7 @@ def _cmd_retry(wf: Any, args: argparse.Namespace) -> int:
 
 
 def _cmd_runs(wf: Any, args: argparse.Namespace) -> int:
-    store = _make_store(args)
+    store = _make_store(args, wf)
     store.init()
     rows = store.list_runs(graph_name=wf.name)
     if not rows:
@@ -315,19 +375,26 @@ def _cmd_describe(wf: Any, args: argparse.Namespace) -> int:
 
 
 def _cmd_dispatch(wf: Any, args: argparse.Namespace) -> int:
-    store = _make_store(args)
+    store = _make_store(args, wf)
     store.init()
-    wf.dispatch(args.run_id, store, Path(args.run_dir),
-                verify=getattr(args, "verify", False))
+    wf.dispatch(
+        args.run_id,
+        store,
+        _resolve_run_dir(args, store),
+        verify=getattr(args, "verify", False),
+    )
     return 0
 
 
 def _cmd_worker(wf: Any, args: argparse.Namespace) -> int:
-    store = _make_store(args)
+    store = _make_store(args, wf)
     store.init()
     wf.worker(
-        args.run_id, store, Path(args.run_dir),
-        task_name=args.task, index=args.index,
+        args.run_id,
+        store,
+        _resolve_run_dir(args, store),
+        task_name=args.task,
+        index=args.index,
     )
     return 0
 
@@ -338,6 +405,7 @@ def _cmd_worker(wf: Any, args: argparse.Namespace) -> int:
 def main() -> None:
     """Entry point for the ``reflow`` command (future server CLI)."""
     from . import __version__
+
     if len(sys.argv) > 1 and sys.argv[1] in ("--version", "-V"):
         print(f"reflow {__version__}")
         raise SystemExit(0)
