@@ -304,7 +304,7 @@ class Workflow(Flow):
                 {},
             )
 
-        exc = real_executor or SlurmExecutor.from_environment()
+        exc = real_executor or SlurmExecutor.from_environment(self.config)
         self._submit_dispatch(exc, run_id, rd, st, verify=verify)
 
         logger.info("Created run %s in %s", run_id, rd)
@@ -375,7 +375,7 @@ class Workflow(Flow):
                 {},
             )
 
-        exc = executor or SlurmExecutor.from_environment()
+        exc = executor or SlurmExecutor.from_environment(self.config)
         self._submit_dispatch(exc, run_id, rd, st)
         return run_id
 
@@ -394,13 +394,13 @@ class Workflow(Flow):
         Parameters
         ----------
         run_id : str
-            Workflow run identifier.
+            Run identifier.
         store : Store
-            Manifest store used to read and update task state.
+            Manifest store for the run.
         run_dir : Path
-            Run directory containing logs and task artefacts.
+            Working directory for the run.
         executor : Executor or None
-            Executor used for submission. ``None`` uses the default Slurm executor.
+            Explicit executor override.
         verify : bool
             If ``True``, verify cached outputs (file existence for
             Path types, custom callables) before accepting cache hits.
@@ -408,7 +408,7 @@ class Workflow(Flow):
             Set to ``True`` during retry to catch stale outputs.
 
         """
-        exc = executor or SlurmExecutor.from_environment()
+        exc = executor or SlurmExecutor.from_environment(self.config)
         for task_name in self._topological_order():
             spec = self.tasks[task_name]
             if spec.config.array:
@@ -578,8 +578,8 @@ class Workflow(Flow):
         if cached is None:
             return False
 
-        # Only verify when explicitly requested
-        # (retry path, or submit with verify=True).
+        # Only verify when explicitly requested, either during retry or when
+        # submit() was called with verify=True.
         if verify:
             if not verify_cached_output(
                 cached["output"], spec.return_type, spec.verify
@@ -825,7 +825,7 @@ class Workflow(Flow):
             store.update_task_failed(instance_id, traceback.format_exc())
             raise
 
-        exc = executor or SlurmExecutor.from_environment()
+        exc = executor or SlurmExecutor.from_environment(self.config)
         self._submit_dispatch(exc, run_id, run_dir, store)
 
     # --- cancel / retry / status -------------------------------------------
@@ -837,8 +837,7 @@ class Workflow(Flow):
         task_name: str | None = None,
         executor: Executor | None = None,
     ) -> int:
-        """Cancel active instances for a run or a single task."""
-        exc = executor or SlurmExecutor.from_environment()
+        exc = executor or SlurmExecutor.from_environment(self.config)
         instances = store.list_task_instances(
             run_id,
             task_name=task_name,
@@ -871,15 +870,15 @@ class Workflow(Flow):
         Parameters
         ----------
         run_id : str
-            Workflow run identifier.
+            Run identifier.
         store : Store
-            Manifest store used to update retry state.
+            Manifest store for the run.
         run_dir : Path
-            Run directory containing logs and task artefacts.
+            Working directory for the run.
         task_name : str or None
-            Restrict the retry to one task name. ``None`` retries all retriable tasks.
+            Optional task name filter.
         executor : Executor or None
-            Executor used for resubmission. ``None`` uses the default Slurm executor.
+            Explicit executor override.
         verify : bool
             If ``True`` (the default for retry), verify cached
             upstream outputs before resubmitting.  This catches
@@ -898,12 +897,11 @@ class Workflow(Flow):
             retried += 1
         store.update_run_status(run_id, RunState.RUNNING)
         if retried > 0:
-            exc = executor or SlurmExecutor.from_environment()
+            exc = executor or SlurmExecutor.from_environment(self.config)
             self._submit_dispatch(exc, run_id, run_dir, store, verify=verify)
         return retried
 
     def run_status(self, run_id: str, store: Store) -> dict[str, Any]:
-        """Return run metadata, task summary counts, and all task instances."""
         run_row = store.get_run(run_id)
         if run_row is None:
             raise KeyError(f"Unknown run_id: {run_id!r}")
@@ -992,7 +990,7 @@ class Workflow(Flow):
         task_name: str,
         store: Store,
     ) -> list[str]:
-        python = os.getenv("REFLOW_PYTHON", sys.executable)
+        python = os.getenv("REFLOW_PYTHON") or sys.executable
         cmd = [
             python,
             str(self._entrypoint()),
@@ -1016,14 +1014,17 @@ class Workflow(Flow):
         store: Store,
         verify: bool = False,
     ) -> str:
-        python = os.getenv("REFLOW_PYTHON", sys.executable)
+        python = (
+            os.getenv("REFLOW_PYTHON")
+            or self.config.executor_python
+            or sys.executable
+        )
         resources = JobResources(
             job_name=f"{self.name}-dispatch",
-            cpus=1,
-            time_limit="00:10:00",
-            mem="1G",
-            partition=os.getenv("REFLOW_DISPATCH_PARTITION", "compute"),
-            account=os.getenv("REFLOW_DISPATCH_ACCOUNT"),
+            cpus=int(self.config.dispatch_cpus or "1"),
+            time_limit=self.config.dispatch_time or "00:10:00",
+            mem=self.config.dispatch_mem or "1G",
+            submit_options=self.config.dispatch_submit_options,
             output_path=run_dir / "logs" / "dispatch-%j.out",
             error_path=run_dir / "logs" / "dispatch-%j.err",
         )
@@ -1043,20 +1044,17 @@ class Workflow(Flow):
         return executor.submit(resources, cmd)
 
     def _single_resources(self, run_dir: Path, spec: TaskSpec) -> JobResources:
-        cfg = self.config
+        submit_options = dict(self.config.executor_submit_options)
+        submit_options.update(spec.config.submit_options)
         return JobResources(
             job_name=f"{self.name}-{spec.name}",
             cpus=spec.config.cpus,
             time_limit=spec.config.time,
             mem=spec.config.mem,
-            partition=spec.config.partition,
-            account=spec.config.account or cfg.executor_account,
+            submit_options=submit_options,
             output_path=run_dir / "logs" / f"{spec.name}-%j.out",
             error_path=run_dir / "logs" / f"{spec.name}-%j.err",
-            extra=spec.config.extra,
-            mail_user=spec.config.mail_user or cfg.mail_user,
-            mail_type=spec.config.mail_type or cfg.mail_type,
-            signal=spec.config.signal or cfg.signal,
+            backend=spec.config.backend,
         )
 
     def _array_resources(
@@ -1065,21 +1063,18 @@ class Workflow(Flow):
         spec: TaskSpec,
         array_value: str,
     ) -> JobResources:
-        cfg = self.config
+        submit_options = dict(self.config.executor_submit_options)
+        submit_options.update(spec.config.submit_options)
         return JobResources(
             job_name=f"{self.name}-{spec.name}",
             cpus=spec.config.cpus,
             time_limit=spec.config.time,
             mem=spec.config.mem,
-            partition=spec.config.partition,
-            account=spec.config.account or cfg.executor_account,
             array=array_value,
+            submit_options=submit_options,
             output_path=run_dir / "logs" / f"{spec.name}-%A_%a.out",
             error_path=run_dir / "logs" / f"{spec.name}-%A_%a.err",
-            extra=spec.config.extra,
-            mail_user=spec.config.mail_user or cfg.mail_user,
-            mail_type=spec.config.mail_type or cfg.mail_type,
-            signal=spec.config.signal or cfg.signal,
+            backend=spec.config.backend,
         )
 
 

@@ -2,9 +2,9 @@
 
 User-facing descriptor types:
 
-* :class:`Param` -- CLI argument with help text, short flags, scoping.
-* :class:`Result` -- data dependency on an upstream task's output.
-* :class:`RunDir` -- marker for the run working directory.
+* [`Param`][Param] -- CLI argument with help text, short flags, scoping.
+* [`Result`][Pesult] -- data dependency on an upstream task's output.
+* [`RunDir`][RunDir] -- marker for the run working directory.
 
 Also provides helpers for type introspection, argparse integration,
 wiring mode inference, and static type validation.
@@ -135,7 +135,7 @@ class Param:
 
 
 def extract_result(annotation: Any) -> Result | None:
-    """Find the first :class:`Result` in an ``Annotated`` type."""
+    """Find the first [`Result`][Result] in an ``Annotated`` type."""
     if not hasattr(annotation, "__metadata__"):
         return None
     for meta in annotation.__metadata__:
@@ -145,7 +145,7 @@ def extract_result(annotation: Any) -> Result | None:
 
 
 def extract_param(annotation: Any) -> Param | None:
-    """Find the first :class:`Param` in an ``Annotated`` type."""
+    """Find the first [`Param`][Param] in an ``Annotated`` type."""
     if not hasattr(annotation, "__metadata__"):
         return None
     for meta in annotation.__metadata__:
@@ -344,21 +344,17 @@ class ResolvedParam:
 
     @property
     def namespace(self) -> str:
-        """Return the CLI namespace used for this bound parameter."""
         return self.param.namespace if self.param is not None else "global"
 
     @property
     def help_text(self) -> str:
-        """Return the human-readable help text for the parameter."""
         return self.param.help if self.param is not None and self.param.help else ""
 
     @property
     def short_flag(self) -> str | None:
-        """Return the short CLI flag, if one is defined."""
         return self.param.short if self.param is not None else None
 
     def cli_flag(self) -> str:
-        """Return the long CLI flag for this bound parameter."""
         base = self.name.replace("_", "-")
         if self.namespace == "local":
             prefix = self.task_name.replace("_", "-")
@@ -366,7 +362,6 @@ class ResolvedParam:
         return f"--{base}"
 
     def dest_name(self) -> str:
-        """Return the argparse destination name for this parameter."""
         if self.namespace == "local":
             return f"{self.task_name}_{self.name}"
         return self.name

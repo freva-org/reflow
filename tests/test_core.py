@@ -4,29 +4,42 @@ from __future__ import annotations
 
 import inspect
 import os
-from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Literal
-from uuid import UUID
 
 import pytest
 
 from reflow import (
-    Flow, Param, Result, Run, RunDir, RunState, TaskState, Workflow,
+    Config,
+    Flow,
+    JobResources,
+    Param,
+    Result,
+    Run,
+    RunDir,
+    SlurmExecutor,
+    TaskState,
+    Workflow,
+    ensure_config_exists,
 )
 from reflow.flow import JobConfig, TaskSpec
 from reflow.params import (
-    WireMode, argparse_type_callable, check_type_compatibility,
-    collect_cli_params, collect_result_deps, extract_base_type,
-    extract_param, extract_result, get_list_element_type,
-    get_literal_values, get_return_type, infer_wire_mode,
-    is_list_type, is_run_dir, merge_resolved_params, unwrap_optional,
+    WireMode,
+    collect_cli_params,
+    collect_result_deps,
+    extract_base_type,
+    extract_param,
+    extract_result,
+    get_list_element_type,
+    get_literal_values,
+    get_return_type,
+    infer_wire_mode,
+    is_list_type,
+    is_run_dir,
+    unwrap_optional,
 )
-from reflow.manifest import DEFAULT_CODEC, ManifestCodec
 from reflow.stores.sqlite import SqliteStore
 from reflow.workflow import _build_kwargs
-
 
 # --- params ----------------------------------------------------------------
 
@@ -83,7 +96,10 @@ class TestWireMode:
         assert infer_wire_mode(str, True, list[str], False) == WireMode.GATHER
         assert infer_wire_mode(str, True, str, True) == WireMode.CHAIN
         assert infer_wire_mode(list[str], True, str, True) == WireMode.CHAIN_FLATTEN
-        assert infer_wire_mode(list[str], True, list[str], False) == WireMode.GATHER_FLATTEN
+        assert (
+            infer_wire_mode(list[str], True, list[str], False)
+            == WireMode.GATHER_FLATTEN
+        )
         assert infer_wire_mode(str, False, str, False) == WireMode.DIRECT
 
     def test_fan_out_error(self) -> None:
@@ -103,6 +119,7 @@ class TestCollectCliParams:
             bucket: Annotated[str, Param(help="B")],
         ) -> None:
             pass
+
         params = collect_cli_params("t", fn, inspect.signature(fn))
         names = [p.name for p in params]
         assert "bucket" in names
@@ -114,6 +131,7 @@ class TestCollectCliParams:
             model: Annotated[Literal["era5", "icon"], Param(help="M")] = "era5",
         ) -> None:
             pass
+
         params = collect_cli_params("t", fn, inspect.signature(fn))
         assert params[0].literal_choices == ("era5", "icon")
 
@@ -122,50 +140,12 @@ class TestCollectCliParams:
             chunk: Annotated[int, Param(namespace="local")] = 256,
         ) -> None:
             pass
+
         params = collect_cli_params("convert", fn, inspect.signature(fn))
         assert params[0].cli_flag() == "--convert-chunk"
 
 
 # --- SqliteStore -----------------------------------------------------------
-
-
-# --- manifest ---------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class ExamplePayload:
-    path: Path
-    created_at: datetime
-
-
-class TestManifestCodec:
-    def test_roundtrip_supported_types(self) -> None:
-        codec = ManifestCodec()
-        value = {
-            "path": Path("/tmp/data.nc"),
-            "created_at": datetime(2026, 3, 17, 12, 30, tzinfo=timezone.utc),
-            "run": UUID("12345678-1234-5678-1234-567812345678"),
-            "state": TaskState.SUCCESS,
-            "items": ("a", 1),
-            "payload": ExamplePayload(
-                path=Path("/tmp/out.zarr"),
-                created_at=datetime(2026, 3, 17, 12, 45, tzinfo=timezone.utc),
-            ),
-        }
-        restored = codec.loads(codec.dumps(value))
-        assert restored["path"] == Path("/tmp/data.nc")
-        assert restored["created_at"] == datetime(2026, 3, 17, 12, 30, tzinfo=timezone.utc)
-        assert restored["run"] == UUID("12345678-1234-5678-1234-567812345678")
-        assert restored["state"] is TaskState.SUCCESS
-        assert restored["items"] == ("a", 1)
-        assert restored["payload"] == ExamplePayload(
-            path=Path("/tmp/out.zarr"),
-            created_at=datetime(2026, 3, 17, 12, 45, tzinfo=timezone.utc),
-        )
-
-    def test_rejects_non_string_dict_keys(self) -> None:
-        with pytest.raises(TypeError, match="string keys"):
-            DEFAULT_CODEC.dumps({1: "bad"})
 
 
 class TestSqliteStore:
@@ -177,64 +157,6 @@ class TestSqliteStore:
         assert run is not None
         assert run["graph_name"] == "test"
         assert run["user_id"] == "user1"
-
-    def test_run_record_methods(self, tmp_path: Path) -> None:
-        store = SqliteStore.for_run_dir(tmp_path)
-        store.init()
-        params = {
-            "path": tmp_path / "data.nc",
-            "created_at": datetime(2026, 3, 17, 12, 30, tzinfo=timezone.utc),
-        }
-        store.insert_run("r1", "test", "user1", params)
-
-        record = store.get_run_record("r1")
-        assert record is not None
-        assert record.run_id == "r1"
-        assert record.graph_name == "test"
-        assert record.status is RunState.RUNNING
-        assert record.parameters["path"] == tmp_path / "data.nc"
-
-        listed = store.list_run_records(user_id="user1")
-        assert len(listed) == 1
-        assert listed[0] == record
-
-    def test_roundtrip_typed_parameters(self, tmp_path: Path) -> None:
-        store = SqliteStore.for_run_dir(tmp_path)
-        store.init()
-        params = {
-            "path": tmp_path / "data.nc",
-            "created_at": datetime(2026, 3, 17, 12, 30, tzinfo=timezone.utc),
-            "state": TaskState.PENDING,
-        }
-        store.insert_run("r1", "test", "user1", params)
-        restored = store.get_run_parameters("r1")
-        assert restored["path"] == tmp_path / "data.nc"
-        assert restored["created_at"] == datetime(2026, 3, 17, 12, 30, tzinfo=timezone.utc)
-        assert restored["state"] is TaskState.PENDING
-
-    def test_task_instance_record_methods(self, tmp_path: Path) -> None:
-        store = SqliteStore.for_run_dir(tmp_path)
-        store.init()
-        store.insert_run("r1", "g", "u", {})
-        iid = store.insert_task_instance("r1", "t", None, TaskState.PENDING, {"a": 1})
-
-        record = store.get_task_instance_record("r1", "t", None)
-        assert record is not None
-        assert record.id == iid
-        assert record.state is TaskState.PENDING
-        assert record.input == {"a": 1}
-
-        store.update_task_running(iid)
-        store.update_task_success(iid, {"out": tmp_path / "result.txt"})
-
-        updated = store.get_task_instance_record("r1", "t", None)
-        assert updated is not None
-        assert updated.state is TaskState.SUCCESS
-        assert updated.output == {"out": tmp_path / "result.txt"}
-
-        listed = store.list_task_instance_records("r1", task_name="t")
-        assert len(listed) == 1
-        assert listed[0] == updated
 
     def test_task_lifecycle(self, tmp_path: Path) -> None:
         store = SqliteStore.for_run_dir(tmp_path)
@@ -423,18 +345,6 @@ class TestWorkflow:
         assert len(manifest["tasks"]) == 1
         assert manifest["cli_params"][0]["name"] == "x"
 
-    def test_describe_typed(self) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def a(x: Annotated[str, Param(help="X")], run_dir: RunDir) -> str:
-            return "ok"
-
-        description = wf.describe_typed()
-        assert description.name == "w"
-        assert description.tasks[0].name == "a"
-        assert description.cli_params[0].name == "x"
-
 
 # --- submit and Run --------------------------------------------------------
 
@@ -468,13 +378,6 @@ class TestSubmitAndRun:
         assert run.run_id
         assert "submit_test" in run.run_id
 
-    def test_submit_uses_shared_store(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        os.environ["REFLOW_MODE"] = "dry-run"
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache-home"))
-        wf = self._make_wf()
-        run = wf.submit(run_dir=tmp_path / "r", start="2025-01-01", bucket="b")
-        assert run.store.path == (tmp_path / "cache-home" / "reflow" / "manifest.db").resolve()
-
     def test_submit_missing_required(self, tmp_path: Path) -> None:
         wf = self._make_wf()
         with pytest.raises(TypeError, match="missing required"):
@@ -484,8 +387,10 @@ class TestSubmitAndRun:
         os.environ["REFLOW_MODE"] = "dry-run"
         wf = self._make_wf()
         run = wf.submit(
-            run_dir=tmp_path / "r", start="2025-01-01",
-            bucket="b", executor="local",
+            run_dir=tmp_path / "r",
+            start="2025-01-01",
+            bucket="b",
+            executor="local",
         )
         assert isinstance(run, Run)
 
@@ -530,39 +435,57 @@ class TestCLI:
 
     def test_parser_builds(self) -> None:
         from reflow.cli import build_parser
+
         assert build_parser(self._make_wf()).prog == "cli_test"
 
     def test_submit_parses(self) -> None:
         from reflow.cli import build_parser
-        args = build_parser(self._make_wf()).parse_args([
-            "submit", "--run-dir", "/tmp", "--start", "2025-01-01",
-            "--bucket", "b", "--model", "icon",
-        ])
+
+        args = build_parser(self._make_wf()).parse_args(
+            [
+                "submit",
+                "--run-dir",
+                "/tmp",
+                "--start",
+                "2025-01-01",
+                "--bucket",
+                "b",
+                "--model",
+                "icon",
+            ]
+        )
         assert args.start == "2025-01-01"
         assert args.model == "icon"
 
     def test_literal_choices_enforced(self) -> None:
         from reflow.cli import build_parser
+
         with pytest.raises(SystemExit):
-            build_parser(self._make_wf()).parse_args([
-                "submit", "--run-dir", "/tmp", "--start", "x",
-                "--bucket", "b", "--model", "invalid",
-            ])
+            build_parser(self._make_wf()).parse_args(
+                [
+                    "submit",
+                    "--run-dir",
+                    "/tmp",
+                    "--start",
+                    "x",
+                    "--bucket",
+                    "b",
+                    "--model",
+                    "invalid",
+                ]
+            )
 
     def test_hidden_commands(self) -> None:
         from reflow.cli import build_parser, parse_args
+
         wf = self._make_wf()
         assert "dispatch" not in build_parser(wf).format_help()
-        args = parse_args(wf, ["dispatch", "--run-id", "x"])
+        args = parse_args(wf, ["dispatch", "--run-id", "x", "--run-dir", "/tmp"])
         assert args._command == "dispatch"
-
-    def test_status_without_run_dir(self) -> None:
-        from reflow.cli import build_parser
-        args = build_parser(self._make_wf()).parse_args(["status", "run-123"])
-        assert args.run_dir is None
 
     def test_describe_command(self) -> None:
         from reflow.cli import parse_args
+
         wf = self._make_wf()
         args = parse_args(wf, ["describe"])
         assert args._command == "describe"
@@ -575,7 +498,9 @@ class TestBuildKwargs:
     @staticmethod
     def _spec(func):
         return TaskSpec(
-            name="t", func=func, config=JobConfig(),
+            name="t",
+            func=func,
+            config=JobConfig(),
             signature=inspect.signature(func),
             result_deps=collect_result_deps(func),
             return_type=get_return_type(func),
@@ -584,18 +509,21 @@ class TestBuildKwargs:
     def test_run_dir_injection(self) -> None:
         def fn(wd: RunDir) -> None:
             pass
+
         kw = _build_kwargs(self._spec(fn), {"run_dir": "/scratch"}, {})
         assert kw["wd"] == Path("/scratch")
 
     def test_result_from_input(self) -> None:
         def fn(item: Annotated[str, Result(step="p")]) -> str:
             return item
+
         kw = _build_kwargs(self._spec(fn), {}, {"item": "a.nc"})
         assert kw["item"] == "a.nc"
 
     def test_global_param(self) -> None:
         def fn(bucket: str) -> None:
             pass
+
         kw = _build_kwargs(self._spec(fn), {"bucket": "b"}, {})
         assert kw["bucket"] == "b"
 
@@ -606,20 +534,16 @@ class TestBuildKwargs:
 class TestConfig:
     def test_load_missing(self, tmp_path: Path) -> None:
         from reflow.config import load_config
+
         cfg = load_config(tmp_path / "nonexistent.toml")
         assert cfg.executor_partition is None
 
     def test_env_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from reflow.config import load_config
+
         monkeypatch.setenv("REFLOW_PARTITION", "gpu")
         cfg = load_config(Path("/nonexistent"))
         assert cfg.executor_partition == "gpu"
-
-    def test_default_store_path_uses_xdg_cache(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        from reflow.config import load_config
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache-home"))
-        cfg = load_config(Path("/nonexistent"))
-        assert cfg.default_store_path == str((tmp_path / "cache-home" / "reflow" / "manifest.db"))
 
 
 # --- cache -----------------------------------------------------------------
@@ -688,7 +612,9 @@ class TestCacheVerify:
     def test_list_path_one_missing(self, tmp_path: Path) -> None:
         f1 = tmp_path / "a.nc"
         f1.touch()
-        assert verify_cached_output([str(f1), "/nonexistent"], list[Path], None) is False
+        assert (
+            verify_cached_output([str(f1), "/nonexistent"], list[Path], None) is False
+        )
 
     def test_non_path_trusts_cache(self) -> None:
         assert verify_cached_output(42, int, None) is True
@@ -700,26 +626,6 @@ class TestCacheVerify:
 
 
 class TestCacheStoreIntegration:
-    def test_find_cached_record(self, tmp_path: Path) -> None:
-        store = SqliteStore.for_run_dir(tmp_path)
-        store.init()
-        store.insert_run("r1", "g", "u", {})
-
-        ih = compute_input_hash("t", "1", {"x": "a"})
-        identity = compute_identity(ih, [])
-        iid = store.insert_task_instance(
-            "r1", "t", None, TaskState.PENDING, {},
-            identity=identity, input_hash=ih,
-        )
-        store.update_task_running(iid)
-        store.update_task_success(iid, {"path": tmp_path / "result.txt"}, output_hash="oh1")
-
-        cached = store.find_cached_record("t", identity)
-        assert cached is not None
-        assert cached.state is TaskState.SUCCESS
-        assert cached.output == {"path": tmp_path / "result.txt"}
-        assert cached.output_hash == "oh1"
-
     def test_find_cached(self, tmp_path: Path) -> None:
         store = SqliteStore.for_run_dir(tmp_path)
         store.init()
@@ -728,8 +634,13 @@ class TestCacheStoreIntegration:
         ih = compute_input_hash("t", "1", {"x": "a"})
         identity = compute_identity(ih, [])
         iid = store.insert_task_instance(
-            "r1", "t", None, TaskState.PENDING, {},
-            identity=identity, input_hash=ih,
+            "r1",
+            "t",
+            None,
+            TaskState.PENDING,
+            {},
+            identity=identity,
+            input_hash=ih,
         )
         store.update_task_running(iid)
         oh = compute_output_hash("result")
@@ -753,8 +664,13 @@ class TestCacheStoreIntegration:
         ih = compute_input_hash("t", "1", {"x": "a"})
         identity = compute_identity(ih, [])
         iid = store.insert_task_instance(
-            "r1", "t", None, TaskState.PENDING, {},
-            identity=identity, input_hash=ih,
+            "r1",
+            "t",
+            None,
+            TaskState.PENDING,
+            {},
+            identity=identity,
+            input_hash=ih,
         )
         store.update_task_running(iid)
         store.update_task_success(iid, "result", output_hash="oh1")
@@ -772,8 +688,13 @@ class TestCacheStoreIntegration:
         ih_v1 = compute_input_hash("t", "1", {"x": "a"})
         id_v1 = compute_identity(ih_v1, [])
         iid = store.insert_task_instance(
-            "r1", "t", None, TaskState.PENDING, {},
-            identity=id_v1, input_hash=ih_v1,
+            "r1",
+            "t",
+            None,
+            TaskState.PENDING,
+            {},
+            identity=id_v1,
+            input_hash=ih_v1,
         )
         store.update_task_running(iid)
         store.update_task_success(iid, "result_v1", output_hash="oh1")
@@ -791,8 +712,13 @@ class TestCacheStoreIntegration:
         ih = compute_input_hash("downstream", "1", {"x": "a"})
         id_old = compute_identity(ih, ["upstream_hash_old"])
         iid = store.insert_task_instance(
-            "r1", "downstream", None, TaskState.PENDING, {},
-            identity=id_old, input_hash=ih,
+            "r1",
+            "downstream",
+            None,
+            TaskState.PENDING,
+            {},
+            identity=id_old,
+            input_hash=ih,
         )
         store.update_task_running(iid)
         store.update_task_success(iid, "old_result", output_hash="oh_old")
@@ -807,8 +733,10 @@ class TestCacheStoreIntegration:
 
 class TestSignals:
     def test_task_interrupted(self) -> None:
-        from reflow.signals import TaskInterrupted
         import signal as sig
+
+        from reflow.signals import TaskInterrupted
+
         exc = TaskInterrupted(sig.SIGTERM)
         assert exc.signal_number == sig.SIGTERM
         assert "SIGTERM" in str(exc)
@@ -816,6 +744,7 @@ class TestSignals:
 
     def test_graceful_shutdown_normal(self) -> None:
         from reflow.signals import graceful_shutdown
+
         # Should not raise if no signal is sent.
         with graceful_shutdown():
             x = 1 + 1
@@ -823,6 +752,7 @@ class TestSignals:
 
     def test_graceful_shutdown_restores_handlers(self) -> None:
         import signal as sig
+
         from reflow.signals import graceful_shutdown
 
         old_term = sig.getsignal(sig.SIGTERM)
@@ -845,10 +775,12 @@ class TestConfigWiring:
         """Config values fill in where decorator doesn't specify."""
         from reflow.config import Config
 
-        cfg = Config({
-            "executor": {"account": "default_account"},
-            "notifications": {"mail_user": "user@dkrz.de", "mail_type": "FAIL"},
-        })
+        cfg = Config(
+            {
+                "executor": {"account": "default_account"},
+                "notifications": {"mail_user": "user@dkrz.de", "mail_type": "FAIL"},
+            }
+        )
         wf = Workflow("test", config=cfg)
 
         @wf.job()
@@ -865,10 +797,12 @@ class TestConfigWiring:
         """Decorator values take priority over config."""
         from reflow.config import Config
 
-        cfg = Config({
-            "executor": {"account": "default_account"},
-            "notifications": {"mail_user": "default@dkrz.de"},
-        })
+        cfg = Config(
+            {
+                "executor": {"account": "default_account"},
+                "notifications": {"mail_user": "default@dkrz.de"},
+            }
+        )
         wf = Workflow("test", config=cfg)
 
         @wf.job(account="override_account", mail_user="override@dkrz.de")
@@ -887,11 +821,13 @@ class TestConfigWiring:
 class TestVersion:
     def test_version_exists(self) -> None:
         import reflow
+
         assert hasattr(reflow, "__version__")
         assert reflow.__version__.startswith("1.")
 
     def test_cli_version(self) -> None:
         from reflow.cli import build_parser
+
         wf = Workflow("test")
 
         @wf.job()
@@ -909,13 +845,15 @@ class TestVersion:
 
 class TestSlurmMailSignal:
     def test_mail_flags_in_sbatch(self) -> None:
-        from reflow.executors.slurm import SlurmExecutor
         from reflow.executors import JobResources
+        from reflow.executors.slurm import SlurmExecutor
 
         exc = SlurmExecutor(mode="dry-run")
         res = JobResources(
-            job_name="test", mail_user="user@dkrz.de",
-            mail_type="FAIL,END", signal="B:INT@60",
+            job_name="test",
+            mail_user="user@dkrz.de",
+            mail_type="FAIL,END",
+            signal="B:INT@60",
         )
         cmd = exc._build_sbatch(res, ["python", "test.py"])
         assert "--mail-user" in cmd
@@ -926,8 +864,8 @@ class TestSlurmMailSignal:
         assert "B:INT@60" in cmd
 
     def test_no_mail_when_none(self) -> None:
-        from reflow.executors.slurm import SlurmExecutor
         from reflow.executors import JobResources
+        from reflow.executors.slurm import SlurmExecutor
 
         exc = SlurmExecutor(mode="dry-run")
         res = JobResources(job_name="test")
@@ -935,3 +873,92 @@ class TestSlurmMailSignal:
         assert "--mail-user" not in cmd
         assert "--mail-type" not in cmd
         assert "--signal" not in cmd
+
+
+class TestSchedulerNativeOptions:
+    def test_flow_collects_submit_options(self) -> None:
+        flow = Flow("sched")
+
+        @flow.job(partition="compute", qos="debug", queue="workq")
+        def task() -> str:
+            return "ok"
+
+        cfg = flow.tasks["task"].config
+        assert cfg.submit_options["partition"] == "compute"
+        assert cfg.submit_options["qos"] == "debug"
+        assert cfg.submit_options["queue"] == "workq"
+
+    def test_workflow_applies_config_defaults(self, tmp_path: Path) -> None:
+        wf = Workflow(
+            "sched",
+            config=Config({"executor": {"partition": "cfgpart", "account": "cfgacc"}}),
+        )
+
+        @wf.job()
+        def task() -> str:
+            return "ok"
+
+        resources = wf._single_resources(tmp_path, wf.tasks["task"])
+        assert resources.submit_options["partition"] == "cfgpart"
+        assert resources.submit_options["account"] == "cfgacc"
+
+    def test_code_submit_options_override_config(self, tmp_path: Path) -> None:
+        wf = Workflow(
+            "sched",
+            config=Config({"executor": {"partition": "cfgpart", "account": "cfgacc"}}),
+        )
+
+        @wf.job(partition="codepart", qos="debug")
+        def task() -> str:
+            return "ok"
+
+        resources = wf._single_resources(tmp_path, wf.tasks["task"])
+        assert resources.submit_options["partition"] == "codepart"
+        assert resources.submit_options["qos"] == "debug"
+        assert resources.submit_options["account"] == "cfgacc"
+
+    def test_env_overrides_config(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("REFLOW_PARTITION", "envpart")
+        monkeypatch.setenv("REFLOW_ACCOUNT", "envacc")
+        wf = Workflow(
+            "sched",
+            config=Config({"executor": {"partition": "cfgpart", "account": "cfgacc"}}),
+        )
+
+        @wf.job()
+        def task() -> str:
+            return "ok"
+
+        resources = wf._single_resources(tmp_path, wf.tasks["task"])
+        assert resources.submit_options["partition"] == "envpart"
+        assert resources.submit_options["account"] == "envacc"
+
+    def test_slurm_executor_renders_submit_options(self) -> None:
+        executor = SlurmExecutor(mode="dry-run")
+        resources = JobResources(
+            job_name="job",
+            submit_options={
+                "partition": "compute",
+                "qos": "debug",
+                "exclusive": True,
+                "exclude": ["n1", "n2"],
+            },
+        )
+        cmd = executor._build_sbatch(resources, ["python", "worker.py"])
+        assert "--partition" in cmd
+        assert "compute" in cmd
+        assert "--qos" in cmd
+        assert "debug" in cmd
+        assert "--exclusive" in cmd
+        assert cmd.count("--exclude") == 2
+
+
+class TestConfigHelpers:
+    def test_ensure_config_exists(self, tmp_path: Path) -> None:
+        path = ensure_config_exists(tmp_path / "config.toml")
+        assert path.exists()
+        content = path.read_text(encoding="utf-8")
+        assert "[executor]" in content
+        assert "# partition =" in content

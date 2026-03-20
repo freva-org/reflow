@@ -132,10 +132,7 @@ class Run:
 
         """
         n = self.workflow.cancel_run(
-            self.run_id,
-            self.store,
-            task_name=task,
-            executor=executor,
+            self.run_id, self.store, task_name=task, executor=executor,
         )
         print(f"Cancelled {n} task instance(s).")
         return n
@@ -169,12 +166,8 @@ class Run:
 
         """
         n = self.workflow.retry_failed(
-            self.run_id,
-            self.store,
-            self.run_dir,
-            task_name=task,
-            executor=executor,
-            verify=verify,
+            self.run_id, self.store, self.run_dir,
+            task_name=task, executor=executor, verify=verify,
         )
         print(f"Marked {n} task instance(s) for retry.")
         return n

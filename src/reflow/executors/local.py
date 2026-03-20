@@ -19,15 +19,11 @@ class LocalExecutor(Executor):
         self._procs: dict[str, subprocess.CompletedProcess[str] | None] = {}
 
     def submit(self, resources: JobResources, command: list[str]) -> str:
-        """Run a command locally and return a synthetic job id."""
         job_id = f"local-{uuid.uuid4().hex[:8]}"
         logger.info("LOCAL [%s]: %s", job_id, " ".join(command))
         try:
             proc = subprocess.run(
-                command,
-                text=True,
-                capture_output=self.capture_output,
-                check=False,
+                command, text=True, capture_output=self.capture_output, check=False,
             )
             self._procs[job_id] = proc
         except Exception:
@@ -36,11 +32,9 @@ class LocalExecutor(Executor):
         return job_id
 
     def cancel(self, job_id: str) -> None:
-        """Log a cancellation request for a local job."""
         logger.info("LOCAL cancel is a no-op for %s", job_id)
 
     def job_state(self, job_id: str) -> str | None:
-        """Return the terminal state of a previously submitted local job."""
         proc = self._procs.get(job_id)
         if proc is None:
             return None

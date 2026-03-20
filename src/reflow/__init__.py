@@ -7,7 +7,13 @@ annotations, and submit to Slurm with an auto-generated CLI.
 __version__ = "1.0.0a1"
 
 from ._types import RunState, TaskState
-from .config import Config, load_config
+from .config import (
+    Config,
+    config_path,
+    ensure_config_exists,
+    load_config,
+    write_example_config,
+)
 from .executors import Executor, JobResources
 from .executors.local import LocalExecutor
 from .executors.slurm import SlurmExecutor
@@ -26,7 +32,10 @@ __all__ = [
     "Result",
     "RunDir",
     "Config",
+    "config_path",
     "load_config",
+    "ensure_config_exists",
+    "write_example_config",
     "TaskInterrupted",
     "JobConfig",
     "TaskSpec",
