@@ -13,12 +13,26 @@ import sys
 from pathlib import Path
 from typing import Any
 
+try:
+    from rich_argparse import ArgumentDefaultsRichHelpFormatter as ArgFormatter
+except ImportError:
+    ArgFormatter = argparse.ArgumentDefaultsHelpFormatter
+
 from .params import (
     ResolvedParam,
     collect_cli_params,
     merge_resolved_params,
 )
 from .stores.sqlite import SqliteStore
+
+
+class ReflowArgumentParser(argparse.ArgumentParser):
+    """ArgumentParser with a consistent help formatter."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("formatter_class", ArgFormatter)
+        super().__init__(*args, **kwargs)
+
 
 # --- submit builder --------------------------------------------------------
 
@@ -85,7 +99,10 @@ def _add_store_flags(
 
 
 def _add_status_parser(sp: Any) -> None:
-    p = sp.add_parser("status", help="Show the status of a run.")
+    p = sp.add_parser(
+        "status",
+        help="Show the status of a run.",
+    )
     p.add_argument("run_id", type=str, help="Run identifier.")
     _add_store_flags(p)
     p.add_argument("--task", default=None, type=str, help="Filter by task.")
@@ -96,7 +113,10 @@ def _add_status_parser(sp: Any) -> None:
 
 
 def _add_cancel_parser(sp: Any) -> None:
-    p = sp.add_parser("cancel", help="Cancel active tasks in a run.")
+    p = sp.add_parser(
+        "cancel",
+        help="Cancel active tasks in a run.",
+    )
     p.add_argument("run_id", type=str, help="Run identifier.")
     _add_store_flags(p)
     p.add_argument("--task", default=None, type=str)
@@ -104,8 +124,15 @@ def _add_cancel_parser(sp: Any) -> None:
 
 
 def _add_retry_parser(sp: Any) -> None:
-    p = sp.add_parser("retry", help="Retry failed or cancelled tasks.")
-    p.add_argument("run_id", type=str, help="Run identifier.")
+    p = sp.add_parser(
+        "retry",
+        help="Retry failed or cancelled tasks.",
+    )
+    p.add_argument(
+        "run_id",
+        type=str,
+        help="Run identifier.",
+    )
     _add_store_flags(p)
     p.add_argument("--task", default=None, type=str)
     p.add_argument(
@@ -119,18 +146,27 @@ def _add_retry_parser(sp: Any) -> None:
 
 
 def _add_runs_parser(sp: Any) -> None:
-    p = sp.add_parser("runs", help="List all runs.")
+    p = sp.add_parser(
+        "runs",
+        help="List all runs.",
+    )
     _add_store_flags(p)
     p.set_defaults(_command="runs")
 
 
 def _add_dag_parser(sp: Any) -> None:
-    p = sp.add_parser("dag", help="Print the task DAG.")
+    p = sp.add_parser(
+        "dag",
+        help="Print the task DAG.",
+    )
     p.set_defaults(_command="dag")
 
 
 def _add_describe_parser(sp: Any) -> None:
-    p = sp.add_parser("describe", help="Print the workflow manifest as JSON.")
+    p = sp.add_parser(
+        "describe",
+        help="Print the workflow manifest as JSON.",
+    )
     p.set_defaults(_command="describe")
 
 
@@ -138,7 +174,7 @@ def _add_describe_parser(sp: Any) -> None:
 
 
 def _build_dispatch_parser(prog: str) -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog=f"{prog} dispatch")
+    p = ReflowArgumentParser(prog=f"{prog} dispatch")
     p.add_argument("--run-id", required=True, type=str)
     _add_store_flags(p)
     p.add_argument(
@@ -152,7 +188,7 @@ def _build_dispatch_parser(prog: str) -> argparse.ArgumentParser:
 
 
 def _build_worker_parser(prog: str) -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog=f"{prog} worker")
+    p = ReflowArgumentParser(prog=f"{prog} worker")
     p.add_argument("--run-id", required=True, type=str)
     _add_store_flags(p)
     p.add_argument("--task", required=True, type=str)
@@ -171,7 +207,7 @@ def build_parser(workflow: Any) -> argparse.ArgumentParser:
     """Build the public CLI parser."""
     from . import __version__
 
-    parser = argparse.ArgumentParser(
+    parser = ReflowArgumentParser(
         prog=workflow.name,
         description=f"reflow workflow: {workflow.name}",
     )
@@ -180,7 +216,11 @@ def build_parser(workflow: Any) -> argparse.ArgumentParser:
         action="version",
         version=f"%(prog)s (reflow {__version__})",
     )
-    sp = parser.add_subparsers(dest="_command", required=True)
+    sp = parser.add_subparsers(
+        dest="_command",
+        required=True,
+        parser_class=ReflowArgumentParser,
+    )
     _add_submit_parser(sp, workflow)
     _add_status_parser(sp)
     _add_cancel_parser(sp)
