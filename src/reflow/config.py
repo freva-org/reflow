@@ -51,9 +51,12 @@ def _load_toml(path: Path) -> dict[str, Any]:
             config: dict[str, Any] = tomllib.load(fh)
             return config
     except FileNotFoundError:
-        path.parent.mkdir(exist_ok=True, parents=True)
-        with open(path, "w", encoding="utf-8") as fh:
-            fh.write(STANDARD_CONFIG)
+        try:
+            path.parent.mkdir(exist_ok=True, parents=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(STANDARD_CONFIG)
+        except (PermissionError, IsADirectoryError, FileNotFoundError):
+            pass
         return {}
 
 
