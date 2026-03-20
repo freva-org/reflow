@@ -7,29 +7,16 @@ import os
 import shlex
 import subprocess
 import sys
+from typing import Any
 
+from ..config import Config
 from . import Executor, JobResources
 
 logger = logging.getLogger(__name__)
 
 
 class SlurmExecutor(Executor):
-    """Submit, cancel, and query Slurm jobs.
-
-    Parameters
-    ----------
-    mode : str
-        ``"sbatch"`` for real submission, ``"dry-run"`` to print only.
-    sbatch : str
-        Path to the ``sbatch`` binary.
-    scancel : str
-        Path to the ``scancel`` binary.
-    sacct : str
-        Path to the ``sacct`` binary.
-    python : str
-        Python interpreter used inside ``sbatch --wrap``.
-
-    """
+    """Submit, cancel, and query Slurm jobs."""
 
     def __init__(
         self,
@@ -46,27 +33,20 @@ class SlurmExecutor(Executor):
         self.python = python or sys.executable
 
     @classmethod
-    def from_environment(cls) -> SlurmExecutor:
-        """Build from ``REFLOW_*`` environment variables.
-
-        Recognised variables:
-
-        - ``REFLOW_MODE`` -- ``"sbatch"`` (default) or ``"dry-run"``
-        - ``REFLOW_SBATCH`` -- path to ``sbatch``
-        - ``REFLOW_SCANCEL`` -- path to ``scancel``
-        - ``REFLOW_SACCT`` -- path to ``sacct``
-        - ``REFLOW_PYTHON`` -- Python interpreter for workers
-        """
+    def from_environment(cls, config: Config | None = None) -> SlurmExecutor:
+        """Build from ``REFLOW_*`` environment variables and config."""
+        cfg = config or Config()
+        mode = os.getenv("REFLOW_MODE") or cfg.executor_mode or "sbatch"
+        python = os.getenv("REFLOW_PYTHON") or cfg.executor_python or sys.executable
         return cls(
-            mode=os.getenv("REFLOW_MODE", "sbatch").strip().lower(),
+            mode=mode.strip().lower(),
             sbatch=os.getenv("REFLOW_SBATCH", "sbatch"),
             scancel=os.getenv("REFLOW_SCANCEL", "scancel"),
             sacct=os.getenv("REFLOW_SACCT", "sacct"),
-            python=os.getenv("REFLOW_PYTHON", sys.executable),
+            python=python,
         )
 
     def submit(self, resources: JobResources, command: list[str]) -> str:
-        """Submit a command to Slurm and return the job identifier."""
         cmd = self._build_sbatch(resources, command)
         if self.mode == "dry-run":
             logger.info("DRY-RUN: %s", " ".join(cmd))
@@ -77,7 +57,6 @@ class SlurmExecutor(Executor):
         return output
 
     def cancel(self, job_id: str) -> None:
-        """Cancel a previously submitted Slurm job."""
         if job_id == "DRYRUN":
             return
         try:
@@ -86,7 +65,6 @@ class SlurmExecutor(Executor):
             logger.warning("scancel %s returned %d", job_id, exc.returncode)
 
     def job_state(self, job_id: str) -> str | None:
-        """Return the current Slurm state for a job, if available."""
         if job_id == "DRYRUN":
             return None
         try:
@@ -118,25 +96,29 @@ class SlurmExecutor(Executor):
             resources.time_limit,
             "--mem",
             resources.mem,
-            "--partition",
-            resources.partition,
         ]
-        if resources.account:
-            parts.extend(["-A", resources.account])
         if resources.array:
             parts.extend(["--array", resources.array])
         if resources.output_path is not None:
             parts.extend(["--output", str(resources.output_path)])
         if resources.error_path is not None:
             parts.extend(["--error", str(resources.error_path)])
-        if resources.mail_user:
-            parts.extend(["--mail-user", resources.mail_user])
-        if resources.mail_type:
-            parts.extend(["--mail-type", resources.mail_type])
-        if resources.signal:
-            parts.extend(["--signal", resources.signal])
-        for key, value in resources.extra.items():
-            flag = f"--{key}" if not key.startswith("-") else key
-            parts.extend([flag, str(value)])
+        for key, value in resources.submit_options.items():
+            parts.extend(self._render_submit_option(key, value))
         parts.extend(["--wrap", shlex.join(command)])
         return parts
+
+    def _render_submit_option(self, key: str, value: Any) -> list[str]:
+        if value is None or value is False:
+            return []
+        flag = (
+            f"--{key.replace('_', '-')}" if not str(key).startswith("-") else str(key)
+        )
+        if value is True:
+            return [flag]
+        if isinstance(value, (list, tuple)):
+            rendered: list[str] = []
+            for item in value:
+                rendered.extend([flag, str(item)])
+            return rendered
+        return [flag, str(value)]

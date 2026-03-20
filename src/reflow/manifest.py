@@ -247,7 +247,7 @@ class ManifestCodec:
         return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
     def loads(self, payload: str | bytes | bytearray) -> Any:
-        """Load a value previously written with :meth:`dumps`."""
+        """Load a value previously written with [`dumps`][dumps]."""
         if isinstance(payload, (bytes, bytearray)):
             payload = payload.decode()
         return self.load_value(json.loads(payload))

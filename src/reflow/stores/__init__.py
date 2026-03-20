@@ -91,20 +91,22 @@ class Store(abc.ABC):
 
         Parameters
         ----------
-        run_id : str
-            Run identifier.
-        task_name : str
-            Task name.
-        array_index : int or None
-            Array index, or ``None`` for a singleton task.
-        state : TaskState
-            Initial state for the task instance.
-        input_payload : dict[str, Any]
-            Serialized task inputs stored with the instance.
+        run_id: str
+            Uniq identifier for this job.
+        task_name: str
+            Name of the job.
         identity : str
             Full Merkle identity hash.
         input_hash : str
             Hash of direct inputs only (without upstream hashes).
+        array_index: int|None
+            Number of array job. If any.
+        state: TaskState
+            Stats of the task.
+        input_payload: dict
+            payload of the input jobs
+        identity: str
+        input_hash: str
 
         """
 
@@ -185,12 +187,14 @@ class Store(abc.ABC):
 
         Parameters
         ----------
-        instance_id : int
-            Database identifier of the task instance.
-        output : Any
-            Task result to persist.
         output_hash : str
             Hash of the output value for downstream Merkle propagation.
+        instance_id: int
+            Database id
+        output: Any
+            Output for the job
+        output_hash: str
+            hash of the output
 
         """
 

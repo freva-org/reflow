@@ -113,7 +113,6 @@ run.status(as_dict=True)  # returns dict for scripting
 
 ```bash
 pip install -e .
-pip install -e .[dev]   # pytest, ruff, mypy
 ```
 
 ## Core concepts
@@ -334,28 +333,6 @@ reflow delete demo --server https://flow.dkrz.de
 The `describe` command already produces the JSON manifest that a server
 would need to reconstruct the CLI and dispatch logic without importing
 user code.
-
-## Package structure
-
-```
-reflow/
-├── __init__.py          # public exports, __version__
-├── _types.py            # TaskState, RunState enums
-├── params.py            # Param, Result, RunDir, type validation
-├── cache.py             # Merkle identity hashing and verification
-├── flow.py              # Flow (reusable task registry)
-├── workflow.py          # Workflow (extends Flow with execution)
-├── run.py               # Run handle for interactive use
-├── cli.py               # argparse CLI
-├── config.py            # config file + env var loading
-├── stores/
-│   ├── __init__.py      # Store ABC
-│   └── sqlite.py        # SqliteStore (stdlib sqlite3)
-└── executors/
-    ├── __init__.py      # Executor ABC, JobResources
-    ├── slurm.py         # SlurmExecutor
-    └── local.py         # LocalExecutor
-```
 
 ## Design choices
 

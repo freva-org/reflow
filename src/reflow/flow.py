@@ -1,8 +1,8 @@
 """Reusable task registry for reflow.
 
 A [`Flow`][Flow] holds task definitions (registered via decorators) but
-has no execution machinery.  Attach a flow to a
-[`Workflow`][reflow.Workflow] with [`Workflow.include`][reflow.Workflow.include].
+has no execution machinery. Attach a flow to a
+[`reflow.Workflow`][reflow.Workflow] with [`Workflow.include`][Workflow.include].
 """
 
 from __future__ import annotations
@@ -16,25 +16,76 @@ from typing import Any
 from .params import Result, collect_result_deps, get_return_type
 
 
-@dataclass
+@dataclass(init=False)
 class JobConfig:
     """Resource and dependency configuration for a single task."""
 
-    cpus: int = 1
-    time: str = "00:30:00"
-    mem: str = "4G"
-    partition: str = "compute"
-    account: str | None = None
-    array: bool = False
-    after: list[str] = field(default_factory=list)
-    array_parallelism: int | None = None
-    extra: dict[str, Any] = field(default_factory=dict)
-    version: str = "1"
-    cache: bool = True
-    mail_user: str | None = None
-    mail_type: str | None = None  # e.g. "FAIL", "END", "FAIL,END", "ALL"
-    signal: str | None = None  # e.g. "B:INT@60" (send SIGINT 60s before timeout)
-    # verify is stored on TaskSpec, not here (not serialisable).
+    cpus: int
+    time: str
+    mem: str
+    array: bool
+    after: list[str]
+    array_parallelism: int | None
+    submit_options: dict[str, Any]
+    version: str
+    cache: bool
+    backend: str | None
+
+    def __init__(
+        self,
+        cpus: int = 1,
+        time: str = "00:30:00",
+        mem: str = "4G",
+        array: bool = False,
+        after: list[str] | None = None,
+        array_parallelism: int | None = None,
+        submit_options: dict[str, Any] | None = None,
+        version: str = "1",
+        cache: bool = True,
+        backend: str | None = None,
+        extra: dict[str, Any] | None = None,
+        **scheduler_options: Any,
+    ) -> None:
+        merged = dict(submit_options or {})
+        if extra:
+            merged.update(extra)
+        merged.update(scheduler_options)
+
+        self.cpus = cpus
+        self.time = time
+        self.mem = mem
+        self.array = array
+        self.after = list(after or [])
+        self.array_parallelism = array_parallelism
+        self.submit_options = merged
+        self.version = version
+        self.cache = cache
+        self.backend = backend
+
+    @property
+    def extra(self) -> dict[str, Any]:
+        """Backward-compatible alias for scheduler-native submit options."""
+        return self.submit_options
+
+    @property
+    def partition(self) -> str | None:
+        return self.submit_options.get("partition")
+
+    @property
+    def account(self) -> str | None:
+        return self.submit_options.get("account")
+
+    @property
+    def mail_user(self) -> str | None:
+        return self.submit_options.get("mail_user")
+
+    @property
+    def mail_type(self) -> str | None:
+        return self.submit_options.get("mail_type")
+
+    @property
+    def signal(self) -> str | None:
+        return self.submit_options.get("signal")
 
 
 @dataclass
@@ -53,7 +104,7 @@ class TaskSpec:
 class Flow:
     """Reusable collection of task definitions.
 
-    Register tasks with [`job`][job] and [`array_job`][array_job].  A flow has
+    Register tasks with [`job`][job] and [`array_job`][array_job]. A flow has
     no execution machinery -- attach it to a [`reflow.Workflow`][reflow.Workflow]
     via [`Workflow.include`][Workflow.include].
 
@@ -76,54 +127,46 @@ class Flow:
         cpus: int = 1,
         time: str = "00:30:00",
         mem: str = "4G",
-        partition: str = "compute",
-        account: str | None = None,
         after: list[str] | None = None,
+        submit_options: dict[str, Any] | None = None,
         extra: dict[str, Any] | None = None,
         version: str = "1",
         cache: bool = True,
         verify: Callable[[Any], bool] | None = None,
-        mail_user: str | None = None,
-        mail_type: str | None = None,
-        signal: str | None = None,
+        backend: str | None = None,
+        **scheduler_options: Any,
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Register a singleton task.
 
         Parameters
         ----------
         name : str or None
-            Task name.  Defaults to the function name.
+            Task name. Defaults to the function name.
         cpus : int
             CPUs per task.
         time : str
             Wall-clock time limit.
         mem : str
             Memory request.
-        partition : str
-            Target partition.
-        account : str or None
-            Billing account.
         after : list[str] or None
             Explicit ordering dependencies.
+        submit_options : dict[str, Any] or None
+            Scheduler-native submit options, for example ``partition``,
+            ``account``, ``qos``, or ``queue``.
         extra : dict[str, Any] or None
-            Backend-specific resource flags.
+            Backward-compatible alias for ``submit_options``.
         version : str
-            Cache version string.  Bump to invalidate cached results
+            Cache version string. Bump to invalidate cached results
             when the task logic changes.
         cache : bool
             Whether to cache results across runs.
         verify : callable or None
             Custom output verification function.
-        mail_user : str or None
-            Email address for Slurm notifications.  Falls back to
-            the config file / ``REFLOW_MAIL_USER`` if not set.
-        mail_type : str or None
-            Notification type (e.g. ``"FAIL"``, ``"END"``, ``"ALL"``).
-            Falls back to config / ``REFLOW_MAIL_TYPE``.
-        signal : str or None
-            Signal spec sent before timeout, e.g. ``"B:INT@60"``
-            (send SIGINT 60 seconds before walltime).  Falls back to
-            config / ``REFLOW_SIGNAL``.
+        backend : str or None
+            Optional backend hint for future multi-backend execution.
+        **scheduler_options : Any
+            Additional scheduler-native submit options. These are merged
+            with ``submit_options`` and stored verbatim.
 
         """
 
@@ -136,16 +179,14 @@ class Flow:
                     cpus=cpus,
                     time=time,
                     mem=mem,
-                    partition=partition,
-                    account=account,
                     after=list(after or []),
                     array=False,
-                    extra=dict(extra or {}),
+                    submit_options=submit_options,
+                    extra=extra,
                     version=version,
                     cache=cache,
-                    mail_user=mail_user,
-                    mail_type=mail_type,
-                    signal=signal,
+                    backend=backend,
+                    **scheduler_options,
                 ),
                 verify=verify,
             )
@@ -160,52 +201,48 @@ class Flow:
         cpus: int = 1,
         time: str = "00:30:00",
         mem: str = "4G",
-        partition: str = "compute",
-        account: str | None = None,
         after: list[str] | None = None,
         array_parallelism: int | None = None,
+        submit_options: dict[str, Any] | None = None,
         extra: dict[str, Any] | None = None,
         version: str = "1",
         cache: bool = True,
         verify: Callable[[Any], bool] | None = None,
-        mail_user: str | None = None,
-        mail_type: str | None = None,
-        signal: str | None = None,
+        backend: str | None = None,
+        **scheduler_options: Any,
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Register an array task.
 
         Parameters
         ----------
         name : str or None
-            Task name.  Defaults to the function name.
+            Task name. Defaults to the function name.
         cpus : int
             CPUs per task.
         time : str
             Wall-clock time limit.
         mem : str
             Memory request.
-        partition : str
-            Target partition.
-        account : str or None
-            Billing account.
         after : list[str] or None
             Additional explicit ordering dependencies.
         array_parallelism : int or None
             Maximum concurrent array tasks.
+        submit_options : dict[str, Any] or None
+            Scheduler-native submit options, for example ``partition``,
+            ``account``, ``qos``, or ``queue``.
         extra : dict[str, Any] or None
-            Backend-specific resource flags.
+            Backward-compatible alias for ``submit_options``.
         version : str
             Cache version string.
         cache : bool
             Whether to cache results across runs.
         verify : callable or None
             Custom output verification function.
-        mail_user : str or None
-            Email address for Slurm notifications.
-        mail_type : str or None
-            Notification type.
-        signal : str or None
-            Signal spec sent before timeout.
+        backend : str or None
+            Optional backend hint for future multi-backend execution.
+        **scheduler_options : Any
+            Additional scheduler-native submit options. These are merged
+            with ``submit_options`` and stored verbatim.
 
         """
 
@@ -218,17 +255,15 @@ class Flow:
                     cpus=cpus,
                     time=time,
                     mem=mem,
-                    partition=partition,
-                    account=account,
                     after=list(after or []),
                     array=True,
                     array_parallelism=array_parallelism,
-                    extra=dict(extra or {}),
+                    submit_options=submit_options,
+                    extra=extra,
                     version=version,
                     cache=cache,
-                    mail_user=mail_user,
-                    mail_type=mail_type,
-                    signal=signal,
+                    backend=backend,
+                    **scheduler_options,
                 ),
                 verify=verify,
             )
@@ -282,23 +317,17 @@ class Flow:
 
         for old_name, old_spec in self.tasks.items():
             new_name = _px(old_name)
-            new_config = copy.deepcopy(old_spec.config)
-            new_config.after = [
-                _px(a) if a in internal else a for a in new_config.after
+            spec = copy.deepcopy(old_spec)
+            spec.name = new_name
+            spec.config.after = [
+                _px(d) if d in internal else d for d in spec.config.after
             ]
-            new_deps: dict[str, Result] = {}
-            for pname, result in old_spec.result_deps.items():
-                new_deps[pname] = Result(
-                    steps=[_px(s) if s in internal else s for s in result.steps],
-                )
-            tasks[new_name] = TaskSpec(
-                name=new_name,
-                func=old_spec.func,
-                config=new_config,
-                signature=old_spec.signature,
-                result_deps=new_deps,
-                return_type=old_spec.return_type,
-            )
+            new_result_deps: dict[str, Result] = {}
+            for pname, res in spec.result_deps.items():
+                steps = [_px(s) if s in internal else s for s in res.steps]
+                new_result_deps[pname] = Result(steps=steps)
+            spec.result_deps = new_result_deps
+            tasks[new_name] = spec
             order.append(new_name)
 
         return tasks, order

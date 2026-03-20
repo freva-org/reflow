@@ -70,7 +70,6 @@ class SqliteStore(Store):
 
     @property
     def conn(self) -> sqlite3.Connection:
-        """Return the live SQLite connection, opening it on first use."""
         if self._conn is None:
             self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
             self._conn.row_factory = sqlite3.Row
@@ -81,7 +80,6 @@ class SqliteStore(Store):
     # --- lifecycle ---------------------------------------------------------
 
     def init(self) -> None:
-        """Create the SQLite schema if it does not already exist."""
         self.conn.executescript("""
             CREATE TABLE IF NOT EXISTS runs (
                 run_id       TEXT PRIMARY KEY,
@@ -131,7 +129,6 @@ class SqliteStore(Store):
         """)
 
     def close(self) -> None:
-        """Close the underlying SQLite connection."""
         if self._conn is not None:
             self._conn.close()
             self._conn = None
@@ -199,7 +196,6 @@ class SqliteStore(Store):
         user_id: str,
         parameters: dict[str, Any],
     ) -> None:
-        """Insert a new workflow run record."""
         self.conn.execute(
             "INSERT INTO runs "
             "(run_id, graph_name, user_id, created_at, status, parameters) "
@@ -216,7 +212,6 @@ class SqliteStore(Store):
         self.conn.commit()
 
     def get_run_record(self, run_id: str) -> RunRecord | None:
-        """Return one typed run record, if it exists."""
         row = self.conn.execute(
             "SELECT * FROM runs WHERE run_id = ?",
             (run_id,),
@@ -224,23 +219,20 @@ class SqliteStore(Store):
         return self._decode_run_record(row)
 
     def get_run(self, run_id: str) -> dict[str, Any] | None:
-        """Return one run as the public dictionary representation."""
         record = self.get_run_record(run_id)
         return None if record is None else record.to_public_dict()
 
     def get_run_parameters(self, run_id: str) -> dict[str, Any]:
-        """Return the stored parameter payload for a run."""
         row = self.conn.execute(
             "SELECT parameters FROM runs WHERE run_id = ?",
             (run_id,),
         ).fetchone()
         if row is None:
             raise KeyError(f"Unknown run_id: {run_id}")
-        param: dict[str, Any] = DEFAULT_CODEC.loads(row[0])
-        return param
+        codec: dict[str, Any] = DEFAULT_CODEC.loads(row[0])
+        return codec
 
     def update_run_status(self, run_id: str, status: RunState) -> None:
-        """Update the top-level status for a workflow run."""
         self.conn.execute(
             "UPDATE runs SET status = ? WHERE run_id = ?",
             (status.value, run_id),
@@ -252,7 +244,6 @@ class SqliteStore(Store):
         graph_name: str | None = None,
         user_id: str | None = None,
     ) -> list[RunRecord]:
-        """List typed run records with optional filters."""
         clauses: list[str] = []
         params: list[Any] = []
         if graph_name is not None:
@@ -277,7 +268,6 @@ class SqliteStore(Store):
         graph_name: str | None = None,
         user_id: str | None = None,
     ) -> list[dict[str, Any]]:
-        """List runs as public dictionaries with optional filters."""
         return [
             record.to_public_dict()
             for record in self.list_run_records(graph_name, user_id)
@@ -293,7 +283,6 @@ class SqliteStore(Store):
         config_json: dict[str, Any],
         dependencies: list[str],
     ) -> None:
-        """Insert a task specification and its dependency edges."""
         c = self.conn
         c.execute(
             "INSERT OR REPLACE INTO task_specs (run_id, task_name, is_array, config) "
@@ -315,7 +304,6 @@ class SqliteStore(Store):
     def get_task_spec_record(
         self, run_id: str, task_name: str
     ) -> TaskSpecRecord | None:
-        """Return one typed task specification record, if present."""
         row = self.conn.execute(
             "SELECT * FROM task_specs WHERE run_id = ? AND task_name = ?",
             (run_id, task_name),
@@ -324,7 +312,6 @@ class SqliteStore(Store):
         return self._decode_task_spec_record(row, deps)
 
     def list_task_dependencies(self, run_id: str, task_name: str) -> list[str]:
-        """Return dependency names for a task specification."""
         rows = self.conn.execute(
             "SELECT depends_on FROM task_dependencies "
             "WHERE run_id = ? AND task_name = ? ORDER BY depends_on",
@@ -344,7 +331,6 @@ class SqliteStore(Store):
         identity: str = "",
         input_hash: str = "",
     ) -> int:
-        """Insert a task instance row and return its database id."""
         now = _utcnow()
         cur = self.conn.execute(
             "INSERT INTO task_instances "
@@ -372,7 +358,6 @@ class SqliteStore(Store):
         task_name: str,
         array_index: int | None,
     ) -> TaskInstanceRecord | None:
-        """Return one typed task instance record, if present."""
         if array_index is None:
             row = self.conn.execute(
                 "SELECT * FROM task_instances "
@@ -393,7 +378,6 @@ class SqliteStore(Store):
         task_name: str,
         array_index: int | None,
     ) -> dict[str, Any] | None:
-        """Return one task instance as the public dictionary representation."""
         record = self.get_task_instance_record(run_id, task_name, array_index)
         return None if record is None else record.to_public_dict()
 
@@ -403,7 +387,6 @@ class SqliteStore(Store):
         task_name: str | None = None,
         states: list[TaskState] | None = None,
     ) -> list[TaskInstanceRecord]:
-        """List typed task instance records for a run."""
         clauses = ["run_id = ?"]
         params: list[Any] = [run_id]
         if task_name is not None:
@@ -430,14 +413,12 @@ class SqliteStore(Store):
         task_name: str | None = None,
         states: list[TaskState] | None = None,
     ) -> list[dict[str, Any]]:
-        """List task instances as public dictionaries for a run."""
         return [
             record.to_public_dict()
             for record in self.list_task_instance_records(run_id, task_name, states)
         ]
 
     def count_task_instances(self, run_id: str, task_name: str) -> int:
-        """Return the number of instances recorded for a task."""
         row = self.conn.execute(
             "SELECT COUNT(*) FROM task_instances WHERE run_id = ? AND task_name = ?",
             (run_id, task_name),
@@ -447,7 +428,6 @@ class SqliteStore(Store):
     # --- output retrieval ---------------------------------------------------
 
     def get_singleton_output(self, run_id: str, task_name: str) -> Any:
-        """Return the successful output of a singleton task, if any."""
         row = self.conn.execute(
             "SELECT output FROM task_instances "
             "WHERE run_id = ? AND task_name = ? AND array_index IS NULL AND state = ?",
@@ -458,7 +438,6 @@ class SqliteStore(Store):
         return DEFAULT_CODEC.loads(row[0])
 
     def get_array_outputs(self, run_id: str, task_name: str) -> list[Any]:
-        """Return successful outputs for an array task in index order."""
         rows = self.conn.execute(
             "SELECT output FROM task_instances "
             "WHERE run_id = ? AND task_name = ? AND state = ? "
@@ -515,7 +494,6 @@ class SqliteStore(Store):
     # --- dependency check ---------------------------------------------------
 
     def dependency_is_satisfied(self, run_id: str, task_name: str) -> bool:
-        """Return whether every recorded instance of a task succeeded."""
         row = self.conn.execute(
             "SELECT COUNT(*) AS total, "
             "SUM(CASE WHEN state = ? THEN 1 ELSE 0 END) AS ok "
@@ -535,7 +513,6 @@ class SqliteStore(Store):
         task_name: str,
         job_id: str,
     ) -> None:
-        """Mark pending or retrying instances of a task as submitted."""
         self.conn.execute(
             "UPDATE task_instances SET state = ?, job_id = ?, updated_at = ? "
             "WHERE run_id = ? AND task_name = ? AND state IN (?, ?)",
@@ -552,7 +529,6 @@ class SqliteStore(Store):
         self.conn.commit()
 
     def update_task_running(self, instance_id: int) -> None:
-        """Mark one task instance as running."""
         self.conn.execute(
             "UPDATE task_instances SET state = ?, updated_at = ? WHERE id = ?",
             (TaskState.RUNNING.value, _utcnow(), instance_id),
@@ -565,7 +541,6 @@ class SqliteStore(Store):
         output: Any,
         output_hash: str = "",
     ) -> None:
-        """Persist a successful task result and mark the instance done."""
         self.conn.execute(
             "UPDATE task_instances SET state = ?, output = ?, output_hash = ?, "
             "updated_at = ? WHERE id = ?",
@@ -580,7 +555,6 @@ class SqliteStore(Store):
         self.conn.commit()
 
     def update_task_failed(self, instance_id: int, error_text: str) -> None:
-        """Persist a failure message and mark the instance failed."""
         self.conn.execute(
             "UPDATE task_instances SET state = ?, error_text = ?, "
             "updated_at = ? WHERE id = ?",
@@ -589,7 +563,6 @@ class SqliteStore(Store):
         self.conn.commit()
 
     def update_task_cancelled(self, instance_id: int) -> None:
-        """Mark one task instance as cancelled."""
         self.conn.execute(
             "UPDATE task_instances SET state = ?, updated_at = ? WHERE id = ?",
             (TaskState.CANCELLED.value, _utcnow(), instance_id),
@@ -597,7 +570,6 @@ class SqliteStore(Store):
         self.conn.commit()
 
     def mark_for_retry(self, instance_id: int) -> None:
-        """Reset a failed or cancelled instance so it can be retried."""
         retriable = ",".join(f"'{s.value}'" for s in TaskState.retriable())
         self.conn.execute(
             f"UPDATE task_instances SET state = ?, error_text = NULL, "
@@ -633,14 +605,12 @@ class SqliteStore(Store):
         task_name: str,
         identity: str,
     ) -> dict[str, Any] | None:
-        """Return a cached task instance as the public dictionary format."""
         record = self.find_cached_record(task_name, identity)
         return None if record is None else record.to_public_dict()
 
     # --- summary ------------------------------------------------------------
 
     def task_state_summary(self, run_id: str) -> dict[str, dict[str, int]]:
-        """Return per-task state counts for a run."""
         rows = self.conn.execute(
             "SELECT task_name, state, COUNT(*) AS n "
             "FROM task_instances WHERE run_id = ? GROUP BY task_name, state",
