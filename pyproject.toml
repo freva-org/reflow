@@ -52,6 +52,7 @@ dev = [
     "ruff",
     "mypy",
 ]
+pretty = ["rich-argparse"]
 docs = [
     "mkdocs>=1.5",
     "mkdocs-material>=9.5",

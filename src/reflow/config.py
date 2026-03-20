@@ -24,6 +24,20 @@ import os
 from pathlib import Path
 from typing import Any
 
+STANDARD_CONFIG = """# [executor]
+# partition = "my_partition"
+# account = "my_account"
+# python = "/path/to/python"
+# mode = "sbatch"
+
+# [defaults]
+# run_dir = "/scratch/k204221/reflow"
+
+
+# [server]
+# url = "https://flowserver.org"
+"""
+
 try:
     import tomllib
 except ImportError:
@@ -37,6 +51,12 @@ def _load_toml(path: Path) -> dict[str, Any]:
             config: dict[str, Any] = tomllib.load(fh)
             return config
     except FileNotFoundError:
+        try:
+            path.parent.mkdir(exist_ok=True, parents=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(STANDARD_CONFIG)
+        except (PermissionError, IsADirectoryError, FileNotFoundError):
+            pass
         return {}
 
 
