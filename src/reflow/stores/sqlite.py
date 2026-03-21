@@ -79,13 +79,15 @@ class SqliteStore(Store):
 
     """
 
-    def __init__(self, path: Path | str) -> None:
+    def __init__(self, path: Path | str, readonly: bool = False) -> None:
         self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.readonly = readonly
+        if not readonly:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         self._conn: sqlite3.Connection | None = None
 
     @classmethod
-    def for_run_dir(cls, run_dir: Path | str) -> SqliteStore:
+    def for_run_dir(cls, run_dir: Path | str, readonly: bool = False) -> SqliteStore:
         """Create a store at ``<run_dir>/manifest.db``.
 
         This remains available for callers that want a run-local store,
@@ -93,8 +95,9 @@ class SqliteStore(Store):
         one manifest database can serve multiple run directories.
         """
         rd = Path(run_dir).expanduser().resolve()
-        rd.mkdir(parents=True, exist_ok=True)
-        return cls(rd / "manifest.db")
+        if not readonly:
+            rd.mkdir(parents=True, exist_ok=True)
+        return cls(rd / "manifest.db", readonly=readonly)
 
     @classmethod
     def default_path(cls, config: Config | None = None) -> Path:
@@ -108,25 +111,36 @@ class SqliteStore(Store):
         return Path(cfg.default_store_path).expanduser().resolve()
 
     @classmethod
-    def default(cls, config: Config | None = None) -> SqliteStore:
+    def default(
+        cls, config: Config | None = None, readonly: bool = False
+    ) -> SqliteStore:
         """Create a store using the shared default manifest path."""
-        return cls(cls.default_path(config))
+        return cls(cls.default_path(config), readonly=readonly)
 
     @property
     def conn(self) -> sqlite3.Connection:
         if self._conn is None:
-            self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
-            self._conn.row_factory = sqlite3.Row
-            # WAL mode is faster but requires mmap/shared memory, which
-            # fails on distributed filesystems (VAST, Lustre, GPFS).
-            # Fall back to DELETE journal mode if WAL is not supported.
-            try:
-                self._conn.execute("PRAGMA journal_mode=WAL")
-            except sqlite3.OperationalError:
-                self._conn.execute("PRAGMA journal_mode=DELETE")
-            # 60s busy timeout -- dispatchers and workers may contend
-            # briefly on network filesystems.
-            self._conn.execute("PRAGMA busy_timeout=60000")
+            if self.readonly:
+                # Read-only URI mode: no locks, no pragmas, safe on
+                # distributed filesystems with concurrent readers.
+                uri = f"file:{self.path}?mode=ro"
+                self._conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
+                self._conn.row_factory = sqlite3.Row
+            else:
+                self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
+                self._conn.row_factory = sqlite3.Row
+                # WAL mode is faster but requires mmap/shared memory, which
+                # fails on distributed filesystems (VAST, Lustre, GPFS).
+                # Fall back to DELETE journal mode if WAL is not supported.
+                try:
+                    self._conn.execute("PRAGMA journal_mode=WAL")
+                except sqlite3.OperationalError:
+                    try:
+                        self._conn.execute("PRAGMA journal_mode=DELETE")
+                    except sqlite3.OperationalError:
+                        pass  # use whatever mode the DB already has
+                # 60s busy timeout for dispatch/submit contention.
+                self._conn.execute("PRAGMA busy_timeout=60000")
         return self._conn
 
     # --- lifecycle ---------------------------------------------------------
