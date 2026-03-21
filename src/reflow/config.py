@@ -151,9 +151,9 @@ def ensure_config_exists(path: Path | str | None = None) -> Path:
 def _rosetta_stone(workload_manager: str, key: str) -> str:
     """Translate workload manager vocabulary."""
     if workload_manager == "dry-run":
-        workload_manager = "slurm"
+        workload_manager = "sbatch"
     _options = {
-        "slurm": {
+        "sbatch": {
             "partition": "partition",
             "account": "account",
             "signal": "signal",
