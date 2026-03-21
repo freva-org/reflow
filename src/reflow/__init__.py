@@ -4,7 +4,7 @@ Define tasks with Python decorators, wire data flow with ``Result``
 annotations, and submit to Slurm with an auto-generated CLI.
 """
 
-__version__ = "1.0.0a1"
+__version__ = "2604.0.0a2"
 
 from ._types import RunState, TaskState
 from .config import (
