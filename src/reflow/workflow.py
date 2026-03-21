@@ -833,12 +833,13 @@ class Workflow(Flow):
         instance_id = int(row["id"])
 
         # Mark as running in the DB (best-effort; retry on lock).
-        try:
-            store.update_task_running(instance_id)
-        except Exception:
-            logger.warning(
-                "Could not mark %s[%s] as RUNNING in DB", task_name, resolved_index
-            )
+        if not getattr(store, "readonly", False):
+            try:
+                store.update_task_running(instance_id)
+            except Exception:
+                logger.error(
+                    "Could not mark %s[%s] as RUNNING in DB", task_name, resolved_index
+                )
 
         try:
             with graceful_shutdown():

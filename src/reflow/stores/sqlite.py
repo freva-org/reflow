@@ -123,7 +123,7 @@ class SqliteStore(Store):
             if self.readonly:
                 # Read-only URI mode: no locks, no pragmas, safe on
                 # distributed filesystems with concurrent readers.
-                uri = f"file:{self.path}?mode=ro"
+                uri = f"file:{self.path}?mode=ro&immutable=1"
                 self._conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
                 self._conn.row_factory = sqlite3.Row
             else:
