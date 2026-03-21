@@ -25,12 +25,13 @@ class SlurmExecutor(Executor):
         scancel: str = "scancel",
         sacct: str = "sacct",
         python: str = "",
+        config: Config | None = None,
     ) -> None:
         self.mode = mode
         self.sbatch = sbatch
         self.scancel = scancel
         self.sacct = sacct
-        self.python = python or sys.executable
+        super().__init__(python=python, config=config)
 
     @classmethod
     def from_environment(cls, config: Config | None = None) -> SlurmExecutor:
@@ -104,7 +105,9 @@ class SlurmExecutor(Executor):
         if resources.error_path is not None:
             parts.extend(["--error", str(resources.error_path)])
         for key, value in resources.submit_options.items():
-            parts.extend(self._render_submit_option(key, value))
+            if key not in ("python", "sbatch", "sacct", "scancel", "mode"):
+                parts.extend(self._render_submit_option(key, value))
+
         parts.extend(["--wrap", shlex.join(command)])
         return parts
 

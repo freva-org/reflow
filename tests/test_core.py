@@ -777,7 +777,7 @@ class TestConfigWiring:
 
         cfg = Config(
             {
-                "executor": {"account": "default_account"},
+                "executor": {"submit_options": {"account": "default_account"}},
                 "notifications": {"mail_user": "user@dkrz.de", "mail_type": "FAIL"},
             }
         )
@@ -799,7 +799,7 @@ class TestConfigWiring:
 
         cfg = Config(
             {
-                "executor": {"account": "default_account"},
+                "executor": {"submit_options": {"account": "default_account"}},
                 "notifications": {"mail_user": "default@dkrz.de"},
             }
         )
@@ -851,9 +851,11 @@ class TestSlurmMailSignal:
         exc = SlurmExecutor(mode="dry-run")
         res = JobResources(
             job_name="test",
-            mail_user="user@dkrz.de",
-            mail_type="FAIL,END",
-            signal="B:INT@60",
+            submit_options={
+                "mail_user": "user@dkrz.de",
+                "mail_type": "FAIL,END",
+                "signal": "B:INT@60",
+            },
         )
         cmd = exc._build_sbatch(res, ["python", "test.py"])
         assert "--mail-user" in cmd
@@ -891,7 +893,13 @@ class TestSchedulerNativeOptions:
     def test_workflow_applies_config_defaults(self, tmp_path: Path) -> None:
         wf = Workflow(
             "sched",
-            config=Config({"executor": {"partition": "cfgpart", "account": "cfgacc"}}),
+            config=Config(
+                {
+                    "executor": {
+                        "submit_options": {"partition": "cfgpart", "account": "cfgacc"}
+                    }
+                }
+            ),
         )
 
         @wf.job()
@@ -905,7 +913,13 @@ class TestSchedulerNativeOptions:
     def test_code_submit_options_override_config(self, tmp_path: Path) -> None:
         wf = Workflow(
             "sched",
-            config=Config({"executor": {"partition": "cfgpart", "account": "cfgacc"}}),
+            config=Config(
+                {
+                    "executor": {
+                        "submit_options": {"partition": "cfgpart", "account": "cfgacc"}
+                    }
+                }
+            ),
         )
 
         @wf.job(partition="codepart", qos="debug")
