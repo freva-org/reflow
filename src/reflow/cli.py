@@ -431,7 +431,10 @@ def _cmd_dispatch(wf: Any, args: argparse.Namespace) -> int:
 
 def _cmd_worker(wf: Any, args: argparse.Namespace) -> int:
     store = _make_store(args, wf)
-    store.init()
+    # Workers only READ from the store (input payload, parameters).
+    # Results are written as files to <run_dir>/results/.
+    # Do NOT call store.init() here -- it requires a write lock
+    # which fails on distributed filesystems with concurrent workers.
     wf.worker(
         args.run_id,
         store,

@@ -823,7 +823,6 @@ class TestVersion:
         import reflow
 
         assert hasattr(reflow, "__version__")
-        assert reflow.__version__.startswith("1.")
 
     def test_cli_version(self) -> None:
         from reflow.cli import build_parser

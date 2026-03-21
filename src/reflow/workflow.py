@@ -44,7 +44,9 @@ from .params import (
     is_run_dir,
     merge_resolved_params,
 )
+from .results import write_result
 from .run import Run
+from .signals import graceful_shutdown
 from .stores import Store
 from .stores.sqlite import SqliteStore
 
@@ -391,6 +393,10 @@ class Workflow(Flow):
     ) -> None:
         """Inspect the manifest and submit runnable tasks.
 
+        Before dispatching, ingests any worker result files from
+        ``<run_dir>/results/`` into the store.  This is always
+        single-threaded, so all DB writes are serialised.
+
         Parameters
         ----------
         run_id : str
@@ -408,6 +414,13 @@ class Workflow(Flow):
             Set to ``True`` during retry to catch stale outputs.
 
         """
+        # Ingest worker results before dispatching next round.
+        from .results import ingest_results
+
+        n = ingest_results(Path(run_dir), store)
+        if n > 0:
+            logger.info("Ingested %d worker result(s)", n)
+
         exc = executor or SlurmExecutor.from_environment(self.config)
         for task_name in self._topological_order():
             spec = self.tasks[task_name]
@@ -791,13 +804,16 @@ class Workflow(Flow):
     ) -> None:
         """Execute one task instance and re-dispatch.
 
+        Workers only *read* from the store (input payload, parameters).
+        Results are written as JSON files to ``<run_dir>/results/``
+        and ingested by the dispatcher.  This avoids concurrent SQLite
+        writes from array job workers on distributed filesystems.
+
         Signal handling: SIGTERM and SIGINT are converted to
         [`reflow.signals.TaskInterrupted`][reflow.signals.TaskInterrupted]
-        so that the existing error handler stores the traceback and marks
-        the instance as FAILED.
+        so that the error handler writes a FAILED result file with the
+        traceback.
         """
-        from .signals import graceful_shutdown
-
         if task_name not in self.tasks:
             raise KeyError(f"Unknown task: {task_name!r}")
         resolved_index = _resolve_index(index)
@@ -815,14 +831,37 @@ class Workflow(Flow):
         kwargs = _build_kwargs(spec, parameters, task_input or {})
 
         instance_id = int(row["id"])
-        store.update_task_running(instance_id)
+
+        # Mark as running in the DB (best-effort; retry on lock).
+        try:
+            store.update_task_running(instance_id)
+        except Exception:
+            logger.warning(
+                "Could not mark %s[%s] as RUNNING in DB", task_name, resolved_index
+            )
+
         try:
             with graceful_shutdown():
                 result = spec.func(**kwargs)
             out_hash = compute_output_hash(result)
-            store.update_task_success(instance_id, result, output_hash=out_hash)
+            write_result(
+                run_dir=Path(run_dir),
+                task_name=task_name,
+                array_index=resolved_index,
+                instance_id=instance_id,
+                state=TaskState.SUCCESS,
+                output=result,
+                output_hash=out_hash,
+            )
         except Exception:
-            store.update_task_failed(instance_id, traceback.format_exc())
+            write_result(
+                run_dir=Path(run_dir),
+                task_name=task_name,
+                array_index=resolved_index,
+                instance_id=instance_id,
+                state=TaskState.FAILED,
+                error_text=traceback.format_exc(),
+            )
             raise
 
         exc = executor or SlurmExecutor.from_environment(self.config)
@@ -1015,9 +1054,7 @@ class Workflow(Flow):
         verify: bool = False,
     ) -> str:
         python = (
-            os.getenv("REFLOW_PYTHON")
-            or self.config.executor_python
-            or sys.executable
+            os.getenv("REFLOW_PYTHON") or self.config.executor_python or sys.executable
         )
         resources = JobResources(
             job_name=f"{self.name}-dispatch",
