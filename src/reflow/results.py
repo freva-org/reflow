@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -21,14 +23,13 @@ from .stores import Store
 
 logger = logging.getLogger(__name__)
 
-_RESULTS_DIR = "results"
 
-
-def _results_dir(run_dir: Path) -> Path:
+def _results_dir(run_id: str) -> Path:
     """Return the results directory, creating it if needed."""
-    d = run_dir / _RESULTS_DIR
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    cache_dir = Path(os.getenv("XDG_CACHE_HOME") or Path.home() / ".cache" / "reflow")
+    cache_dir = cache_dir / "results" / str(run_id)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
 
 
 def _result_filename(task_name: str, array_index: int | None) -> str:
@@ -38,7 +39,7 @@ def _result_filename(task_name: str, array_index: int | None) -> str:
 
 
 def write_result(
-    run_dir: Path,
+    run_id: str,
     task_name: str,
     array_index: int | None,
     instance_id: int,
@@ -54,8 +55,8 @@ def write_result(
 
     Parameters
     ----------
-    run_dir : Path
-        Shared working directory.
+    run_id : str
+        ID of the running task.
     task_name : str
         Task name.
     array_index : int or None
@@ -77,7 +78,7 @@ def write_result(
         Path to the written result file.
 
     """
-    d = _results_dir(run_dir)
+    d = _results_dir(run_id)
     filename = _result_filename(task_name, array_index)
     path = d / filename
 
@@ -104,7 +105,7 @@ def write_result(
     return path
 
 
-def ingest_results(run_dir: Path, store: Store) -> int:
+def ingest_results(run_id: str, store: Store) -> int:
     """Read all result files and apply them to the store.
 
     Called by the dispatcher before the dispatch cycle.  This is
@@ -112,8 +113,8 @@ def ingest_results(run_dir: Path, store: Store) -> int:
 
     Parameters
     ----------
-    run_dir : Path
-        Shared working directory.
+    run_id : str
+        Id of the current run.
     store : Store
         Manifest store.
 
@@ -123,10 +124,7 @@ def ingest_results(run_dir: Path, store: Store) -> int:
         Number of results ingested.
 
     """
-    d = run_dir / _RESULTS_DIR
-    if not d.is_dir():
-        return 0
-
+    d = _results_dir(run_id)
     count = 0
     for path in sorted(d.glob("*.json")):
         try:
@@ -159,10 +157,15 @@ def ingest_results(run_dir: Path, store: Store) -> int:
         # Remove the result file after successful ingestion.
         try:
             path.unlink()
-        except OSError:
+        except (OSError, PermissionError):
             pass
 
         count += 1
         logger.debug("Ingested result: %s (state=%s)", path.name, state.value)
-
+    files = [f for f in d.rglob("*.json")]
+    if not files:
+        try:
+            shutil.rmtree(d)
+        except (OSError, PermissionError):
+            pass
     return count

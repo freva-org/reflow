@@ -414,7 +414,7 @@ class Workflow(Flow):
         # Ingest worker results before dispatching next round.
         from .results import ingest_results
 
-        n = ingest_results(Path(run_dir), store)
+        n = ingest_results(run_id, store)
         if n > 0:
             logger.info("Ingested %d worker result(s)", n)
 
@@ -881,7 +881,7 @@ class Workflow(Flow):
                 result = spec.func(**kwargs)
             out_hash = compute_output_hash(result)
             write_result(
-                run_dir=Path(run_dir),
+                run_id=run_id,
                 task_name=task_name,
                 array_index=resolved_index,
                 instance_id=instance_id,
@@ -891,7 +891,7 @@ class Workflow(Flow):
             )
         except Exception:
             write_result(
-                run_dir=Path(run_dir),
+                run_id=run_id,
                 task_name=task_name,
                 array_index=resolved_index,
                 instance_id=instance_id,
