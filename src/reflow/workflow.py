@@ -44,9 +44,7 @@ from .params import (
     is_run_dir,
     merge_resolved_params,
 )
-from .results import write_result
 from .run import Run
-from .signals import graceful_shutdown
 from .stores import Store
 from .stores.sqlite import SqliteStore
 
@@ -394,8 +392,9 @@ class Workflow(Flow):
         """Inspect the manifest and submit runnable tasks.
 
         Before dispatching, ingests any worker result files from
-        ``<run_dir>/results/`` into the store.  This is always
-        single-threaded, so all DB writes are serialised.
+        ``<run_dir>/results/`` into the store.  After submitting
+        worker jobs, submits a single follow-up dispatch with a
+        Slurm ``--dependency=afterany:...`` on all submitted jobs.
 
         Parameters
         ----------
@@ -408,10 +407,8 @@ class Workflow(Flow):
         executor : Executor or None
             Explicit executor override.
         verify : bool
-            If ``True``, verify cached outputs (file existence for
-            Path types, custom callables) before accepting cache hits.
-            Default is ``False`` -- the Merkle identity is trusted.
-            Set to ``True`` during retry to catch stale outputs.
+            If ``True``, verify cached outputs before accepting
+            cache hits.
 
         """
         # Ingest worker results before dispatching next round.
@@ -422,13 +419,45 @@ class Workflow(Flow):
             logger.info("Ingested %d worker result(s)", n)
 
         exc = executor or SlurmExecutor.from_environment(self.config)
+
+        # Dispatch all ready tasks, collecting submitted job IDs.
+        submitted_job_ids: list[str] = []
         for task_name in self._topological_order():
             spec = self.tasks[task_name]
             if spec.config.array:
-                self._dispatch_array(run_id, run_dir, spec, store, exc, verify=verify)
+                jid = self._dispatch_array(
+                    run_id,
+                    run_dir,
+                    spec,
+                    store,
+                    exc,
+                    verify=verify,
+                )
             else:
-                self._dispatch_single(run_id, run_dir, spec, store, exc, verify=verify)
+                jid = self._dispatch_single(
+                    run_id,
+                    run_dir,
+                    spec,
+                    store,
+                    exc,
+                    verify=verify,
+                )
+            if jid is not None:
+                submitted_job_ids.append(jid)
+
         self._maybe_finalise_run(run_id, store)
+
+        # If we submitted any jobs, chain a single follow-up dispatch
+        # that runs after ALL of them complete.
+        if submitted_job_ids:
+            dep = "afterany:" + ":".join(submitted_job_ids)
+            self._submit_dispatch(
+                exc,
+                run_id,
+                run_dir,
+                store,
+                dependency=dep,
+            )
 
     def _all_deps_satisfied(self, store: Store, run_id: str, spec: TaskSpec) -> bool:
         return all(
@@ -641,9 +670,10 @@ class Workflow(Flow):
         store: Store,
         executor: Executor,
         verify: bool = False,
-    ) -> None:
+    ) -> str | None:
+        """Dispatch a singleton task.  Returns the Slurm job ID or None."""
         if not self._all_deps_satisfied(store, run_id, spec):
-            return
+            return None
         row = store.get_task_instance(run_id, spec.name, None)
         if row is None:
             payload = self._resolve_result_inputs(store, run_id, spec)
@@ -653,7 +683,7 @@ class Workflow(Flow):
             if self._try_cache(
                 store, run_id, spec, payload, None, up_hashes, verify=verify
             ):
-                return
+                return None
 
             input_hash = compute_input_hash(spec.name, spec.config.version, payload)
             identity = compute_identity(input_hash, up_hashes)
@@ -671,12 +701,13 @@ class Workflow(Flow):
             raise RuntimeError(f"Could not create instance for {spec.name!r}.")
         state = TaskState(str(row["state"]))
         if state not in (TaskState.PENDING, TaskState.RETRYING):
-            return
+            return None
         job_id = executor.submit(
             self._single_resources(run_dir, spec),
             self._worker_command(run_id, run_dir, spec.name, store),
         )
         store.update_task_submitted(run_id, spec.name, job_id)
+        return job_id
 
     def _dispatch_array(
         self,
@@ -686,9 +717,10 @@ class Workflow(Flow):
         store: Store,
         executor: Executor,
         verify: bool = False,
-    ) -> None:
+    ) -> str | None:
+        """Dispatch an array task.  Returns the Slurm job ID or None."""
         if not self._all_deps_satisfied(store, run_id, spec):
-            return
+            return None
 
         existing = store.list_task_instances(run_id, task_name=spec.name)
         retrying = [
@@ -701,22 +733,22 @@ class Workflow(Flow):
                 self._worker_command(run_id, run_dir, spec.name, store),
             )
             store.update_task_submitted(run_id, spec.name, job_id)
-            return
+            return job_id
 
         if store.count_task_instances(run_id, spec.name) > 0:
-            return
+            return None
 
         result_inputs = self._resolve_result_inputs(store, run_id, spec)
         if not result_inputs:
-            return
+            return None
         fan_param = self._find_fan_out_param(spec)
         if fan_param is None or fan_param not in result_inputs:
-            return
+            return None
         fan_items = result_inputs[fan_param]
         if not isinstance(fan_items, list):
             fan_items = [fan_items]
         if not fan_items:
-            return
+            return None
 
         up_hashes = self._collect_upstream_output_hashes(store, run_id, spec)
         pending_indices: list[int] = []
@@ -755,7 +787,7 @@ class Workflow(Flow):
             logger.info(
                 "All %d instances of %s resolved from cache.", len(fan_items), spec.name
             )
-            return
+            return None
 
         # Submit only the uncached indices.
         if len(pending_indices) == len(fan_items):
@@ -769,6 +801,7 @@ class Workflow(Flow):
             self._worker_command(run_id, run_dir, spec.name, store),
         )
         store.update_task_submitted(run_id, spec.name, job_id)
+        return job_id
 
     def _maybe_finalise_run(self, run_id: str, store: Store) -> None:
         summary = store.task_state_summary(run_id)
@@ -814,6 +847,9 @@ class Workflow(Flow):
         so that the error handler writes a FAILED result file with the
         traceback.
         """
+        from .results import write_result
+        from .signals import graceful_shutdown
+
         if task_name not in self.tasks:
             raise KeyError(f"Unknown task: {task_name!r}")
         resolved_index = _resolve_index(index)
@@ -833,13 +869,12 @@ class Workflow(Flow):
         instance_id = int(row["id"])
 
         # Mark as running in the DB (best-effort; retry on lock).
-        if not getattr(store, "readonly", False):
-            try:
-                store.update_task_running(instance_id)
-            except Exception:
-                logger.error(
-                    "Could not mark %s[%s] as RUNNING in DB", task_name, resolved_index
-                )
+        try:
+            store.update_task_running(instance_id)
+        except Exception:
+            logger.warning(
+                "Could not mark %s[%s] as RUNNING in DB", task_name, resolved_index
+            )
 
         try:
             with graceful_shutdown():
@@ -864,9 +899,6 @@ class Workflow(Flow):
                 error_text=traceback.format_exc(),
             )
             raise
-
-        exc = executor or SlurmExecutor.from_environment(self.config)
-        self._submit_dispatch(exc, run_id, run_dir, store)
 
     # --- cancel / retry / status -------------------------------------------
 
@@ -1053,16 +1085,21 @@ class Workflow(Flow):
         run_dir: Path,
         store: Store,
         verify: bool = False,
+        dependency: str | None = None,
     ) -> str:
+        """Submit a dispatch job, optionally with a Slurm dependency."""
         python = (
             os.getenv("REFLOW_PYTHON") or self.config.executor_python or sys.executable
         )
+        submit_options = dict(self.config.dispatch_submit_options)
+        if dependency:
+            submit_options["dependency"] = dependency
         resources = JobResources(
             job_name=f"{self.name}-dispatch",
             cpus=int(self.config.dispatch_cpus or "1"),
             time_limit=self.config.dispatch_time or "00:10:00",
             mem=self.config.dispatch_mem or "1G",
-            submit_options=self.config.dispatch_submit_options,
+            submit_options=submit_options,
             output_path=run_dir / "logs" / "dispatch-%j.out",
             error_path=run_dir / "logs" / "dispatch-%j.err",
         )
