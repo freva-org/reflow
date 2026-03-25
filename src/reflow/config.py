@@ -33,9 +33,14 @@ DEFAULT_CONFIG_TOML = dedent(
     # Supported values today are typically "sbatch" and "dry-run".
     # mode = "sbatch"
 
+    # Override the Slurm command paths if needed.
+    # sbatch = "/usr/bin/sbatch"
+    # scancel = "/usr/bin/scancel"
+    # sacct = "/usr/bin/sacct"
+
     # Python interpreter used for worker jobs.
     # python = "/path/to/python"
-
+    # [executor.submit_options]
     # Default Slurm partition for task jobs.
     # partition = "compute"
 
@@ -45,11 +50,6 @@ DEFAULT_CONFIG_TOML = dedent(
     # Signal sent shortly before walltime expires.
     # Example: B:INT@60 sends SIGINT 60 seconds before timeout.
     # signal = "B:INT@60"
-
-    # Override the Slurm command paths if needed.
-    # sbatch = "/usr/bin/sbatch"
-    # scancel = "/usr/bin/scancel"
-    # sacct = "/usr/bin/sacct"
 
     # [notifications]
     # Default email address for scheduler notifications.
@@ -148,6 +148,23 @@ def ensure_config_exists(path: Path | str | None = None) -> Path:
     return target
 
 
+def _rosetta_stone(workload_manager: str, key: str) -> str:
+    """Translate workload manager vocabulary."""
+    if workload_manager == "dry-run":
+        workload_manager = "sbatch"
+    _options = {
+        "sbatch": {
+            "partition": "partition",
+            "account": "account",
+            "signal": "signal",
+            "sbatch": "sbatch",
+            "scancel": "scnacel",
+            "sacct": "sacct",
+        }
+    }
+    return _options[workload_manager][key]
+
+
 class Config:
     """Loaded user configuration.
 
@@ -156,6 +173,10 @@ class Config:
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
         self._data: dict[str, Any] = data or {}
+        self.submit_options = {
+            k: v
+            for k, v in self._data.get("executor", {}).get("submit_options", {}).items()
+        }
 
     def _get(
         self,
@@ -173,13 +194,32 @@ class Config:
             return str(val)
         return None
 
+    @staticmethod
+    def _get_env_var(env_var: str | None) -> str | None:
+        """Lookup and environment variable."""
+        return None if env_var is None else os.getenv(env_var)
+
+    def _get_submit_option(self, key: str) -> str | None:
+        """Look up scheduler options."""
+        mode = self.executor_mode or "slurm"
+        workload_manager_key = _rosetta_stone(mode, key)
+        env_var = self._get_env_var(f"REFLOW_{workload_manager_key.upper()}")
+        if env_var:
+            return env_var
+        return self.submit_options.get(workload_manager_key)
+
+    def _get_submit_command(self, command: str) -> str:
+        mode = self.executor_mode or "slurm"
+        cmd = _rosetta_stone(mode, command)
+        return self._get("executor", cmd, f"REFLOW_{cmd.upper()}") or cmd
+
     @property
     def executor_partition(self) -> str | None:
-        return self._get("executor", "partition", "REFLOW_PARTITION")
+        return self._get_submit_option("partition")
 
     @property
     def executor_account(self) -> str | None:
-        return self._get("executor", "account", "REFLOW_ACCOUNT")
+        return self._get_submit_option("account")
 
     @property
     def executor_python(self) -> str | None:
@@ -191,15 +231,15 @@ class Config:
 
     @property
     def executor_sbatch(self) -> str | None:
-        return self._get("executor", "sbatch", "REFLOW_SBATCH")
+        return self._get_submit_option("sbatch")
 
     @property
     def executor_scancel(self) -> str | None:
-        return self._get("executor", "scancel", "REFLOW_SCANCEL")
+        return self._get_submit_option("scancel")
 
     @property
     def executor_sacct(self) -> str | None:
-        return self._get("executor", "sacct", "REFLOW_SACCT")
+        return self._get_submit_option("sacct")
 
     @property
     def mail_user(self) -> str | None:
@@ -211,7 +251,7 @@ class Config:
 
     @property
     def signal(self) -> str | None:
-        return self._get("executor", "signal", "REFLOW_SIGNAL")
+        return self._get_submit_option("signal")
 
     @property
     def executor_submit_options(self) -> dict[str, str]:

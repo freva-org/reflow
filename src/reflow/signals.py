@@ -42,13 +42,9 @@ class TaskInterrupted(Exception):
         )
 
 
-def _make_handler(sig_num: int) -> Any:
+def _signal_handler(signum: int, frame: Any) -> None:
     """Create a signal handler that raises TaskInterrupted."""
-
-    def handler(signum: int, frame: Any) -> None:
-        raise TaskInterrupted(signum)
-
-    return handler
+    raise TaskInterrupted(signum)
 
 
 @contextmanager
@@ -66,8 +62,8 @@ def graceful_shutdown() -> Generator[None, None, None]:
     old_sigterm = signal.getsignal(signal.SIGTERM)
     old_sigint = signal.getsignal(signal.SIGINT)
 
-    signal.signal(signal.SIGTERM, _make_handler(signal.SIGTERM))
-    signal.signal(signal.SIGINT, _make_handler(signal.SIGINT))
+    signal.signal(signal.SIGTERM, _signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
 
     try:
         yield

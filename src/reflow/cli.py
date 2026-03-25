@@ -244,11 +244,13 @@ def parse_args(workflow: Any, argv: list[str] | None = None) -> argparse.Namespa
     return build_parser(workflow).parse_args(argv)
 
 
-def _make_store(args: argparse.Namespace, workflow: Any) -> SqliteStore:
+def _make_store(
+    args: argparse.Namespace, workflow: Any, readonly: bool = False,
+) -> SqliteStore:
     """Create a SqliteStore from parsed args."""
     if getattr(args, "store_path", None):
-        return SqliteStore(args.store_path)
-    return SqliteStore.default(getattr(workflow, "config", None))
+        return SqliteStore(args.store_path, readonly=readonly)
+    return SqliteStore.default(getattr(workflow, "config", None), readonly=readonly)
 
 
 def _resolve_run_dir(args: argparse.Namespace, store: SqliteStore) -> Path:
@@ -430,8 +432,10 @@ def _cmd_dispatch(wf: Any, args: argparse.Namespace) -> int:
 
 
 def _cmd_worker(wf: Any, args: argparse.Namespace) -> int:
-    store = _make_store(args, wf)
-    store.init()
+    store = _make_store(args, wf, readonly=True)
+    # Workers open the DB read-only: no locks, no pragmas, safe on
+    # distributed filesystems.  Results are written as files to
+    # <run_dir>/results/ and ingested by the dispatcher.
     wf.worker(
         args.run_id,
         store,

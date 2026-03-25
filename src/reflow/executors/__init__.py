@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import abc
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from ..config import Config, load_config
 
 
 @dataclass(init=False)
@@ -34,12 +37,11 @@ class JobResources:
         submit_options: dict[str, Any] | None = None,
         backend: str | None = None,
         extra: dict[str, Any] | None = None,
-        **scheduler_options: Any,
     ) -> None:
-        merged = dict(submit_options or {})
+        merged = load_config().submit_options
+        merged.update(submit_options or {})
         if extra:
             merged.update(extra)
-        merged.update(scheduler_options)
 
         self.job_name = job_name
         self.cpus = cpus
@@ -79,6 +81,12 @@ class JobResources:
 
 class Executor(abc.ABC):
     """Base class for workload-manager executors."""
+
+    def __init__(
+        self, mode: str = "", python: str = "", config: Config | None = None
+    ) -> None:
+        self.python = python or sys.executable
+        self._config = config or Config()
 
     @abc.abstractmethod
     def submit(self, resources: JobResources, command: list[str]) -> str:

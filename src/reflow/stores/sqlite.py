@@ -7,10 +7,15 @@ reused across multiple run directories.
 
 from __future__ import annotations
 
+import logging
+import random
 import sqlite3
+import time
+from collections.abc import Callable
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 
 from .._types import RunState, TaskState
 from ..config import Config
@@ -19,10 +24,49 @@ from . import Store
 from .records import RunRecord, TaskInstanceRecord, TaskSpecRecord
 
 UTC = timezone.utc
+logger = logging.getLogger(__name__)
+
+_MAX_RETRIES = 5
+_BASE_DELAY = 0.5  # seconds
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
 def _utcnow() -> str:
     return datetime.now(tz=UTC).isoformat()
+
+
+def _retry_on_locked(func: Callable[_P, _R]) -> Callable[_P, _R]:
+    """Retry a method on sqlite3.OperationalError (database locked).
+
+    Uses exponential backoff with jitter, up to _MAX_RETRIES attempts.
+    Only retries on locking errors; other OperationalErrors propagate.
+    """
+
+    @wraps(func)
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        for attempt in range(_MAX_RETRIES):
+            try:
+                return func(*args, **kwargs)
+            except sqlite3.OperationalError as exc:
+                msg = str(exc).lower()
+                if "lock" not in msg and "busy" not in msg:
+                    raise
+                if attempt == _MAX_RETRIES - 1:
+                    raise
+                delay = _BASE_DELAY * (2**attempt) + random.uniform(0, 0.5)
+                logger.warning(
+                    "SQLite locked (attempt %d/%d), retrying in %.1fs: %s",
+                    attempt + 1,
+                    _MAX_RETRIES,
+                    delay,
+                    exc,
+                )
+                time.sleep(delay)
+        return func(*args, **kwargs)  # unreachable but keeps mypy happy
+
+    return wrapper
 
 
 class SqliteStore(Store):
@@ -35,13 +79,15 @@ class SqliteStore(Store):
 
     """
 
-    def __init__(self, path: Path | str) -> None:
+    def __init__(self, path: Path | str, readonly: bool = False) -> None:
         self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.readonly = readonly
+        if not readonly:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         self._conn: sqlite3.Connection | None = None
 
     @classmethod
-    def for_run_dir(cls, run_dir: Path | str) -> SqliteStore:
+    def for_run_dir(cls, run_dir: Path | str, readonly: bool = False) -> SqliteStore:
         """Create a store at ``<run_dir>/manifest.db``.
 
         This remains available for callers that want a run-local store,
@@ -49,8 +95,9 @@ class SqliteStore(Store):
         one manifest database can serve multiple run directories.
         """
         rd = Path(run_dir).expanduser().resolve()
-        rd.mkdir(parents=True, exist_ok=True)
-        return cls(rd / "manifest.db")
+        if not readonly:
+            rd.mkdir(parents=True, exist_ok=True)
+        return cls(rd / "manifest.db", readonly=readonly)
 
     @classmethod
     def default_path(cls, config: Config | None = None) -> Path:
@@ -64,21 +111,41 @@ class SqliteStore(Store):
         return Path(cfg.default_store_path).expanduser().resolve()
 
     @classmethod
-    def default(cls, config: Config | None = None) -> SqliteStore:
+    def default(
+        cls, config: Config | None = None, readonly: bool = False
+    ) -> SqliteStore:
         """Create a store using the shared default manifest path."""
-        return cls(cls.default_path(config))
+        return cls(cls.default_path(config), readonly=readonly)
 
     @property
     def conn(self) -> sqlite3.Connection:
         if self._conn is None:
-            self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
-            self._conn.row_factory = sqlite3.Row
-            self._conn.execute("PRAGMA journal_mode=WAL")
-            self._conn.execute("PRAGMA busy_timeout=5000")
+            if self.readonly:
+                # Read-only URI mode: no locks, no pragmas, safe on
+                # distributed filesystems with concurrent readers.
+                uri = f"file:{self.path}?mode=ro&immutable=1"
+                self._conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
+                self._conn.row_factory = sqlite3.Row
+            else:
+                self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
+                self._conn.row_factory = sqlite3.Row
+                # WAL mode is faster but requires mmap/shared memory, which
+                # fails on distributed filesystems (VAST, Lustre, GPFS).
+                # Fall back to DELETE journal mode if WAL is not supported.
+                try:
+                    self._conn.execute("PRAGMA journal_mode=WAL")
+                except sqlite3.OperationalError:
+                    try:
+                        self._conn.execute("PRAGMA journal_mode=DELETE")
+                    except sqlite3.OperationalError:
+                        pass  # use whatever mode the DB already has
+                # 60s busy timeout for dispatch/submit contention.
+                self._conn.execute("PRAGMA busy_timeout=60000")
         return self._conn
 
     # --- lifecycle ---------------------------------------------------------
 
+    @_retry_on_locked
     def init(self) -> None:
         self.conn.executescript("""
             CREATE TABLE IF NOT EXISTS runs (
@@ -189,6 +256,7 @@ class SqliteStore(Store):
 
     # --- runs --------------------------------------------------------------
 
+    @_retry_on_locked
     def insert_run(
         self,
         run_id: str,
@@ -232,6 +300,7 @@ class SqliteStore(Store):
         codec: dict[str, Any] = DEFAULT_CODEC.loads(row[0])
         return codec
 
+    @_retry_on_locked
     def update_run_status(self, run_id: str, status: RunState) -> None:
         self.conn.execute(
             "UPDATE runs SET status = ? WHERE run_id = ?",
@@ -275,6 +344,7 @@ class SqliteStore(Store):
 
     # --- task specs --------------------------------------------------------
 
+    @_retry_on_locked
     def insert_task_spec(
         self,
         run_id: str,
@@ -321,6 +391,7 @@ class SqliteStore(Store):
 
     # --- task instances -----------------------------------------------------
 
+    @_retry_on_locked
     def insert_task_instance(
         self,
         run_id: str,
@@ -507,6 +578,7 @@ class SqliteStore(Store):
 
     # --- state transitions --------------------------------------------------
 
+    @_retry_on_locked
     def update_task_submitted(
         self,
         run_id: str,
@@ -528,6 +600,7 @@ class SqliteStore(Store):
         )
         self.conn.commit()
 
+    @_retry_on_locked
     def update_task_running(self, instance_id: int) -> None:
         self.conn.execute(
             "UPDATE task_instances SET state = ?, updated_at = ? WHERE id = ?",
@@ -535,6 +608,7 @@ class SqliteStore(Store):
         )
         self.conn.commit()
 
+    @_retry_on_locked
     def update_task_success(
         self,
         instance_id: int,
@@ -554,6 +628,7 @@ class SqliteStore(Store):
         )
         self.conn.commit()
 
+    @_retry_on_locked
     def update_task_failed(self, instance_id: int, error_text: str) -> None:
         self.conn.execute(
             "UPDATE task_instances SET state = ?, error_text = ?, "
@@ -562,6 +637,7 @@ class SqliteStore(Store):
         )
         self.conn.commit()
 
+    @_retry_on_locked
     def update_task_cancelled(self, instance_id: int) -> None:
         self.conn.execute(
             "UPDATE task_instances SET state = ?, updated_at = ? WHERE id = ?",
@@ -569,6 +645,7 @@ class SqliteStore(Store):
         )
         self.conn.commit()
 
+    @_retry_on_locked
     def mark_for_retry(self, instance_id: int) -> None:
         retriable = ",".join(f"'{s.value}'" for s in TaskState.retriable())
         self.conn.execute(
