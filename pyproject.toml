@@ -163,7 +163,7 @@ deps = git-python
        packaging
        requests
        tomli
-commands = python3 bump.py tag py_oidc_auth
+commands = python3 bump.py tag reflow
 allowlist_externals = rm
                       curl
 commands_pre = curl -H 'Cache-Control: no-cache' -Ls -o bump.py https://raw.githubusercontent.com/freva-org/freva-admin/main/release.py
