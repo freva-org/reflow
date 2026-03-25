@@ -1,0 +1,73 @@
+name: Create a new release
+run-name: ${{ github.actor }} is preparing the next release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+jobs:
+  pypi:
+    name: Create Pip package
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      -
+        name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      -
+        name: Install flit
+        run: python -m pip install flit
+      -
+        name: Building package 📦 with flit
+        run: flit build
+
+      - name: Publish to PyPI
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+          verbose: true
+          packages-dir: dist
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v6
+
+      -
+        name: Extract release notes
+        id: notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Extract everything between this version header and the next one (or EOF)
+          NOTES=$(awk "/^## v${VERSION}/{found=1; next} /^## v/{if(found) exit} found" docs/whats-new.md)
+          # Write to file to avoid quoting issues
+          echo "$NOTES" > /tmp/release-notes.md
+
+      -
+        name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: /tmp/release-notes.md
+          generate_release_notes: false
