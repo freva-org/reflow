@@ -273,7 +273,7 @@ class ManifestCodec:
         if not isinstance(value, expected):
             raise TypeError(
                 f"Manifest field {key!r} must be {expected.__name__}, got "
-                "{type(value).__name__}"
+                f"{type(value).__name__}"
             )
         return value
 

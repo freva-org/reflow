@@ -158,7 +158,7 @@ def _rosetta_stone(workload_manager: str, key: str) -> str:
             "account": "account",
             "signal": "signal",
             "sbatch": "sbatch",
-            "scancel": "scnacel",
+            "scancel": "scancel",
             "sacct": "sacct",
         }
     }
@@ -201,7 +201,7 @@ class Config:
 
     def _get_submit_option(self, key: str) -> str | None:
         """Look up scheduler options."""
-        mode = self.executor_mode or "slurm"
+        mode = self.executor_mode or "sbatch"
         workload_manager_key = _rosetta_stone(mode, key)
         env_var = self._get_env_var(f"REFLOW_{workload_manager_key.upper()}")
         if env_var:
@@ -209,7 +209,7 @@ class Config:
         return self.submit_options.get(workload_manager_key)
 
     def _get_submit_command(self, command: str) -> str:
-        mode = self.executor_mode or "slurm"
+        mode = self.executor_mode or "sbatch"
         cmd = _rosetta_stone(mode, command)
         return self._get("executor", cmd, f"REFLOW_{cmd.upper()}") or cmd
 
