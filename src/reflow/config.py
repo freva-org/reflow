@@ -3,6 +3,11 @@
 Loads settings from ``~/.config/reflow/config.toml`` (XDG standard).
 Environment variables override values from the config file.
 
+Reflow supports multiple workload managers (Slurm, PBS, LSF, SGE,
+Flux).  Users write scheduler-agnostic config keys like ``partition``
+or ``queue`` — the executor layer translates them to the correct
+flags for whichever backend is active.
+
 This module also provides helpers to create a fully commented example
 configuration on first use.
 """
@@ -19,63 +24,95 @@ DEFAULT_CONFIG_TOML = dedent(
     """\
     # Reflow configuration
     #
-    # All options are commented out by default so the file has no effect until
-    # you opt in to a setting.
+    # All options are commented out by default so the file has no effect
+    # until you opt in to a setting.
     #
-    # Resolution order at runtime is typically:
-    # 1. explicit values from workflow code
-    # 2. environment variables
-    # 3. values from this file
-    # 4. built-in defaults
+    # Resolution order at runtime:
+    #   1. explicit values from workflow code / @wf.job() decorator
+    #   2. environment variables  (REFLOW_*)
+    #   3. values from this file
+    #   4. built-in defaults
+    #
+    # Reflow supports multiple workload managers:
+    #   Slurm, PBS Pro / Torque, LSF, SGE / UGE, Flux
+    #
+    # You can use scheduler-agnostic keys in this file (e.g. "partition"
+    # or "queue") — reflow translates them to the right flags for
+    # whichever backend is active.
 
+    # ── Executor ─────────────────────────────────────────────────────
     # [executor]
-    # Default execution mode for Slurm-backed runs.
-    # Supported values today are typically "sbatch" and "dry-run".
+
+    # Execution mode.  Set this to your scheduler's submit command:
+    #   "sbatch"    – Slurm  (default)
+    #   "qsub-pbs"  – PBS Pro / OpenPBS / Torque
+    #   "bsub"      – LSF
+    #   "qsub-sge"  – SGE / UGE
+    #   "flux"       – Flux Framework
+    #   "dry-run"   – log commands without submitting (any scheduler)
     # mode = "sbatch"
 
-    # Override the Slurm command paths if needed.
-    # sbatch = "/usr/bin/sbatch"
-    # scancel = "/usr/bin/scancel"
-    # sacct = "/usr/bin/sacct"
-
-    # Python interpreter used for worker jobs.
+    # Python interpreter used for worker and dispatch jobs.
     # python = "/path/to/python"
-    # [executor.submit_options]
-    # Default Slurm partition for task jobs.
-    # partition = "compute"
 
-    # Default Slurm account for task jobs.
-    # account = "my_account"
+    # Override scheduler command paths if they are not on $PATH.
+    # Slurm:
+    #   sbatch  = "/usr/bin/sbatch"
+    #   scancel = "/usr/bin/scancel"
+    #   sacct   = "/usr/bin/sacct"
+    # PBS:
+    #   qsub  = "/opt/pbs/bin/qsub"
+    #   qdel  = "/opt/pbs/bin/qdel"
+    #   qstat = "/opt/pbs/bin/qstat"
+    # LSF:
+    #   bsub  = "/usr/bin/bsub"
+    #   bkill = "/usr/bin/bkill"
+    #   bjobs = "/usr/bin/bjobs"
+    # Flux:
+    #   flux = "/usr/bin/flux"
+
+    # ── Submit options ───────────────────────────────────────────────
+    # [executor.submit_options]
+
+    # Queue or partition for task jobs.
+    # Use whichever name your site prefers — reflow maps "partition"
+    # and "queue" to the correct flag for the active backend.
+    # partition = "compute"
+    # queue     = "batch"
+
+    # Account / project for billing.
+    # account = "my_project"
 
     # Signal sent shortly before walltime expires.
-    # Example: B:INT@60 sends SIGINT 60 seconds before timeout.
+    # Slurm example: "B:INT@60" sends SIGINT 60 s before timeout.
     # signal = "B:INT@60"
 
-    # [notifications]
-    # Default email address for scheduler notifications.
-    # mail_user = "you@example.org"
+    # Any other scheduler-native flags can be added here.  Keys are
+    # converted to CLI flags automatically (snake_case → --kebab-case).
+    # exclusive = true
+    # qos = "high"
 
-    # Default scheduler mail events.
-    # Examples: "FAIL", "END", "FAIL,END", "ALL"
+    # ── Notifications ────────────────────────────────────────────────
+    # [notifications]
+    # mail_user = "you@example.org"
     # mail_type = "FAIL"
 
+    # ── Dispatch job ─────────────────────────────────────────────────
+    # Resources for the internal coordinator/dispatch job.
     # [dispatch]
-    # Resources for the workflow dispatch/coordinator job.
     # cpus = 1
     # time = "00:10:00"
-    # mem = "1G"
-
-    # Optional Slurm defaults specifically for the dispatch job.
+    # mem  = "1G"
     # partition = "my_partition"
-    # account = "my_account"
+    # account   = "my_account"
 
+    # ── Defaults ─────────────────────────────────────────────────────
     # [defaults]
-    # Default directory in which reflow creates runs.
     # run_dir = "/scratch/$USER/reflow"
 
+    # ── Server (future) ──────────────────────────────────────────────
     # [server]
-    # Reserved for a future Reflow service / web UI.
-    # url = "https://flowserver.org"
+    # url = "https://reflow.example.org"
     """
 )
 
@@ -149,10 +186,14 @@ def ensure_config_exists(path: Path | str | None = None) -> Path:
 
 
 def _rosetta_stone(workload_manager: str, key: str) -> str:
-    """Translate workload manager vocabulary."""
+    """Translate workload manager vocabulary.
+
+    Maps generic reflow config keys to the scheduler-specific
+    vocabulary used in environment variable names and config lookups.
+    """
     if workload_manager == "dry-run":
         workload_manager = "sbatch"
-    _options = {
+    _options: dict[str, dict[str, str]] = {
         "sbatch": {
             "partition": "partition",
             "account": "account",
@@ -160,15 +201,60 @@ def _rosetta_stone(workload_manager: str, key: str) -> str:
             "sbatch": "sbatch",
             "scancel": "scancel",
             "sacct": "sacct",
-        }
+        },
+        "qsub-pbs": {
+            "partition": "queue",
+            "account": "account",
+            "signal": "signal",
+            "qsub": "qsub",
+            "qdel": "qdel",
+            "qstat": "qstat",
+        },
+        "bsub": {
+            "partition": "queue",
+            "account": "account",
+            "signal": "signal",
+            "bsub": "bsub",
+            "bkill": "bkill",
+            "bjobs": "bjobs",
+        },
+        "qsub-sge": {
+            "partition": "queue",
+            "account": "account",
+            "signal": "signal",
+            "qsub": "qsub",
+            "qdel": "qdel",
+            "qstat": "qstat",
+        },
+        "flux": {
+            "partition": "queue",
+            "account": "account",
+            "signal": "signal",
+            "flux": "flux",
+        },
     }
-    return _options[workload_manager][key]
+    backend = _options.get(workload_manager)
+    if backend is None:
+        raise KeyError(
+            f"Unknown workload manager {workload_manager!r}.  "
+            f"Supported: {', '.join(sorted(_options))}."
+        )
+    if key not in backend:
+        raise KeyError(
+            f"Unknown config key {key!r} for workload manager "
+            f"{workload_manager!r}."
+        )
+    return backend[key]
 
 
 class Config:
     """Loaded user configuration.
 
-    Environment variables override the config file.
+    Environment variables (``REFLOW_*``) override the config file.
+    Scheduler-agnostic keys (``partition`` / ``queue``, ``account``)
+    are passed through to the active executor, which normalises them
+    to the backend's native vocabulary via
+    :meth:`~reflow.executors.Executor._normalize_options`.
     """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
@@ -255,7 +341,12 @@ class Config:
 
     @property
     def executor_submit_options(self) -> dict[str, str]:
-        """Default scheduler-native submit options for task jobs."""
+        """Default submit options for task jobs.
+
+        Uses scheduler-agnostic canonical keys (``partition``,
+        ``account``, etc.) which the active executor normalises
+        to its native vocabulary at submission time.
+        """
         options: dict[str, str] = {}
         mapping = {
             "partition": self.executor_partition,
@@ -291,7 +382,7 @@ class Config:
 
     @property
     def dispatch_submit_options(self) -> dict[str, str]:
-        """Default scheduler-native submit options for the dispatch job."""
+        """Default submit options for the dispatch/coordinator job."""
         options: dict[str, str] = {}
         mapping = {
             "partition": self.dispatch_partition,

@@ -7,7 +7,6 @@ import os
 import shlex
 import subprocess
 import sys
-from typing import Any
 
 from ..config import Config
 from . import Executor, JobResources
@@ -17,6 +16,13 @@ logger = logging.getLogger(__name__)
 
 class SlurmExecutor(Executor):
     """Submit, cancel, and query Slurm jobs."""
+
+    array_index_env_var: str = "SLURM_ARRAY_TASK_ID"
+    _internal_keys: frozenset[str] = frozenset(
+        {"python", "sbatch", "sacct", "scancel", "mode"}
+    )
+    # Slurm calls it "partition"; accept "queue" from PBS/LSF/SGE users.
+    _KEY_ALIASES: dict[str, str] = {"queue": "partition"}
 
     def __init__(
         self,
@@ -104,24 +110,8 @@ class SlurmExecutor(Executor):
             parts.extend(["--output", str(resources.output_path)])
         if resources.error_path is not None:
             parts.extend(["--error", str(resources.error_path)])
-        for key, value in resources.submit_options.items():
-            if key not in ("python", "sbatch", "sacct", "scancel", "mode"):
-                parts.extend(self._render_submit_option(key, value))
+        for key, value in self._normalize_options(resources.submit_options).items():
+            parts.extend(self._render_submit_option(key, value))
 
         parts.extend(["--wrap", shlex.join(command)])
         return parts
-
-    def _render_submit_option(self, key: str, value: Any) -> list[str]:
-        if value is None or value is False:
-            return []
-        flag = (
-            f"--{key.replace('_', '-')}" if not str(key).startswith("-") else str(key)
-        )
-        if value is True:
-            return [flag]
-        if isinstance(value, (list, tuple)):
-            rendered: list[str] = []
-            for item in value:
-                rendered.extend([flag, str(item)])
-            return rendered
-        return [flag, str(value)]

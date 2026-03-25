@@ -1,9 +1,10 @@
 """Signal handling for graceful worker shutdown.
 
-When Slurm sends SIGTERM (or SIGINT via ``--signal=B:INT@60``), this
-module converts the signal into a Python exception so that the
-worker's existing try/except block catches it, writes the traceback
-to the manifest, and marks the task as FAILED.
+When the scheduler sends SIGTERM (or SIGINT via a pre-termination
+signal, e.g. Slurm's ``--signal=B:INT@60``), this module converts
+the signal into a Python exception so that the worker's existing
+try/except block catches it, writes the traceback to the manifest,
+and marks the task as FAILED.
 
 Usage::
 

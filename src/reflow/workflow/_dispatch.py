@@ -20,7 +20,6 @@ from ..cache import (
     verify_cached_output,
 )
 from ..executors import Executor
-from ..executors.slurm import SlurmExecutor
 from ..flow import TaskSpec
 from ..params import (
     WireMode,
@@ -28,6 +27,7 @@ from ..params import (
     infer_wire_mode,
 )
 from ..stores import Store
+from ._helpers import default_executor
 
 if TYPE_CHECKING:
     from ..config import Config
@@ -59,7 +59,7 @@ class DispatchMixin:
         Before dispatching, ingests any worker result files from
         ``<run_dir>/results/`` into the store.  After submitting
         worker jobs, submits a single follow-up dispatch with a
-        Slurm ``--dependency=afterany:...`` on all submitted jobs.
+        scheduler dependency on all submitted jobs.
 
         Parameters
         ----------
@@ -83,18 +83,28 @@ class DispatchMixin:
             logger.info("Ingested %d worker result(s)", n)
 
         config: Config = self.config  # type: ignore[attr-defined]
-        exc = executor or SlurmExecutor.from_environment(config)
+        exc = executor or default_executor(config)
 
         submitted_job_ids: list[str] = []
         for task_name in self._topological_order():  # type: ignore[attr-defined]
             spec: TaskSpec = self.tasks[task_name]  # type: ignore[attr-defined]
             if spec.config.array:
                 jid = self._dispatch_array(
-                    run_id, run_dir, spec, store, exc, verify=verify,
+                    run_id,
+                    run_dir,
+                    spec,
+                    store,
+                    exc,
+                    verify=verify,
                 )
             else:
                 jid = self._dispatch_single(
-                    run_id, run_dir, spec, store, exc, verify=verify,
+                    run_id,
+                    run_dir,
+                    spec,
+                    store,
+                    exc,
+                    verify=verify,
                 )
             if jid is not None:
                 submitted_job_ids.append(jid)
@@ -102,15 +112,22 @@ class DispatchMixin:
         self._maybe_finalise_run(run_id, store)
 
         if submitted_job_ids:
-            dep = "afterany:" + ":".join(submitted_job_ids)
+            dep_opts = exc.dependency_options(submitted_job_ids)
             self._submit_dispatch(  # type: ignore[attr-defined]
-                exc, run_id, run_dir, store, dependency=dep,
+                exc,
+                run_id,
+                run_dir,
+                store,
+                dependency_options=dep_opts,
             )
 
     # --- dependency helpers ------------------------------------------------
 
     def _all_deps_satisfied(
-        self, store: Store, run_id: str, spec: TaskSpec,
+        self,
+        store: Store,
+        run_id: str,
+        spec: TaskSpec,
     ) -> bool:
         return all(
             store.dependency_is_satisfied(run_id, dep)
@@ -146,7 +163,8 @@ class DispatchMixin:
             first_up: TaskSpec = self.tasks[result.steps[0]]  # type: ignore[attr-defined]
             wire = None
             if param_type is not None and first_up.return_type not in (
-                None, inspect.Parameter.empty,
+                None,
+                inspect.Parameter.empty,
             ):
                 wire = infer_wire_mode(
                     first_up.return_type,
@@ -158,7 +176,9 @@ class DispatchMixin:
             if wire == WireMode.DIRECT:
                 resolved[pname] = all_values[0] if all_values else None
             elif wire in (
-                WireMode.FAN_OUT, WireMode.CHAIN_FLATTEN, WireMode.GATHER_FLATTEN,
+                WireMode.FAN_OUT,
+                WireMode.CHAIN_FLATTEN,
+                WireMode.GATHER_FLATTEN,
             ):
                 flat: list[Any] = []
                 for v in all_values:
@@ -169,9 +189,7 @@ class DispatchMixin:
             elif wire == WireMode.CHAIN:
                 resolved[pname] = all_values
             else:
-                resolved[pname] = (
-                    all_values[0] if len(all_values) == 1 else all_values
-                )
+                resolved[pname] = all_values[0] if len(all_values) == 1 else all_values
 
         return resolved
 
@@ -187,7 +205,8 @@ class DispatchMixin:
             param_type = extract_base_type(raw_ann)
             first_up = self.tasks.get(result.steps[0])  # type: ignore[attr-defined]
             if first_up is None or first_up.return_type in (
-                None, inspect.Parameter.empty,
+                None,
+                inspect.Parameter.empty,
             ):
                 continue
             try:
@@ -206,7 +225,10 @@ class DispatchMixin:
     # --- cache -------------------------------------------------------------
 
     def _should_force(
-        self, store: Store, run_id: str, task_name: str,
+        self,
+        store: Store,
+        run_id: str,
+        task_name: str,
     ) -> bool:
         """Check whether caching is bypassed for a task."""
         params = store.get_run_parameters(run_id)
@@ -264,7 +286,9 @@ class DispatchMixin:
             return False
 
         input_hash = compute_input_hash(
-            spec.name, spec.config.version, direct_inputs,
+            spec.name,
+            spec.config.version,
+            direct_inputs,
         )
         identity = compute_identity(input_hash, upstream_output_hashes)
 
@@ -274,10 +298,14 @@ class DispatchMixin:
 
         if verify:
             if not verify_cached_output(
-                cached["output"], spec.return_type, spec.verify,
+                cached["output"],
+                spec.return_type,
+                spec.verify,
             ):
                 logger.info(
-                    "Cache stale for %s (identity=%s)", spec.name, identity,
+                    "Cache stale for %s (identity=%s)",
+                    spec.name,
+                    identity,
                 )
                 return False
 
@@ -286,18 +314,28 @@ class DispatchMixin:
             out_hash = compute_output_hash(cached["output"])
 
         iid = store.insert_task_instance(
-            run_id, spec.name, array_index, TaskState.SUCCESS,
-            direct_inputs, identity=identity, input_hash=input_hash,
+            run_id,
+            spec.name,
+            array_index,
+            TaskState.SUCCESS,
+            direct_inputs,
+            identity=identity,
+            input_hash=input_hash,
         )
         store.update_task_success(iid, cached["output"], output_hash=out_hash)
         logger.info(
             "Cache hit for %s[%s] (identity=%s)",
-            spec.name, array_index, identity,
+            spec.name,
+            array_index,
+            identity,
         )
         return True
 
     def _collect_upstream_output_hashes(
-        self, store: Store, run_id: str, spec: TaskSpec,
+        self,
+        store: Store,
+        run_id: str,
+        spec: TaskSpec,
     ) -> list[str]:
         """Collect output hashes from all upstream dependencies."""
         hashes: list[str] = []
@@ -326,17 +364,30 @@ class DispatchMixin:
             up_hashes = self._collect_upstream_output_hashes(store, run_id, spec)
 
             if self._try_cache(
-                store, run_id, spec, payload, None, up_hashes, verify=verify,
+                store,
+                run_id,
+                spec,
+                payload,
+                None,
+                up_hashes,
+                verify=verify,
             ):
                 return None
 
             input_hash = compute_input_hash(
-                spec.name, spec.config.version, payload,
+                spec.name,
+                spec.config.version,
+                payload,
             )
             identity = compute_identity(input_hash, up_hashes)
             store.insert_task_instance(
-                run_id, spec.name, None, TaskState.PENDING, payload,
-                identity=identity, input_hash=input_hash,
+                run_id,
+                spec.name,
+                None,
+                TaskState.PENDING,
+                payload,
+                identity=identity,
+                input_hash=input_hash,
             )
             row = store.get_task_instance(run_id, spec.name, None)
         if row is None:
@@ -366,8 +417,7 @@ class DispatchMixin:
 
         existing = store.list_task_instances(run_id, task_name=spec.name)
         retrying = [
-            r for r in existing
-            if TaskState(str(r["state"])) == TaskState.RETRYING
+            r for r in existing if TaskState(str(r["state"])) == TaskState.RETRYING
         ]
         if retrying:
             arr = ",".join(str(int(r["array_index"])) for r in retrying)
@@ -407,24 +457,38 @@ class DispatchMixin:
                     payload[pname] = value
 
             if self._try_cache(
-                store, run_id, spec, payload, idx, up_hashes, verify=verify,
+                store,
+                run_id,
+                spec,
+                payload,
+                idx,
+                up_hashes,
+                verify=verify,
             ):
                 continue
 
             input_hash = compute_input_hash(
-                spec.name, spec.config.version, payload,
+                spec.name,
+                spec.config.version,
+                payload,
             )
             identity = compute_identity(input_hash, up_hashes)
             store.insert_task_instance(
-                run_id, spec.name, idx, TaskState.PENDING, payload,
-                identity=identity, input_hash=input_hash,
+                run_id,
+                spec.name,
+                idx,
+                TaskState.PENDING,
+                payload,
+                identity=identity,
+                input_hash=input_hash,
             )
             pending_indices.append(idx)
 
         if not pending_indices:
             logger.info(
                 "All %d instances of %s resolved from cache.",
-                len(fan_items), spec.name,
+                len(fan_items),
+                spec.name,
             )
             return None
 

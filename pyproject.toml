@@ -126,7 +126,7 @@ deps = ruff
 
 commands =
     python3 -m ruff check src/reflow/
-    python3 -m flake8 src --count --max-complexity=20 --ignore=W503 --max-line-length=110 --statistics --show-source
+    python3 -m flake8 src --count --max-complexity=20 --ignore=W503,E203 --max-line-length=110 --statistics --show-source
     codespell {posargs: --quiet-level=2} src/
     python3 -m bandit -r src/reflow --severity-level medium --confidence-level high
 [testenv:test]

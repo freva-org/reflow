@@ -8,7 +8,7 @@ Each task instance gets an *identity* hash computed from:
 - upstream output hashes (propagated through the DAG)
 
 If a previous successful instance with the same identity exists in
-the store, its output is reused without submitting a Slurm job.
+the store, its output is reused without submitting a scheduler job.
 
 For tasks returning ``Path`` or ``list[Path]``, the cached output is
 additionally verified by checking that the files still exist on disk.

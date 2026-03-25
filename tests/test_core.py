@@ -39,7 +39,7 @@ from reflow.params import (
     unwrap_optional,
 )
 from reflow.stores.sqlite import SqliteStore
-from reflow.workflow import _build_kwargs
+from reflow.workflow import build_kwargs
 
 # --- params ----------------------------------------------------------------
 
@@ -491,7 +491,7 @@ class TestCLI:
         assert args._command == "describe"
 
 
-# --- _build_kwargs ---------------------------------------------------------
+# --- build_kwargs ---------------------------------------------------------
 
 
 class TestBuildKwargs:
@@ -510,21 +510,21 @@ class TestBuildKwargs:
         def fn(wd: RunDir) -> None:
             pass
 
-        kw = _build_kwargs(self._spec(fn), {"run_dir": "/scratch"}, {})
+        kw = build_kwargs(self._spec(fn), {"run_dir": "/scratch"}, {})
         assert kw["wd"] == Path("/scratch")
 
     def test_result_from_input(self) -> None:
         def fn(item: Annotated[str, Result(step="p")]) -> str:
             return item
 
-        kw = _build_kwargs(self._spec(fn), {}, {"item": "a.nc"})
+        kw = build_kwargs(self._spec(fn), {}, {"item": "a.nc"})
         assert kw["item"] == "a.nc"
 
     def test_global_param(self) -> None:
         def fn(bucket: str) -> None:
             pass
 
-        kw = _build_kwargs(self._spec(fn), {"bucket": "b"}, {})
+        kw = build_kwargs(self._spec(fn), {"bucket": "b"}, {})
         assert kw["bucket"] == "b"
 
 
