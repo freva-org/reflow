@@ -12,12 +12,12 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import shutil
 from pathlib import Path
 from typing import Any
 
 from ._types import TaskState
+from .config import _cache_dir
 from .manifest import DEFAULT_CODEC
 from .stores import Store
 
@@ -26,8 +26,7 @@ logger = logging.getLogger(__name__)
 
 def _results_dir(run_id: str) -> Path:
     """Return the results directory, creating it if needed."""
-    cache_dir = Path(os.getenv("XDG_CACHE_HOME") or Path.home() / ".cache" / "reflow")
-    cache_dir = cache_dir / "results" / str(run_id)
+    cache_dir = _cache_dir() / "results" / str(run_id)
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 

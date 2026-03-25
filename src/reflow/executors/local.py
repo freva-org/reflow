@@ -15,6 +15,7 @@ class LocalExecutor(Executor):
     """Run tasks as local subprocesses (synchronous)."""
 
     def __init__(self, capture_output: bool = False) -> None:
+        super().__init__()
         self.capture_output = capture_output
         self._procs: dict[str, subprocess.CompletedProcess[str] | None] = {}
 

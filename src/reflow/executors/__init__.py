@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..config import Config, load_config
+from ..config import Config
 
 
 @dataclass(init=False)
@@ -38,8 +38,7 @@ class JobResources:
         backend: str | None = None,
         extra: dict[str, Any] | None = None,
     ) -> None:
-        merged = load_config().submit_options
-        merged.update(submit_options or {})
+        merged: dict[str, Any] = dict(submit_options or {})
         if extra:
             merged.update(extra)
 
