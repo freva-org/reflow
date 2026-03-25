@@ -10,7 +10,8 @@ Decorator-based HPC workflow engine with Result-based data wiring,
 [![PyPI](https://img.shields.io/pypi/v/reflow)](https://pypi.org/project/reflow)
 [![Python Versions](https://img.shields.io/pypi/pyversions/reflow)](https://pypi.org/project/reflow/)
 
-[![Works with](https://img.shields.io/badge/works with-Slurm%20%7C%20PBS%20%7C%20LSF%20%7C%20SGE%20%7C%20Flux-teal)](https://reflow-docs.org/schedulers/)
+[![Works with](https://img.shields.io/badge/works_with-Slurm%20%7C%20PBS%20%7C%20LSF%20%7C%20SGE%20%7C%20Flux-teal)](https://reflow-docs.org/schedulers/)
+
 
 ```python
 from reflow import Workflow, Param, Result, RunDir
