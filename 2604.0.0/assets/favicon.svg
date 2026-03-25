@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 122 128" fill="currentColor" stroke="currentColor">
+  <!-- R: vertical stem nodes -->
+  <circle cx="18" cy="8" r="10"/>
+  <circle cx="18" cy="46" r="10"/>
+  <circle cx="18" cy="84" r="10"/>
+  <line x1="18" y1="18" x2="18" y2="36" stroke-width="6" stroke-linecap="round"/>
+  <line x1="18" y1="56" x2="18" y2="74" stroke-width="6" stroke-linecap="round"/>
+  <!-- R: loop node -->
+  <circle cx="64" cy="26" r="10"/>
+  <path d="M28 8 Q47 1, 54 16" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M54 36 Q47 50, 28 46" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <!-- R: leg node -->
+  <circle cx="64" cy="84" r="10"/>
+  <line x1="28" y1="51" x2="54" y2="79" stroke-width="6" stroke-linecap="round"/>
+  <!-- e: fan-out from leg node -->
+  <path d="M74 84 C90 84, 90 58, 108 58" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M74 84 C90 84, 90 84, 108 84" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M74 84 C90 84, 90 110, 108 110" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>
