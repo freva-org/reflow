@@ -47,7 +47,7 @@ jobs:
       - name: Restore CNAME
         run: |
           git checkout gh-pages
-          echo "reflow-hpc.org" > CNAME
+          echo "reflow-docs.org" > CNAME
           git add CNAME
           git diff --cached --quiet || git commit -m "Restore CNAME"
           git push origin gh-pages
