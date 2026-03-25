@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import Any, get_type_hints
 
 from .._types import RunState, TaskState
-from ..cache import compute_identity, compute_input_hash
 from ..config import Config, load_config
 from ..executors import Executor, JobResources
 from ..executors.slurm import SlurmExecutor
