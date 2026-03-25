@@ -1,49 +1,53 @@
 name: Deploy Docs
-
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# Only deploy on pushes to main (i.e. after merge)
 on:
   push:
     branches: [main]
+    tags: ["v*.*.*"]
   workflow_dispatch:
 
-# Prevent concurrent deployments
 concurrency:
-  group: pages
+  group: docs
   cancel-in-progress: false
 
 jobs:
-  build:
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v6
-
-      - name: Install packages
-        run: |
-          python3 -m pip install tox flit
-
-      - name: Build docs
-        run: tox -e docs
-
-      - name: Upload pages artifact
-        uses: actions/upload-pages-artifact@v3
         with:
-          path: site/
+          python-version: "3.x"
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Install dependencies
+        run: pip install -e ".[docs]" mike
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy dev docs
+        if: github.ref == 'refs/heads/main'
+        run: mike deploy --push dev
+
+      - name: Deploy versioned docs
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mike deploy --push --update-aliases "$VERSION" latest
+          mike set-default latest --push
+
+      - name: Restore CNAME
+        run: |
+          git checkout gh-pages
+          echo "reflow-hpc.org" > CNAME
+          git add CNAME
+          git diff --cached --quiet || git commit -m "Restore CNAME"
+          git push

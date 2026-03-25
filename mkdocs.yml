@@ -73,6 +73,10 @@ markdown_extensions:
   - toc:
       permalink: true
 
+extra:
+  version:
+    provider: mike
+    default: latest
 
 nav:
   - Home: index.md
@@ -95,3 +99,4 @@ nav:
       - Architecture: architecture.md
       - Development: development.md
       - Future service API: future-service-api.md
+  - Changelog: whats-new.md
