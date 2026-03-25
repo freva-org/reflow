@@ -59,6 +59,7 @@ docs = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.27",
     "pymdown-extensions>=10.0",
+    "mike",
 
 ]
 
