@@ -11,7 +11,7 @@ test_results.py:
 - executors/slurm.py (sbatch rendering, dry-run, from_environment)
 - flow.py (duplicate registration, prefix edge cases, array_job validation)
 - cli.py (dag, describe, runs, hidden worker parser, main entry)
-- workflow.py (_build_kwargs locals, _maybe_finalise_run, force/force_tasks)
+- workflow.py (build_kwargs locals, _maybe_finalise_run, force/force_tasks)
 - cache.py (edge cases in verify_cached_output)
 - _types.py (TaskState/RunState enum helpers)
 - params.py (merge_resolved_params dedup, ResolvedParam methods)
@@ -21,15 +21,11 @@ from __future__ import annotations
 
 import inspect
 import json
-import os
 import signal as sig
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Literal
-from unittest.mock import patch
+from typing import Annotated, Any
 
 import pytest
 
@@ -38,7 +34,6 @@ from reflow import (
     Flow,
     Param,
     Result,
-    Run,
     RunDir,
     RunState,
     TaskState,
@@ -47,28 +42,20 @@ from reflow import (
 )
 from reflow._types import TaskState as TS
 from reflow.cache import (
-    compute_identity,
-    compute_input_hash,
     compute_output_hash,
     verify_cached_output,
 )
 from reflow.config import (
-    DEFAULT_CONFIG_TOML,
-    _cache_dir,
-    _config_dir,
     _rosetta_stone,
     config_path,
-    ensure_config_exists,
-    load_config,
 )
-from reflow.executors import Executor, JobResources
+from reflow.executors import JobResources
 from reflow.executors.local import LocalExecutor
 from reflow.executors.slurm import SlurmExecutor
 from reflow.flow import JobConfig, TaskSpec
 from reflow.manifest import (
     DEFAULT_CODEC,
     CliParamDescription,
-    ManifestCodec,
     TaskDescription,
     WorkflowDescription,
     canonical_manifest_dumps,
@@ -77,18 +64,15 @@ from reflow.manifest import (
 )
 from reflow.params import (
     ResolvedParam,
-    WireMode,
     argparse_type_callable,
     check_type_compatibility,
-    collect_cli_params,
     collect_result_deps,
     get_return_type,
     merge_resolved_params,
 )
 from reflow.stores.records import RunRecord, TaskInstanceRecord, TaskSpecRecord
 from reflow.stores.sqlite import SqliteStore
-from reflow.workflow import _build_kwargs, _make_run_id, _resolve_executor, _resolve_index
-
+from reflow.workflow import build_kwargs, make_run_id, resolve_executor, resolve_index
 
 # ═══════════════════════════════════════════════════════════════════════════
 # _types.py
@@ -325,15 +309,17 @@ class TestRosettaStone:
 
 class TestConfigProperties:
     def test_dispatch_properties(self) -> None:
-        cfg = Config({
-            "dispatch": {
-                "cpus": 2,
-                "time": "01:00:00",
-                "mem": "4G",
-                "partition": "debug",
-                "account": "myacc",
+        cfg = Config(
+            {
+                "dispatch": {
+                    "cpus": 2,
+                    "time": "01:00:00",
+                    "mem": "4G",
+                    "partition": "debug",
+                    "account": "myacc",
+                }
             }
-        })
+        )
         assert cfg.dispatch_cpus == "2"
         assert cfg.dispatch_time == "01:00:00"
         assert cfg.dispatch_mem == "4G"
@@ -341,17 +327,24 @@ class TestConfigProperties:
         assert cfg.dispatch_account == "myacc"
 
     def test_dispatch_submit_options(self) -> None:
-        cfg = Config({
-            "dispatch": {"partition": "debug", "account": "acc"},
-        })
+        cfg = Config(
+            {
+                "dispatch": {"partition": "debug", "account": "acc"},
+            }
+        )
         opts = cfg.dispatch_submit_options
         assert opts["partition"] == "debug"
         assert opts["account"] == "acc"
 
     def test_empty_config(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Clear any env vars that might be set by other tests.
-        for var in ("REFLOW_MODE", "REFLOW_PARTITION", "REFLOW_ACCOUNT",
-                     "REFLOW_PYTHON", "REFLOW_MAIL_USER"):
+        for var in (
+            "REFLOW_MODE",
+            "REFLOW_PARTITION",
+            "REFLOW_ACCOUNT",
+            "REFLOW_PYTHON",
+            "REFLOW_MAIL_USER",
+        ):
             monkeypatch.delenv(var, raising=False)
         cfg = Config()
         assert cfg.executor_partition is None
@@ -365,15 +358,24 @@ class TestConfigProperties:
         assert "manifest.db" in cfg.default_store_path
 
     def test_executor_submit_options_from_config(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        for var in ("REFLOW_MODE", "REFLOW_PARTITION", "REFLOW_ACCOUNT",
-                     "REFLOW_SIGNAL", "REFLOW_MAIL_USER", "REFLOW_MAIL_TYPE"):
+        for var in (
+            "REFLOW_MODE",
+            "REFLOW_PARTITION",
+            "REFLOW_ACCOUNT",
+            "REFLOW_SIGNAL",
+            "REFLOW_MAIL_USER",
+            "REFLOW_MAIL_TYPE",
+        ):
             monkeypatch.delenv(var, raising=False)
-        cfg = Config({
-            "executor": {"submit_options": {"partition": "gpu", "account": "acc"}},
-            "notifications": {"mail_user": "u@e.org", "mail_type": "FAIL"},
-        })
+        cfg = Config(
+            {
+                "executor": {"submit_options": {"partition": "gpu", "account": "acc"}},
+                "notifications": {"mail_user": "u@e.org", "mail_type": "FAIL"},
+            }
+        )
         opts = cfg.executor_submit_options
         assert opts["partition"] == "gpu"
         assert opts["account"] == "acc"
@@ -686,7 +688,8 @@ class TestSlurmExecutorExtended:
         assert exc.sacct == "sacct"
 
     def test_from_environment_env_override(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         monkeypatch.setenv("REFLOW_SBATCH", "/custom/sbatch")
@@ -761,6 +764,7 @@ class TestFlowExtended:
             return "ok"
 
         with pytest.raises(ValueError, match="already registered"):
+
             @f.job(name="task_a")
             def task_a_dup() -> str:
                 return "dup"
@@ -768,6 +772,7 @@ class TestFlowExtended:
     def test_array_job_without_result_raises(self) -> None:
         f = Flow("test")
         with pytest.raises(ValueError, match="must have at least one"):
+
             @f.array_job()
             def bad_array(x: str) -> str:
                 return x
@@ -844,7 +849,13 @@ class TestParamsExtended:
     def test_check_type_compatibility_error_message(self) -> None:
         with pytest.raises(TypeError, match="wiring"):
             check_type_compatibility(
-                str, False, str, True, "up", "down", "param",
+                str,
+                False,
+                str,
+                True,
+                "up",
+                "down",
+                "param",
             )
 
     def test_collect_result_deps(self) -> None:
@@ -875,7 +886,12 @@ class TestParamsExtended:
 
     def test_resolved_param_local_flag(self) -> None:
         rp = ResolvedParam(
-            "chunk_size", "convert", int, False, False, 256,
+            "chunk_size",
+            "convert",
+            int,
+            False,
+            False,
+            256,
             Param(namespace="local"),
         )
         assert rp.cli_flag() == "--convert-chunk-size"
@@ -889,37 +905,37 @@ class TestParamsExtended:
 
 class TestWorkflowHelpers:
     def test_make_run_id_format(self) -> None:
-        rid = _make_run_id("test")
+        rid = make_run_id("test")
         parts = rid.split("-")
         assert parts[0] == "test"
         assert len(parts) == 3
         assert len(parts[2]) == 4  # short hex
 
     def test_resolve_executor_local(self) -> None:
-        exc = _resolve_executor("local")
+        exc = resolve_executor("local")
         assert isinstance(exc, LocalExecutor)
 
     def test_resolve_executor_unknown(self) -> None:
         with pytest.raises(ValueError, match="Unknown executor"):
-            _resolve_executor("pbs")
+            resolve_executor("unicorn")
 
     def test_resolve_executor_none(self) -> None:
-        assert _resolve_executor(None) is None
+        assert resolve_executor(None) is None
 
     def test_resolve_executor_passthrough(self) -> None:
         exc = LocalExecutor()
-        assert _resolve_executor(exc) is exc
+        assert resolve_executor(exc) is exc
 
     def test_resolve_index_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("SLURM_ARRAY_TASK_ID", "5")
-        assert _resolve_index(None) == 5
+        assert resolve_index(None) == 5
 
     def test_resolve_index_explicit(self) -> None:
-        assert _resolve_index(3) == 3
+        assert resolve_index(3) == 3
 
     def test_resolve_index_no_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("SLURM_ARRAY_TASK_ID", raising=False)
-        assert _resolve_index(None) is None
+        assert resolve_index(None) is None
 
 
 class TestBuildKwargsExtended:
@@ -938,7 +954,7 @@ class TestBuildKwargsExtended:
         def fn(chunk: int = 256) -> None:
             pass
 
-        kw = _build_kwargs(
+        kw = build_kwargs(
             self._spec(fn),
             {"__task_params__": {"t": {"chunk": 512}}},
             {},
@@ -947,10 +963,11 @@ class TestBuildKwargsExtended:
 
     def test_run_dir_by_name(self) -> None:
         """Parameter named 'run_dir' without RunDir annotation."""
+
         def fn(run_dir: str) -> None:
             pass
 
-        kw = _build_kwargs(self._spec(fn), {"run_dir": "/scratch"}, {})
+        kw = build_kwargs(self._spec(fn), {"run_dir": "/scratch"}, {})
         assert kw["run_dir"] == Path("/scratch")
 
 
@@ -960,7 +977,9 @@ class TestBuildKwargsExtended:
 
 
 class TestWorkflowForce:
-    def test_submit_with_force(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_submit_with_force(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = Workflow("fw")
 
@@ -979,7 +998,9 @@ class TestWorkflowForce:
         params = run.store.get_run_parameters(run.run_id)
         assert params.get("__force__") is True
 
-    def test_submit_with_force_tasks(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_submit_with_force_tasks(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = Workflow("fw")
 
@@ -1043,9 +1064,18 @@ class TestCLIExtended:
         from reflow.cli import parse_args
 
         wf = self._make_wf()
-        args = parse_args(wf, [
-            "worker", "--run-id", "r1", "--run-dir", "/tmp", "--task", "task_a",
-        ])
+        args = parse_args(
+            wf,
+            [
+                "worker",
+                "--run-id",
+                "r1",
+                "--run-dir",
+                "/tmp",
+                "--task",
+                "task_a",
+            ],
+        )
         assert args._command == "worker"
         assert args.task == "task_a"
 
@@ -1053,19 +1083,37 @@ class TestCLIExtended:
         from reflow.cli import parse_args
 
         wf = self._make_wf()
-        args = parse_args(wf, [
-            "worker", "--run-id", "r1", "--run-dir", "/tmp",
-            "--task", "t", "--index", "3",
-        ])
+        args = parse_args(
+            wf,
+            [
+                "worker",
+                "--run-id",
+                "r1",
+                "--run-dir",
+                "/tmp",
+                "--task",
+                "t",
+                "--index",
+                "3",
+            ],
+        )
         assert args.index == 3
 
     def test_dispatch_parser_with_verify(self) -> None:
         from reflow.cli import parse_args
 
         wf = self._make_wf()
-        args = parse_args(wf, [
-            "dispatch", "--run-id", "r1", "--run-dir", "/tmp", "--verify",
-        ])
+        args = parse_args(
+            wf,
+            [
+                "dispatch",
+                "--run-id",
+                "r1",
+                "--run-dir",
+                "/tmp",
+                "--verify",
+            ],
+        )
         assert args.verify is True
 
 

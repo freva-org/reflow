@@ -1,7 +1,7 @@
 """reflow -- decorator-based HPC workflow engine.
 
 Define tasks with Python decorators, wire data flow with ``Result``
-annotations, and submit to Slurm with an auto-generated CLI.
+annotations, and submit to HPC schedulers with an auto-generated CLI.
 """
 
 __version__ = "2604.0.0a2"
@@ -15,7 +15,11 @@ from .config import (
     write_example_config,
 )
 from .executors import Executor, JobResources
+from .executors.flux import FluxExecutor
 from .executors.local import LocalExecutor
+from .executors.lsf import LSFExecutor
+from .executors.pbs import PBSExecutor
+from .executors.sge import SGEExecutor
 from .executors.slurm import SlurmExecutor
 from .flow import Flow, JobConfig, TaskSpec
 from .manifest import ManifestCodec, WorkflowDescription
@@ -44,6 +48,10 @@ __all__ = [
     "Executor",
     "JobResources",
     "SlurmExecutor",
+    "PBSExecutor",
+    "LSFExecutor",
+    "SGEExecutor",
+    "FluxExecutor",
     "LocalExecutor",
     "ManifestCodec",
     "WorkflowDescription",

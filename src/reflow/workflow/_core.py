@@ -21,7 +21,6 @@ from typing import Any, get_type_hints
 from .._types import RunState, TaskState
 from ..config import Config, load_config
 from ..executors import Executor, JobResources
-from ..executors.slurm import SlurmExecutor
 from ..flow import Flow, TaskSpec
 from ..manifest import (
     CliParamDescription,
@@ -38,7 +37,7 @@ from ..run import Run
 from ..stores import Store
 from ..stores.sqlite import SqliteStore
 from ._dispatch import DispatchMixin
-from ._helpers import _make_run_id, _resolve_executor
+from ._helpers import default_executor, make_run_id, resolve_executor
 from ._worker import WorkerMixin
 
 logger = logging.getLogger(__name__)
@@ -254,7 +253,7 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
             If required parameters are missing.
 
         """
-        real_executor = _resolve_executor(executor)
+        real_executor = resolve_executor(executor)
         self.validate()
         self._check_submit_params(parameters)
 
@@ -265,7 +264,7 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
         st = store or SqliteStore.default(self.config)
         st.init()
 
-        run_id = _make_run_id(self.name)
+        run_id = make_run_id(self.name)
         user_id = getpass.getuser()
 
         params = dict(parameters)
@@ -290,10 +289,14 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
             if self._effective_dependencies(spec) or spec.config.array:
                 continue
             st.insert_task_instance(
-                run_id, spec.name, None, TaskState.PENDING, {},
+                run_id,
+                spec.name,
+                None,
+                TaskState.PENDING,
+                {},
             )
 
-        exc = real_executor or SlurmExecutor.from_environment(self.config)
+        exc = real_executor or default_executor(self.config)
         self._submit_dispatch(exc, run_id, rd, st, verify=verify)
 
         logger.info("Created run %s in %s", run_id, rd)
@@ -336,7 +339,7 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
         st = store or SqliteStore.default(self.config)
         st.init()
 
-        run_id = _make_run_id(self.name)
+        run_id = make_run_id(self.name)
         user_id = getpass.getuser()
 
         params = dict(parameters)
@@ -357,10 +360,14 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
             if self._effective_dependencies(spec) or spec.config.array:
                 continue
             st.insert_task_instance(
-                run_id, spec.name, None, TaskState.PENDING, {},
+                run_id,
+                spec.name,
+                None,
+                TaskState.PENDING,
+                {},
             )
 
-        exc = executor or SlurmExecutor.from_environment(self.config)
+        exc = executor or default_executor(self.config)
         self._submit_dispatch(exc, run_id, rd, st)
         return run_id
 
@@ -373,7 +380,7 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
         task_name: str | None = None,
         executor: Executor | None = None,
     ) -> int:
-        exc = executor or SlurmExecutor.from_environment(self.config)
+        exc = executor or default_executor(self.config)
         instances = store.list_task_instances(
             run_id,
             task_name=task_name,
@@ -433,7 +440,7 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
             retried += 1
         store.update_run_status(run_id, RunState.RUNNING)
         if retried > 0:
-            exc = executor or SlurmExecutor.from_environment(self.config)
+            exc = executor or default_executor(self.config)
             self._submit_dispatch(exc, run_id, run_dir, store, verify=verify)
         return retried
 
@@ -549,17 +556,15 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
         run_dir: Path,
         store: Store,
         verify: bool = False,
-        dependency: str | None = None,
+        dependency_options: dict[str, str] | None = None,
     ) -> str:
-        """Submit a dispatch job, optionally with a Slurm dependency."""
+        """Submit a dispatch job, optionally with scheduler dependencies."""
         python = (
-            os.getenv("REFLOW_PYTHON")
-            or self.config.executor_python
-            or sys.executable
+            os.getenv("REFLOW_PYTHON") or self.config.executor_python or sys.executable
         )
         submit_options = dict(self.config.dispatch_submit_options)
-        if dependency:
-            submit_options["dependency"] = dependency
+        if dependency_options:
+            submit_options.update(dependency_options)
         resources = JobResources(
             job_name=f"{self.name}-dispatch",
             cpus=int(self.config.dispatch_cpus or "1"),

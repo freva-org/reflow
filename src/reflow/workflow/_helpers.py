@@ -8,11 +8,14 @@ from pathlib import Path
 from typing import Any, get_type_hints
 
 from .._types import TaskState  # noqa: F401 — re-exported for _worker
+from ..executors.helpers import default_executor, resolve_executor
 from ..flow import TaskSpec
 from ..params import is_run_dir
 
+__all__ = ["build_kwargs", "default_executor", "make_run_id", "resolve_executor"]
 
-def _make_run_id(workflow_name: str) -> str:
+
+def make_run_id(workflow_name: str) -> str:
     """Generate a short, human-friendly run id.
 
     Format: ``<workflow>-<YYYYMMDD>-<4hex>``
@@ -24,34 +27,34 @@ def _make_run_id(workflow_name: str) -> str:
     return f"{workflow_name}-{date_str}-{short}"
 
 
-def _resolve_executor(executor: Any) -> Any:
-    """Resolve an executor shorthand string to an instance.
+def resolve_index(explicit: int | None) -> int | None:
+    """Return the array index from *explicit* or a scheduler env var.
 
-    Parameters
-    ----------
-    executor : Executor, str, or None
-        ``"local"`` is a shorthand for
-        :class:`~reflow.executors.local.LocalExecutor`.
-
+    Checks environment variables from all supported schedulers in a
+    fixed priority order.  The first one found wins.
     """
-    if isinstance(executor, str):
-        if executor == "local":
-            from ..executors.local import LocalExecutor
-
-            return LocalExecutor()
-        raise ValueError(f"Unknown executor shorthand {executor!r}.  Use 'local'.")
-    return executor
-
-
-def _resolve_index(explicit: int | None) -> int | None:
-    """Return the array index from *explicit* or ``SLURM_ARRAY_TASK_ID``."""
     if explicit is not None:
         return explicit
-    env_val = os.getenv("SLURM_ARRAY_TASK_ID")
-    return int(env_val) if env_val is not None else None
+    _ARRAY_INDEX_VARS = (
+        "SLURM_ARRAY_TASK_ID",  # Slurm
+        "PBS_ARRAY_INDEX",  # PBS Pro / OpenPBS
+        "PBS_ARRAYID",  # Torque
+        "LSB_JOBINDEX",  # LSF
+        "SGE_TASK_ID",  # SGE / UGE
+        "FLUX_JOB_CC",  # Flux
+        "OAR_ARRAY_INDEX",  # OAR
+    )
+    for var in _ARRAY_INDEX_VARS:
+        env_val = os.getenv(var)
+        if env_val is not None:
+            try:
+                return int(env_val)
+            except ValueError:
+                continue
+    return None
 
 
-def _build_kwargs(
+def build_kwargs(
     spec: TaskSpec,
     run_parameters: dict[str, Any],
     task_input: dict[str, Any],

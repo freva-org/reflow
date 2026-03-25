@@ -647,12 +647,14 @@ class SqliteStore(Store):
 
     @_retry_on_locked
     def mark_for_retry(self, instance_id: int) -> None:
-        retriable = ",".join(f"'{s.value}'" for s in TaskState.retriable())
+        retriable = list(TaskState.retriable())
+        ph = ",".join("?" * len(retriable))
         self.conn.execute(
-            f"UPDATE task_instances SET state = ?, error_text = NULL, "
-            f"output = NULL, output_hash = '', job_id = NULL, updated_at = ? "
-            f"WHERE id = ? AND state IN ({retriable})",
-            (TaskState.RETRYING.value, _utcnow(), instance_id),
+            "UPDATE task_instances SET state = ?, error_text = NULL, "
+            "output = NULL, output_hash = '', job_id = NULL, updated_at = ? "
+            f"WHERE id = ? AND state IN ({ph})",
+            (TaskState.RETRYING.value, _utcnow(), instance_id)
+            + tuple(s.value for s in retriable),
         )
         self.conn.commit()
 

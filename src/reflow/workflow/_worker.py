@@ -1,7 +1,7 @@
 """Worker mixin for the Workflow class.
 
 Contains the :meth:`worker` method that executes a single task
-instance inside a Slurm job (or local subprocess).
+instance inside a scheduler job (or local subprocess).
 """
 
 from __future__ import annotations
@@ -15,8 +15,10 @@ from typing import Any
 from .._types import TaskState
 from ..cache import compute_output_hash
 from ..executors import Executor
+from ..results import write_result
+from ..signals import graceful_shutdown
 from ..stores import Store
-from ._helpers import _build_kwargs, _resolve_index
+from ._helpers import build_kwargs, resolve_index
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +46,10 @@ class WorkerMixin:
         :class:`~reflow.signals.TaskInterrupted` so that the error
         handler writes a FAILED result file with the traceback.
         """
-        from ..results import write_result
-        from ..signals import graceful_shutdown
-
         if task_name not in self.tasks:  # type: ignore[attr-defined]
             raise KeyError(f"Unknown task: {task_name!r}")
-        resolved_index = _resolve_index(index)
+
+        resolved_index = resolve_index(index)
         spec = self.tasks[task_name]  # type: ignore[attr-defined]
 
         row = store.get_task_instance(run_id, task_name, resolved_index)
@@ -61,7 +61,7 @@ class WorkerMixin:
         task_input: Any = row.get("input", {})
         if isinstance(task_input, str):
             task_input = json.loads(task_input)
-        kwargs = _build_kwargs(spec, parameters, task_input or {})
+        kwargs = build_kwargs(spec, parameters, task_input or {})
 
         instance_id = int(row["id"])
 
@@ -71,7 +71,8 @@ class WorkerMixin:
         except Exception:
             logger.warning(
                 "Could not mark %s[%s] as RUNNING in DB",
-                task_name, resolved_index,
+                task_name,
+                resolved_index,
             )
 
         try:

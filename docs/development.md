@@ -1,39 +1,42 @@
 # Development
 
-## Test suite
+## Setup
 
 ```bash
-pytest
+git clone https://github.com/freva-org/reflow
+cd reflow
+pip install -e ".[dev]"
+```
+
+## Running tests
+
+```bash
+pytest -v tests/
+tox -e test
 ```
 
 ## Linting and type checking
 
 ```bash
-ruff check .
-mypy reflow
+ruff check src/
+mypy src/reflow
+tox -e lint
+tox -e types
 ```
 
-## Local docs with MkDocs
-
-Create a `mkdocs.yml` at repository root from `docs/mkdocs.yml.example`, then run:
+## Building docs
 
 ```bash
+pip install -e ".[docs]"
 mkdocs serve
 ```
 
 ## What to keep stable
 
-At this stage, the most important things to keep stable are:
+At this stage, the most important surfaces to keep stable are:
 
-- public decorator API
-- `Run` control surface
-- manifest storage behavior
-- cache semantics
-- executor protocol
-
-## Good next refactors
-
-- split large orchestration helpers in `workflow.py`
-- make backend metadata models more explicit
-- add more focused tests for retry and invalidation paths
-- prepare for a database-backed multi-user service layer
+- public decorator API (`@wf.job()`, `Param`, `Result`, `RunDir`)
+- `Run` control surface (`.status()`, `.cancel()`, `.retry()`)
+- `Executor` protocol (`.submit()`, `.cancel()`, `.job_state()`, `.dependency_options()`)
+- manifest storage behaviour and cache semantics
+- CLI subcommand names and flag conventions

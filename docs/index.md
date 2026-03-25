@@ -1,79 +1,83 @@
-# Reflow
+# reflow
 
-Reflow is a decorator-based Python DAG library for HPC-style workflows.
-
-The core idea is simple:
-
-- define tasks as normal Python functions
-- register them with `@wf.job()` or `@wf.array_job()`
-- let Reflow infer ordering and data dependencies
-- submit the graph through an executor such as Slurm
-- persist run state in a shared SQLite manifest store
-
-This documentation is intentionally **example-first**. The fastest way to understand Reflow is to read a complete workflow and then zoom in on the pieces.
-
-## A complete example
+Decorator-based HPC workflow engine with Result-based data wiring,
+*re*usable *fl*ows, and an auto-generated CLI.
 
 ```python
-from pathlib import Path
+from reflow import Workflow, Param, Result, RunDir
 from typing import Annotated
 
-from reflow import Param, Result, RunDir, Workflow
+wf = Workflow("climate")
 
-wf = Workflow("zarr-pipeline")
-
-
-@wf.job(time="00:10:00", mem="2G")
+@wf.job(cpus=4, time="02:00:00", mem="16G")
 def prepare(
-    source: Annotated[str, Param(help="Input NetCDF file")],
+    start: Annotated[str, Param(help="Start date")],
     run_dir: RunDir = RunDir(),
 ) -> list[str]:
-    inputs = [source]
-    (Path(run_dir) / "inputs.txt").write_text("\n".join(inputs))
-    return inputs
+    """Download and preprocess input files."""
+    return [str(f) for f in (run_dir / "input").glob("*.nc")]
 
-
-@wf.array_job(time="00:30:00", mem="8G")
-def convert(
-    item: Annotated[str, Result(step="prepare")],
-    bucket: Annotated[str, Param(help="Destination bucket")],
-) -> str:
-    return f"{bucket}/{Path(item).stem}.zarr"
-
-
-@wf.job(time="00:05:00", mem="1G")
-def publish(
-    paths: Annotated[list[str], Result(step="convert")],
+@wf.job(array=True, cpus=8, time="04:00:00", mem="32G")
+def compute(
+    nc_file: Annotated[str, Result(step="prepare")],
     run_dir: RunDir = RunDir(),
-) -> Path:
-    out = Path(run_dir) / "published.txt"
-    out.write_text("\n".join(paths))
-    return out
-
+) -> str:
+    """Process a single input file (one per array element)."""
+    return str(run_dir / "output" / Path(nc_file).name)
 
 if __name__ == "__main__":
     wf.cli()
 ```
 
-Run it with:
+```console
+$ python pipeline.py submit --run-dir /scratch/run1 --start 2025-01-01
+Created run climate-20250301-a1b2 in /scratch/run1
 
-```bash
-python flow.py submit \
-  --run-dir /scratch/my-run \
-  --source /data/input.nc \
-  --bucket climate-demo
+$ python pipeline.py status --run-id climate-20250301-a1b2
 ```
 
-## What to read next
+## Features
 
-- Start with the [tutorial](tutorial.md)
-- Then read [Parameters and CLI](parameters-and-cli.md)
-- Then read [Dependencies and data wiring](dependencies-and-wiring.md)
-- For persistence and caching, read [Shared manifest store](shared-manifest-store.md)
+**Decorator-driven**
+:   Define tasks with `@wf.job()`, wire data between them with `Result`,
+    and let reflow handle submission, dependency chaining, and result collection.
 
-## Design goals
+**Automatic fan-out**
+:   Return a `list` from a task, mark the downstream as `array=True`, and
+    reflow submits one array element per item with zero boilerplate.
 
-- **No heavy runtime dependencies** in the library itself
-- **Typed task wiring** based on Python annotations
-- **Shared manifest store** so runs and cache entries work across multiple run directories
-- **Executor abstraction** so Slurm is only the first backend, not the last
+**Merkle-DAG caching**
+:   Each task instance gets a content-addressed identity.  Re-runs skip
+    tasks whose inputs haven't changed.
+
+**Reusable flows**
+:   Build a library of `Flow` objects and compose them into workflows
+    with `wf.include(flow, prefix="...")`.
+
+**Auto-generated CLI**
+:   `wf.cli()` produces a full argparse CLI with `submit`, `status`,
+    `cancel`, `retry`, `dag`, and `describe` subcommands.
+
+**Multi-scheduler**
+:   Works with Slurm, PBS Pro / Torque, LSF, SGE / UGE, and Flux out
+    of the box.  Write scheduler-agnostic config and reflow translates
+    to the right flags.
+
+## Installation
+
+```console
+pip install reflow
+```
+
+Requires Python 3.10+.  The only runtime dependency is
+[tomli](https://pypi.org/project/tomli/) on Python 3.10 (stdlib
+`tomllib` is used on 3.11+).
+
+## Next steps
+
+- [Getting started](getting-started.md) — build a workflow from scratch in five minutes
+- [User guide](guide.md) — concepts, parameters, data wiring, and array jobs
+- [Scheduler backends](schedulers.md) — configure Slurm, PBS, LSF, SGE, or Flux
+- [CLI reference](cli-reference.md) — all subcommands and flags
+- [Python reference](python-reference.md) — submission API and run handles
+- [API reference](api/index.md) — auto-generated from docstrings

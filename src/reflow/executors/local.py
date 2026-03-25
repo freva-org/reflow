@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 class LocalExecutor(Executor):
     """Run tasks as local subprocesses (synchronous)."""
 
+    array_index_env_var: str = "REFLOW_LOCAL_ARRAY_INDEX"
+    _internal_keys: frozenset[str] = frozenset({"python", "mode"})
+
     def __init__(self, capture_output: bool = False) -> None:
         super().__init__()
         self.capture_output = capture_output
