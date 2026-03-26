@@ -7,8 +7,8 @@ Decorator-based HPC workflow engine with Result-based data wiring,
 [![CI](https://github.com/freva-org/reflow/actions/workflows/ci.yaml/badge.svg)](https://github.com/freva-org/reflow/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/freva-org/reflow/graph/badge.svg?token=ZoqyoUkeJw)](https://codecov.io/gh/freva-org/reflow)
 [![Docs](https://img.shields.io/badge/docs-reflow--docs.org-blue)](https://reflow-doc.org)
-[![PyPI](https://img.shields.io/pypi/v/reflow)](https://pypi.org/project/reflow)
-[![Python Versions](https://img.shields.io/pypi/pyversions/reflow)](https://pypi.org/project/reflow/)
+[![PyPI](https://img.shields.io/pypi/v/reflow-hpc)](https://pypi.org/project/reflow-hpc)
+[![Python Versions](https://img.shields.io/pypi/pyversions/reflow-hpc)](https://pypi.org/project/reflow-hpc/)
 
 [![Works with](https://img.shields.io/badge/works_with-Slurm%20%7C%20PBS%20%7C%20LSF%20%7C%20SGE%20%7C%20Flux-teal)](https://reflow-docs.org/schedulers/)
 
