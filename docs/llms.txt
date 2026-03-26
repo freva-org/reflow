@@ -42,6 +42,6 @@ if __name__ == "__main__":
 
 ## Links
 
-- Docs: https://reflow.readthedocs.io
-- Source: https://github.com/FREVA-CLINT/reflow
+- Docs: https://www.reflow-docs.org
+- Source: https://github.com/freva-org/reflow
 - PyPI: https://pypi.org/project/reflow/

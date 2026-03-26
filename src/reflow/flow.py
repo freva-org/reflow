@@ -124,6 +124,8 @@ class Flow:
         self,
         name: str | None = None,
         *,
+        array: bool = False,
+        array_parallelism: int | None = None,
         cpus: int = 1,
         time: str = "00:30:00",
         mem: str = "4G",
@@ -136,12 +138,18 @@ class Flow:
         backend: str | None = None,
         **scheduler_options: Any,
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        """Register a singleton task.
+        """Register a task, singleton or array job.
 
         Parameters
         ----------
         name : str or None
             Task name. Defaults to the function name.
+        array: bool
+            Set this to `True` if you want to submit parallel jobs.
+            Setting `array=True` is equivalent to using the
+            [`array_job`][array_job] method.
+        array_parallelism : int or None
+            Maximum concurrent array tasks.
         cpus : int
             CPUs per task.
         time : str
@@ -151,8 +159,8 @@ class Flow:
         after : list[str] or None
             Explicit ordering dependencies.
         submit_options : dict[str, Any] or None
-            Scheduler-native submit options, for example ``partition``,
-            ``account``, ``qos``, or ``queue``.
+            Scheduler-native submit options, for example `partition`,
+            `account`, `qos`, or `queue`.
         extra : dict[str, Any] or None
             Backward-compatible alias for ``submit_options``.
         version : str
@@ -180,7 +188,8 @@ class Flow:
                     time=time,
                     mem=mem,
                     after=list(after or []),
-                    array=False,
+                    array=array,
+                    array_parallelism=array_parallelism,
                     submit_options=submit_options,
                     extra=extra,
                     version=version,
