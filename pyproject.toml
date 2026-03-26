@@ -3,7 +3,7 @@ requires = ["flit_core>=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "reflow"
+name = "reflow-hpc"
 dynamic = ["version"]
 description = "Decorator-based HPC workflow engine with Result-based data wiring, reusable Flows, and an auto-generated CLI"
 readme = "README.md"
