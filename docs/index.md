@@ -1,3 +1,9 @@
+---
+title: Reflow
+description: Decorator-based HPC workflow engine with Result-based data wiring,
+*re*usable work*fl*ows, and an auto-generated CLI.
+
+---
 # reflow
 
 Decorator-based HPC workflow engine with Result-based data wiring,
