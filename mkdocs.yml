@@ -1,4 +1,5 @@
 site_name: Reflow
+site_url: https://www.reflow-docs.org/latest/
 site_description: Decorator-based HPC workflow engine with Result-based data wiring, reusable Flows, and an auto-generated CLI
 repo_url: https://github.com/freva-org/reflow
 repo_name: freva-org/reflow
@@ -33,8 +34,6 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.footer
-    #- navigation.tabs
-    #- navigation.tabs.sticky
     - navigation.top
     - navigation.path
     - search.highlight
@@ -43,6 +42,7 @@ theme:
 
 plugins:
   - search
+  - social
   - mkdocstrings:
       handlers:
         python:
@@ -100,3 +100,6 @@ nav:
       - Development: development.md
       - Future service API: future-service-api.md
   - Changelog: whats-new.md
+
+exclude_docs: |
+  api/index.md
