@@ -314,7 +314,7 @@ run_dir = "/scratch/$USER/reflow"
 ## Development
 
 ```console
-git clone https://github.com/FREVA-CLINT/reflow
+git clone https://github.com/freva-org/reflow
 cd reflow
 pip install -e ".[dev]"
 tox -e test
