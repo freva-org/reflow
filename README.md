@@ -1,12 +1,12 @@
 # `reflow`
 
 Decorator-based HPC workflow engine with Result-based data wiring,
-*re*usable *fl*ows, and an auto-generated CLI.
+*re*usable work*fl*ows, and an auto-generated CLI.
 
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![CI](https://github.com/freva-org/reflow/actions/workflows/ci.yaml/badge.svg)](https://github.com/freva-org/reflow/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/freva-org/reflow/graph/badge.svg?token=ZoqyoUkeJw)](https://codecov.io/gh/freva-org/reflow)
-[![Docs](https://img.shields.io/badge/docs-reflow--hpc.org-blue)](https://reflow-hpc.org)
+[![Docs](https://img.shields.io/badge/docs-reflow--docs.org-blue)](https://reflow-doc.org)
 [![PyPI](https://img.shields.io/pypi/v/reflow)](https://pypi.org/project/reflow)
 [![Python Versions](https://img.shields.io/pypi/pyversions/reflow)](https://pypi.org/project/reflow/)
 
