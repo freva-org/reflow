@@ -1,45 +1,50 @@
 # `reflow`
 
 Decorator-based HPC workflow engine with Result-based data wiring,
-*re*usable *fl*ows, and an auto-generated CLI.
+*re*usable work*fl*ows, and an auto-generated CLI.
 
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![CI](https://github.com/freva-org/reflow/actions/workflows/ci.yaml/badge.svg)](https://github.com/freva-org/reflow/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/freva-org/reflow/graph/badge.svg?token=ZoqyoUkeJw)](https://codecov.io/gh/freva-org/reflow)
-[![Docs](https://img.shields.io/badge/docs-reflow--hpc.org-blue)](https://reflow-hpc.org)
+[![Docs](https://img.shields.io/badge/docs-reflow--docs.org-blue)](https://reflow-doc.org)
 [![PyPI](https://img.shields.io/pypi/v/reflow)](https://pypi.org/project/reflow)
 [![Python Versions](https://img.shields.io/pypi/pyversions/reflow)](https://pypi.org/project/reflow/)
 
 [![Works with](https://img.shields.io/badge/works_with-Slurm%20%7C%20PBS%20%7C%20LSF%20%7C%20SGE%20%7C%20Flux-teal)](https://reflow-docs.org/schedulers/)
 
 
+```console
+python -m pip install reflow-hpc
+```
+
 ```python
-from reflow import Workflow, Param, Result, RunDir
+from reflow
+from pathlib import Path
 from typing import Annotated
 
-wf = Workflow("climate")
+
+wf = reflow.Workflow("climate")
 
 @wf.job(cpus=4, time="02:00:00", mem="16G")
 def prepare(
-    start: Annotated[str, Param(help="Start date")],
-    run_dir: RunDir = RunDir(),
+    start: Annotated[str, reflow.Param(help="Start date")],
+    run_dir: RunDir = reflow.RunDir(),
 ) -> list[str]:
     """Download and preprocess input files."""
-    ...
     return [str(f) for f in (run_dir / "input").glob("*.nc")]
 
 @wf.job(array=True, cpus=8, time="04:00:00", mem="32G")
 def compute(
-    nc_file: Annotated[str, Result(step="prepare")],
-    run_dir: RunDir = RunDir(),
+    nc_file: Annotated[str, reflow.Result(step="prepare")],
+    run_dir: RunDir = reflow.RunDir(),
 ) -> str:
     """Process a single input file (one per array element)."""
-    ...
     return str(run_dir / "output" / Path(nc_file).name)
 
 if __name__ == "__main__":
     wf.cli()
 ```
+
 
 ```console
 $ python pipeline.py submit --run-dir /scratch/run1 --start 2025-01-01
@@ -75,7 +80,7 @@ and reflow translates to the right flags.
 ## Installation
 
 ```console
-$ pip install reflow
+pip install reflow-hpc
 ```
 
 Requires Python 3.10+.  The only runtime dependency is

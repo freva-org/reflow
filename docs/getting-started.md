@@ -4,9 +4,9 @@ This page builds a complete workflow from scratch.
 
 ## Installation
 
-```bash
-pip install reflow
-pip install reflow[dev]   # for pytest, ruff, mypy
+```console
+python -m pip install reflow-hpc
+python -m pip install reflow-hpc[dev]   # for pytest, ruff, mypy
 ```
 
 ## Step 1: create a workflow
