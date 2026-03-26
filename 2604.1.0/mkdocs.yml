@@ -1,0 +1,84 @@
+site_name: Reflow
+site_description: Decorator-based HPC workflow engine with Result-based data wiring, reusable Flows, and an auto-generated CLI
+repo_url: https://github.com/freva-org/reflow
+repo_name: freva-org/reflow
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+      primary: deep purple
+      accent: lime
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: lime
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: lime
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            show_source: false
+            show_root_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+            merge_init_into_class: true
+            scoped_crossrefs: true
+            relative_crossrefs: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - fenced_code
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+  - toc:
+      permalink: true
+
+
+nav:
+  - Overview: index.md
+  - Getting started: getting-started.md
+  - User guide: guide.md
+  - Scheduler backends: schedulers.md
+  - Caching and retries: caching.md
+  - Manifest store: stores.md
+  - CLI reference: cli-reference.md
+  - Python reference: python-reference.md
+  - Architecture: architecture.md
+  - Development: development.md
+  - Future service API: future-service-api.md
+  - API reference:
+      - Overview: api/index.md
+      - Core objects: api/core.md
+      - Parameters and results: api/params.md
+      - Executors: api/executors.md
+      - Stores: api/stores.md
+      - Other: api/other.md
