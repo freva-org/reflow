@@ -55,6 +55,11 @@ class Result:
         Single upstream task name.
     steps : list[str] or None
         Multiple upstream task names (outputs are concatenated).
+    broadcast : bool
+        If ``True``, the upstream output is passed as-is to every
+        array element instead of being split (fan-out).  When
+        ``False`` (the default), the wiring mode is inferred from
+        the upstream return type and downstream parameter type.
 
     Raises
     ------
@@ -71,23 +76,30 @@ class Result:
 
         item: Annotated[str, Result(steps=["prepare_a", "prepare_b"])]
 
+    Broadcast (pass whole value to every array element)::
+
+        settings: Annotated[dict, Result(step="config", broadcast=True)]
+
     """
 
     def __init__(
         self,
         step: str | None = None,
         steps: list[str] | None = None,
+        broadcast: bool = False,
     ) -> None:
         if step is not None and steps is not None:
             raise ValueError("Provide either 'step' or 'steps', not both.")
         if step is None and steps is None:
             raise ValueError("Must provide 'step' or 'steps'.")
         self.steps: list[str] = [step] if step is not None else list(steps)  # type: ignore[arg-type]
+        self.broadcast: bool = broadcast
 
     def __repr__(self) -> str:
+        bc = ", broadcast=True" if self.broadcast else ""
         if len(self.steps) == 1:
-            return f"Result(step={self.steps[0]!r})"
-        return f"Result(steps={self.steps!r})"
+            return f"Result(step={self.steps[0]!r}{bc})"
+        return f"Result(steps={self.steps!r}{bc})"
 
 
 class Param:
@@ -239,6 +251,11 @@ class WireMode(enum.Enum):
     CHAIN_FLATTEN : str
         Array returns ``list[T]``, array parameter is ``T``.
         Gather + flatten + re-fan-out.
+    BROADCAST : str
+        Upstream output is passed as-is to every array element.
+        Inferred when both sides share the same container type
+        (e.g. ``list[T]`` -> ``list[T]``), or forced with
+        ``Result(broadcast=True)``.
 
     """
 
@@ -248,6 +265,7 @@ class WireMode(enum.Enum):
     GATHER_FLATTEN = "gather_flatten"
     CHAIN = "chain"
     CHAIN_FLATTEN = "chain_flatten"
+    BROADCAST = "broadcast"
 
 
 def infer_wire_mode(
@@ -255,8 +273,23 @@ def infer_wire_mode(
     upstream_is_array: bool,
     downstream_param_type: Any,
     downstream_is_array: bool,
+    broadcast: bool = False,
 ) -> WireMode:
     """Determine how data flows between two tasks.
+
+    Parameters
+    ----------
+    upstream_return_type : Any
+        Return type annotation of the upstream task.
+    upstream_is_array : bool
+        Whether the upstream task is an array job.
+    downstream_param_type : Any
+        Base type annotation of the downstream parameter.
+    downstream_is_array : bool
+        Whether the downstream task is an array job.
+    broadcast : bool
+        If ``True``, force broadcast mode (pass the whole upstream
+        output to every array element).
 
     Raises
     ------
@@ -268,11 +301,20 @@ def infer_wire_mode(
 
     if not upstream_is_array:
         if downstream_is_array:
+            # Explicit broadcast: pass the whole value to every element.
+            if broadcast:
+                return WireMode.BROADCAST
             if up_is_list:
+                # Infer: list[T] -> list[T] means broadcast;
+                #        list[T] -> T means fan-out.
+                down_is_list = is_list_type(downstream_param_type)
+                if down_is_list:
+                    return WireMode.BROADCAST
                 return WireMode.FAN_OUT
             raise TypeError(
                 f"Array job expects fan-out but upstream returns "
-                f"{upstream_return_type!r}, not a list type."
+                f"{upstream_return_type!r}, not a list type.  "
+                f"Use Result(broadcast=True) to pass the value as-is."
             )
         return WireMode.DIRECT
 
@@ -287,6 +329,8 @@ def infer_wire_mode(
             f"gather from an array task.  Use list[...] to collect results."
         )
 
+    if broadcast:
+        return WireMode.BROADCAST
     if up_is_list:
         return WireMode.CHAIN_FLATTEN
     return WireMode.CHAIN
@@ -300,6 +344,7 @@ def check_type_compatibility(
     upstream_name: str,
     downstream_name: str,
     param_name: str,
+    broadcast: bool = False,
 ) -> WireMode:
     """Validate and return the wire mode, with descriptive errors."""
     try:
@@ -308,6 +353,7 @@ def check_type_compatibility(
             upstream_is_array,
             downstream_param_type,
             downstream_is_array,
+            broadcast=broadcast,
         )
     except TypeError as exc:
         raise TypeError(

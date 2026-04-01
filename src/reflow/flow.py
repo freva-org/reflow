@@ -334,7 +334,7 @@ class Flow:
             new_result_deps: dict[str, Result] = {}
             for pname, res in spec.result_deps.items():
                 steps = [_px(s) if s in internal else s for s in res.steps]
-                new_result_deps[pname] = Result(steps=steps)
+                new_result_deps[pname] = Result(steps=steps, broadcast=res.broadcast)
             spec.result_deps = new_result_deps
             tasks[new_name] = spec
             order.append(new_name)
