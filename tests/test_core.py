@@ -40,8 +40,87 @@ from reflow.params import (
 )
 from reflow.stores.sqlite import SqliteStore
 from reflow.workflow import build_kwargs
+from reflow.workflow._core import _suggest_name
+
 
 # --- params ----------------------------------------------------------------
+class TestSuggestName:
+    def test_close_match(self) -> None:
+        hint = _suggest_name("preprae", {"prepare", "compute", "finalize"})
+        assert "prepare" in hint
+
+    def test_no_match(self) -> None:
+        hint = _suggest_name("zzzzzzz", {"prepare", "compute"})
+        assert hint == ""
+
+    def test_exact_match_not_suggested(self) -> None:
+        # If user typo is very close to two names, still returns one
+        hint = _suggest_name("comput", {"compute", "compile"})
+        assert hint != ""
+
+    def test_works_with_dict(self) -> None:
+        hint = _suggest_name("preprae", {"prepare": 1, "compute": 2})
+        assert "prepare" in hint
+
+
+class TestDidYouMeanValidation:
+    def test_result_step_typo(self) -> None:
+        wf = Workflow("w")
+
+        @wf.job()
+        def prepare() -> list[str]:
+            return []
+
+        @wf.array_job()
+        def compute(item: Annotated[str, Result(step="preprae")]) -> str:
+            return item
+
+        with pytest.raises(ValueError, match="Did you mean 'prepare'"):
+            wf.validate()
+
+    def test_after_typo(self) -> None:
+        wf = Workflow("w")
+
+        @wf.job()
+        def step_a() -> str:
+            return "ok"
+
+        @wf.job(after=["step_aa"])
+        def step_b() -> str:
+            return "ok"
+
+        with pytest.raises(ValueError, match="Did you mean 'step_a'"):
+            wf.validate()
+
+    def test_no_suggestion_for_unrelated(self) -> None:
+        wf = Workflow("w")
+
+        @wf.job()
+        def alpha() -> list[str]:
+            return []
+
+        @wf.array_job()
+        def beta(v: Annotated[str, Result(step="zzzzzzzzz")]) -> str:
+            return v
+
+        with pytest.raises(ValueError, match="unknown task") as exc_info:
+            wf.validate()
+        assert "Did you mean" not in str(exc_info.value)
+
+    def test_topological_order_typo_in_after(self) -> None:
+        """_topological_order also gives suggestions."""
+        wf = Workflow("w")
+
+        @wf.job()
+        def first() -> str:
+            return "ok"
+
+        @wf.job(after=["firs"])
+        def second() -> str:
+            return "ok"
+
+        with pytest.raises(ValueError, match="Did you mean"):
+            wf.validate()
 
 
 class TestDescriptors:

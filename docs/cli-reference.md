@@ -1,101 +1,84 @@
 # CLI reference
 
-The CLI is auto-generated from the workflow definition using the
-standard library `argparse` module.  Call `wf.cli()` at the end of
-your script to activate it.
+Call `wf.cli()` at the end of your script to get a full command-line
+interface. Task parameters annotated with `Param` become CLI flags.
 
-## Public commands
+## Commands
 
 ### `submit`
 
-Create a new run and start dispatching.
+Create a new run and start dispatching:
 
-```bash
-python flow.py submit \
-  --run-dir /scratch/r1 \
-  --start 2026-01-01 \
-  --bucket demo
+```console
+$ python pipeline.py submit --run-dir /scratch/r1 --source data.csv
 ```
-
-Task parameters annotated with `Param` become CLI flags.
-`Literal[...]` annotations become argparse choices.
-
-Optional flags:
-
-- `--store-path PATH` — use a specific manifest database instead of the default
 
 ### `status`
 
-Show status for a run.
+Show status for a run:
 
-```bash
-python flow.py status <run-id>
+```console
+$ python pipeline.py status RUN_ID
+$ python pipeline.py status RUN_ID --task process
 ```
-
-Because the manifest database is shared, `status` can find the run
-without `--run-dir`.
 
 ### `cancel`
 
-Cancel active task instances.
+Cancel active jobs:
 
-```bash
-python flow.py cancel <run-id>
-python flow.py cancel <run-id> --task convert
+```console
+$ python pipeline.py cancel RUN_ID
+$ python pipeline.py cancel RUN_ID --task process
 ```
 
 ### `retry`
 
-Retry failed or cancelled instances.
+Retry failed or cancelled tasks:
 
-```bash
-python flow.py retry <run-id>
-python flow.py retry <run-id> --task convert
+```console
+$ python pipeline.py retry RUN_ID
+$ python pipeline.py retry RUN_ID --task process
 ```
 
 ### `runs`
 
-List known runs for the current workflow.
+List all runs:
 
-```bash
-python flow.py runs
+```console
+$ python pipeline.py runs
 ```
 
 ### `dag`
 
-Print the task dependency graph.
+Print the task dependency graph:
 
-```bash
-python flow.py dag
+```console
+$ python pipeline.py dag
 ```
 
 ### `describe`
 
-Return a JSON workflow manifest with task names, types, resource
-configs, dependencies, and CLI parameters.
+Print the full workflow manifest as JSON:
 
-```bash
-python flow.py describe
+```console
+$ python pipeline.py describe
 ```
 
-## Internal commands
+## Options
 
-Reflow also uses `dispatch` and `worker` subcommands internally.
-These are invoked by the scheduler (not by users) and are hidden from
-normal help output.
+### `--run-dir`
 
-- **`dispatch`** — ingests worker results, submits runnable tasks,
-  chains a follow-up dispatch with scheduler dependencies.
-- **`worker`** — executes a single task instance, writes a result
-  file to `<run_dir>/results/`.
+Shared working directory. Required for `submit`.
 
-## Parameter mapping summary
+### `--store-path`
 
-| Annotation | CLI flag |
-|-----------|---------|
-| `start: str` | `--start` |
-| `start: Annotated[str, Param(help="...")]` | `--start` with help text |
-| `chunk: Annotated[int, Param(namespace="local")]` | `--<task>-chunk` |
-| `model: Literal["era5", "icon"]` | `--model {era5,icon}` |
-| `run_dir: RunDir` | not on CLI (injected) |
-| `item: Annotated[str, Result(step="...")]` | not on CLI (wired) |
+Path to the SQLite manifest database.  Overrides the default
+(`~/.cache/reflow/manifest.db`).
+
+### `--task`
+
+Filter `status`, `cancel`, or `retry` to a single task.
+
+### `--version`
+
+Print the reflow version.

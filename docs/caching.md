@@ -1,102 +1,112 @@
 # Caching and retries
 
-Reflow uses content-addressed hashing to avoid recomputing tasks
-whose inputs haven't changed.
+Reflow uses content-addressed hashing to skip tasks whose inputs
+haven't changed.
 
-## How caching works
+## How it works
 
-For each task instance, reflow computes an **identity hash** from:
+Each task instance gets an **identity hash** built from:
 
-- task name
-- task version string
-- direct input parameters (JSON-serialised)
-- upstream output hashes (propagated through the DAG)
+- the task name and version string
+- the input parameters
+- the output hashes of all upstream tasks
 
-If a previous successful instance with the same identity exists in the
-manifest store, its output is reused without submitting a scheduler
-job.
-
-## What is stored
-
-The manifest database records:
-
-- direct input payload
-- task identity hash
-- output value
-- output hash
-- state transitions (`PENDING`, `RUNNING`, `SUCCESS`, `FAILED`, …)
+If a previous run produced a successful result with the same identity,
+reflow reuses it instead of submitting a new job.
 
 ## Cache invalidation
 
-The simplest way to invalidate a task's cache is to bump its
-`version`:
+Bump the `version` field when your task logic changes:
 
 ```python
-@wf.job(version="2")
-def prepare() -> str:
-    return "changed logic"
+@wf.job(version="2")  # was "1" before the code change
+def process() -> str:
+    return "new logic"
 ```
 
-Since the version is part of the identity hash, any change triggers
-recomputation.
+Everything downstream is also recomputed because the upstream output
+hash changes.
 
 ## Forcing recomputation
 
-Skip the cache entirely for a run:
+Skip the cache entirely:
 
 ```python
-run = wf.submit(run_dir="/scratch/r1", force=True, start="2026-01-01")
+# Force everything
+run = wf.submit(run_dir="/tmp/r", force=True, source="data.csv")
+
+# Force only specific tasks
+run = wf.submit(run_dir="/tmp/r", force_tasks=["process"], source="data.csv")
 ```
 
-Or force-rerun only specific tasks:
+The same works with `run_local`:
 
 ```python
-run = wf.submit(
-    run_dir="/scratch/r1",
-    force_tasks=["prepare"],
-    start="2026-01-01",
-)
+run = wf.run_local(run_dir="/tmp/r", force=True, source="data.csv")
 ```
 
-## Verifying cached outputs
-
-During a normal submit, reflow trusts the stored identity hash.
-During retry — or when you explicitly pass `verify=True` — it also
-checks that cached outputs are still valid:
-
-- for `Path` outputs: checks that the file still exists on disk
-- for custom verify callables: calls your function
+## Disabling the cache per task
 
 ```python
-run = wf.submit(run_dir="/scratch/r1", verify=True, start="2026-01-01")
+@wf.job(cache=False)
+def always_run() -> str:
+    return "fresh every time"
 ```
 
-## Custom verification
+## Output verification
 
-Attach a verify function to a task:
+For tasks that return file paths, reflow can verify that cached files
+still exist on disk before reusing them:
 
 ```python
-def verify_output(path: str) -> bool:
-    return path.endswith(".zarr")
-
-@wf.job(verify=verify_output)
-def convert(...) -> str:
-    ...
+run = wf.submit(run_dir="/tmp/r", verify=True, source="data.csv")
 ```
 
-## Retrying failed tasks
+This checks `Path.exists()` for `Path` and `list[Path]` return types.
+You can also supply a custom verification function:
 
 ```python
-run.retry()                    # retry all failed/cancelled
-run.retry(task_name="convert") # retry a specific task
+@wf.job(verify=lambda output: Path(output).stat().st_size > 0)
+def create_file() -> str:
+    return "/tmp/output.csv"
 ```
 
-On retry, `verify=True` is the default — reflow checks that upstream
-outputs still exist before resubmitting downstream work.
+## Retries
 
-From the CLI:
+Failed or cancelled tasks can be retried without rerunning
+the whole pipeline:
 
-```bash
-python flow.py retry <run-id>
-python flow.py retry <run-id> --task convert
+```python
+run.retry()                 # retry all failed tasks
+run.retry(task="process")   # retry only "process"
+```
+
+Or from the CLI:
+
+```console
+$ python pipeline.py retry RUN_ID
+$ python pipeline.py retry RUN_ID --task process
+```
+
+On retry, upstream cache hits are verified by default so stale
+intermediate files are detected.
+
+## The manifest store
+
+Reflow keeps run metadata, task states, and cached outputs in a shared
+SQLite database at `~/.cache/reflow/manifest.db`. This gives you
+cross-run cache reuse and a single place to inspect workflow history.
+
+The path can be overridden:
+
+```console
+export REFLOW_STORE_PATH=/shared/team/manifest.db
+```
+
+Or in the config file:
+
+```toml
+# ~/.config/reflow/config.toml
+[defaults]
+store_path = "/shared/team/manifest.db"
 ```

@@ -2,7 +2,7 @@
 
 Contains the dispatch loop, cache resolution, result wiring,
 fan-out logic, and run finalisation.  Mixed into
-:class:`~reflow.workflow.Workflow` via multiple inheritance.
+[`reflow.workflow.Workflow`][reflow.workflow.Workflow] via multiple inheritance.
 """
 
 from __future__ import annotations
@@ -38,10 +38,10 @@ logger = logging.getLogger(__name__)
 class DispatchMixin:
     """Methods that implement the dispatch cycle.
 
-    These are separated from the core :class:`Workflow` to keep file
+    These are separated from the core `Workflow` to keep file
     sizes manageable.  All methods reference ``self.tasks``,
     ``self.config``, ``self._effective_dependencies``, etc. which are
-    provided by the concrete :class:`Workflow` class through MRO.
+    provided by the concrete [`Workflow`][reflow.Workflow] class through MRO.
     """
 
     # --- public entry point ------------------------------------------------

@@ -1,126 +1,128 @@
 # Getting started
 
-This page builds a complete workflow from scratch.
+Build a complete workflow from scratch in five minutes.
 
-## Installation
+## Install
 
 ```console
-python -m pip install reflow-hpc
-python -m pip install reflow-hpc[dev]   # for pytest, ruff, mypy
+pip install reflow-hpc
 ```
 
-## Step 1: create a workflow
+## Step 1 — create a workflow
 
 ```python
+# pipeline.py
 from reflow import Workflow
 
 wf = Workflow("demo")
 ```
 
-A `Workflow` is the runtime entry point.  It validates the task graph,
-submits work, and exposes status, cancel, and retry operations.
-
-## Step 2: add a singleton task
+## Step 2 — add a task
 
 ```python
-from reflow import RunDir
-
 @wf.job(time="00:05:00", mem="1G")
-def prepare(run_dir: RunDir = RunDir()) -> list[str]:
-    return ["a.nc", "b.nc", "c.nc"]
+def prepare() -> list[str]:
+    """Return a list of items to process."""
+    return ["alice", "bob", "charlie"]
 ```
 
-A `job` produces a single task instance.  The `RunDir` parameter is
-injected with the shared working directory at runtime — it never
-appears on the CLI.
+This is a **singleton** task — it runs once and returns a list.
 
-## Step 3: add an array task
+## Step 3 — fan out into parallel jobs
 
 ```python
 from typing import Annotated
 from reflow import Result
 
 @wf.job(array=True, time="00:20:00", mem="4G")
-def convert(item: Annotated[str, Result(step="prepare")]) -> str:
-    return item.replace(".nc", ".zarr")
+def greet(name: Annotated[str, Result(step="prepare")]) -> str:
+    """Process one item. Reflow runs this once per list element."""
+    return f"Hello, {name}!"
 ```
 
-An array task creates one instance per upstream element.  Here
-`prepare()` returns `list[str]` and `convert()` consumes `str`, so
-reflow infers **fan-out** and submits three array elements.
+`Result(step="prepare")` tells reflow that `greet` depends on
+`prepare`. Because `prepare` returns `list[str]` and `greet`
+takes `str`, reflow infers **fan-out** — three parallel jobs.
 
-## Step 4: gather results
+## Step 4 — gather results
 
 ```python
 @wf.job()
-def publish(paths: Annotated[list[str], Result(step="convert")]) -> str:
-    return f"published {len(paths)} outputs"
+def summarize(
+    greetings: Annotated[list[str], Result(step="greet")],
+) -> str:
+    """Collect all parallel outputs into one list."""
+    return f"{len(greetings)} greetings sent"
 ```
 
-Reflow infers **gather** — all array outputs are collected into a
-single `list[str]` for the downstream singleton.
+Reflow infers **gather** — all array outputs flow into a single list.
 
-## Step 5: add a CLI and run it
+## Step 5 — add a CLI and run
 
 ```python
 if __name__ == "__main__":
     wf.cli()
 ```
 
-```bash
-# Inspect the DAG
-python flow.py dag
+```console
+$ python pipeline.py dag
+prepare -> greet -> summarize
 
-# See available flags
-python flow.py submit --help
+$ python pipeline.py submit --run-dir /tmp/demo
+Created run demo-20260401-a1b2 in /tmp/demo
 
-# Submit a run
-python flow.py submit --run-dir /scratch/demo
+$ python pipeline.py status demo-20260401-a1b2
 ```
 
-## What happens on submit
+## Run locally (no scheduler needed)
 
-1. The workflow graph is validated (missing references, cycles, type mismatches).
-2. A run record is created in the shared manifest database.
-3. Task specs and initial task instances are materialised.
-4. A dispatch job examines which tasks are runnable and submits them
-   through the configured scheduler backend.
-5. Worker processes execute Python callables and write result files.
-6. The dispatcher ingests results, submits downstream tasks, and
-   repeats until the graph is complete.
-
-## Running from Python instead of the CLI
+For development and testing you can run the whole pipeline
+in-process — no Slurm, no PBS, no subprocesses:
 
 ```python
-run = wf.submit(run_dir="/scratch/demo", start="2025-01-01", bucket="demo")
-run.status()    # dict with run state + per-task breakdown
-run.cancel()    # cancel active jobs
-run.retry()     # resubmit failed tasks
+run = wf.run_local(run_dir="/tmp/demo")
+print(run.status(as_dict=True))
 ```
 
-## Plain vs Annotated style
-
-For small internal workflows, plain parameters are fine — they become
-CLI flags automatically:
+## Run from Python
 
 ```python
-@wf.job()
-def prepare(start: str, run_dir: RunDir = RunDir()) -> list[str]:
-    return [start]
+# Submit to your cluster scheduler
+run = wf.submit(run_dir="/tmp/demo")
+run.status()
+run.cancel()
+run.retry()
 ```
 
-For user-facing workflows, use `Annotated` with `Param` to get help
-text, short flags, and local namespacing:
+## Add CLI parameters
+
+Use `Param` to turn function arguments into CLI flags:
 
 ```python
-from typing import Annotated
 from reflow import Param
 
 @wf.job()
 def prepare(
-    start: Annotated[str, Param(help="Start date in ISO-8601 format")],
-    model: Annotated[str, Param(help="Model name")] = "era5",
-    run_dir: RunDir = RunDir(),
+    count: Annotated[int, Param(help="Number of items")] = 3,
 ) -> list[str]:
-    return [f"{model}:{start}"]
+    return [f"item_{i}" for i in range(count)]
 ```
+
+```console
+$ python pipeline.py submit --run-dir /tmp/demo --count 10
+```
+
+## What happens when you submit
+
+1. The workflow graph is validated (missing steps, cycles, type mismatches).
+2. A run record is created in the manifest database.
+3. A dispatch job submits runnable tasks to the scheduler.
+4. Workers execute your Python functions and write results.
+5. The dispatcher picks up results, submits downstream tasks, and
+   repeats until the graph is complete.
+
+## Next steps
+
+- [User guide](guide.md) — parameters, data wiring, broadcast, reusable flows
+- [Scheduler backends](schedulers.md) — configure your cluster
+- [Caching and retries](caching.md) — skip work that hasn't changed

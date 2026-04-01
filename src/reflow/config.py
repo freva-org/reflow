@@ -241,8 +241,7 @@ def _rosetta_stone(workload_manager: str, key: str) -> str:
         )
     if key not in backend:
         raise KeyError(
-            f"Unknown config key {key!r} for workload manager "
-            f"{workload_manager!r}."
+            f"Unknown config key {key!r} for workload manager {workload_manager!r}."
         )
     return backend[key]
 
@@ -253,8 +252,7 @@ class Config:
     Environment variables (``REFLOW_*``) override the config file.
     Scheduler-agnostic keys (``partition`` / ``queue``, ``account``)
     are passed through to the active executor, which normalises them
-    to the backend's native vocabulary via
-    :meth:`~reflow.executors.Executor._normalize_options`.
+    to the backend's native vocabulary.
     """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:

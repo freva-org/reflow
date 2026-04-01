@@ -39,6 +39,7 @@ from ..stores import Store
 from ..stores.sqlite import SqliteStore
 from ._dispatch import DispatchMixin
 from ._helpers import default_executor, make_run_id, resolve_executor
+from ._local import LocalRunMixin
 from ._worker import WorkerMixin
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ def _suggest_name(unknown: str, known: set[str] | dict[str, Any]) -> str:
     return ""
 
 
-class Workflow(DispatchMixin, WorkerMixin, Flow):
+class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
     """Runnable HPC workflow.
 
     Extends [`Flow`][Flow] with execution: validation, CLI, submission,
@@ -189,7 +190,9 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
             for dep in self._effective_dependencies(spec):
                 if dep not in self.tasks:
                     hint = _suggest_name(dep, self.tasks)
-                    raise ValueError(f"Task {name!r} depends on unknown {dep!r}.{hint}")
+                    raise ValueError(
+                        f"Task {name!r} depends on unknown {dep!r}.{hint}"
+                    )
                 in_degree[name] += 1
                 children[dep].append(name)
 
