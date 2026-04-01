@@ -30,8 +30,6 @@ from ..stores.sqlite import SqliteStore
 from ._helpers import build_kwargs, make_run_id
 
 if TYPE_CHECKING:
-    import inspect
-
     from ..flow import TaskSpec
     from ..run import Run
 
@@ -151,18 +149,23 @@ class LocalRunMixin:
         failed_tasks: set[str] = set()
 
         for task_name in topo:
-            spec: TaskSpec = self.tasks[task_name]  # type: ignore[attr-defined]
+            spec: TaskSpec = self.tasks[task_name]  # type: ignore
             deps = set(self._effective_dependencies(spec))  # type: ignore[attr-defined]
             if deps & failed_tasks:
                 logger.warning(
-                    "Skipping %s — upstream dependency failed.", task_name,
+                    "Skipping %s — upstream dependency failed.",
+                    task_name,
                 )
                 failed_tasks.add(task_name)
                 continue
 
             if spec.config.array:
                 ok = self._local_run_array(
-                    run_id, rd, spec, st, params,
+                    run_id,
+                    rd,
+                    spec,
+                    st,
+                    params,
                     max_workers=max_workers,
                     force=force,
                     force_tasks=force_tasks or [],
@@ -170,7 +173,11 @@ class LocalRunMixin:
                 )
             else:
                 ok = self._local_run_single(
-                    run_id, rd, spec, st, params,
+                    run_id,
+                    rd,
+                    spec,
+                    st,
+                    params,
                     force=force,
                     force_tasks=force_tasks or [],
                     verify=verify,
@@ -199,12 +206,18 @@ class LocalRunMixin:
     # --- internals ---------------------------------------------------------
 
     def _local_should_force(
-        self, task_name: str, force: bool, force_tasks: list[str],
+        self,
+        task_name: str,
+        force: bool,
+        force_tasks: list[str],
     ) -> bool:
         return force or task_name in force_tasks
 
     def _local_resolve_inputs(
-        self, store: Store, run_id: str, spec: TaskSpec,
+        self,
+        store: Store,
+        run_id: str,
+        spec: TaskSpec,
     ) -> dict[str, Any]:
         """Resolve Result-wired inputs from the store.
 
@@ -266,9 +279,7 @@ class LocalRunMixin:
             elif wire == WireMode.CHAIN:
                 resolved[pname] = all_values
             else:
-                resolved[pname] = (
-                    all_values[0] if len(all_values) == 1 else all_values
-                )
+                resolved[pname] = all_values[0] if len(all_values) == 1 else all_values
 
         return resolved
 
@@ -291,7 +302,9 @@ class LocalRunMixin:
             return False
 
         input_hash = compute_input_hash(
-            spec.name, spec.config.version, direct_inputs,
+            spec.name,
+            spec.config.version,
+            direct_inputs,
         )
         identity = compute_identity(input_hash, upstream_output_hashes)
         cached = store.find_cached(spec.name, identity)
@@ -299,7 +312,9 @@ class LocalRunMixin:
             return False
 
         if verify and not verify_cached_output(
-            cached["output"], spec.return_type, spec.verify,
+            cached["output"],
+            spec.return_type,
+            spec.verify,
         ):
             logger.info("Cache stale for %s (identity=%s)", spec.name, identity)
             return False
@@ -309,17 +324,28 @@ class LocalRunMixin:
             out_hash = compute_output_hash(cached["output"])
 
         iid = store.insert_task_instance(
-            run_id, spec.name, array_index, TaskState.SUCCESS,
-            direct_inputs, identity=identity, input_hash=input_hash,
+            run_id,
+            spec.name,
+            array_index,
+            TaskState.SUCCESS,
+            direct_inputs,
+            identity=identity,
+            input_hash=input_hash,
         )
         store.update_task_success(iid, cached["output"], output_hash=out_hash)
         logger.info(
-            "Cache hit for %s[%s] (identity=%s)", spec.name, array_index, identity,
+            "Cache hit for %s[%s] (identity=%s)",
+            spec.name,
+            array_index,
+            identity,
         )
         return True
 
     def _local_collect_upstream_hashes(
-        self, store: Store, run_id: str, spec: TaskSpec,
+        self,
+        store: Store,
+        run_id: str,
+        spec: TaskSpec,
     ) -> list[str]:
         hashes: list[str] = []
         for dep in self._effective_dependencies(spec):  # type: ignore[attr-defined]
@@ -344,18 +370,32 @@ class LocalRunMixin:
         up_hashes = self._local_collect_upstream_hashes(store, run_id, spec)
 
         if self._local_try_cache(
-            store, run_id, spec, result_inputs, None,
-            up_hashes, force, force_tasks, verify,
+            store,
+            run_id,
+            spec,
+            result_inputs,
+            None,
+            up_hashes,
+            force,
+            force_tasks,
+            verify,
         ):
             return True
 
         input_hash = compute_input_hash(
-            spec.name, spec.config.version, result_inputs,
+            spec.name,
+            spec.config.version,
+            result_inputs,
         )
         identity = compute_identity(input_hash, up_hashes)
         iid = store.insert_task_instance(
-            run_id, spec.name, None, TaskState.RUNNING,
-            result_inputs, identity=identity, input_hash=input_hash,
+            run_id,
+            spec.name,
+            None,
+            TaskState.RUNNING,
+            result_inputs,
+            identity=identity,
+            input_hash=input_hash,
         )
 
         kwargs = build_kwargs(spec, run_params, result_inputs)
@@ -391,7 +431,8 @@ class LocalRunMixin:
             param_type = extract_base_type(raw_ann)
             first_up = self.tasks.get(result.steps[0])  # type: ignore[attr-defined]
             if first_up is None or first_up.return_type in (
-                None, __import__("inspect").Parameter.empty,
+                None,
+                __import__("inspect").Parameter.empty,
             ):
                 continue
             try:
@@ -463,8 +504,15 @@ class LocalRunMixin:
                     payload[pname] = value
 
             if self._local_try_cache(
-                store, run_id, spec, payload, idx,
-                up_hashes, force, force_tasks, verify,
+                store,
+                run_id,
+                spec,
+                payload,
+                idx,
+                up_hashes,
+                force,
+                force_tasks,
+                verify,
             ):
                 continue
             pending.append((idx, payload))
@@ -472,7 +520,8 @@ class LocalRunMixin:
         if not pending:
             logger.info(
                 "All %d instances of %s resolved from cache.",
-                len(fan_items), spec.name,
+                len(fan_items),
+                spec.name,
             )
             return True
 
@@ -481,15 +530,27 @@ class LocalRunMixin:
             # Sequential execution — simple and debuggable.
             for idx, payload in pending:
                 ok = self._local_run_one_element(
-                    run_id, spec, store, run_params, payload, idx, up_hashes,
+                    run_id,
+                    spec,
+                    store,
+                    run_params,
+                    payload,
+                    idx,
+                    up_hashes,
                 )
                 if not ok:
                     all_ok = False
         else:
             # Parallel execution via ProcessPoolExecutor.
             all_ok = self._local_run_elements_parallel(
-                run_id, run_dir, spec, store, run_params,
-                pending, up_hashes, max_workers,
+                run_id,
+                run_dir,
+                spec,
+                store,
+                run_params,
+                pending,
+                up_hashes,
+                max_workers,
             )
 
         return all_ok
@@ -506,12 +567,19 @@ class LocalRunMixin:
     ) -> bool:
         """Execute a single array element in-process."""
         input_hash = compute_input_hash(
-            spec.name, spec.config.version, payload,
+            spec.name,
+            spec.config.version,
+            payload,
         )
         identity = compute_identity(input_hash, up_hashes)
         iid = store.insert_task_instance(
-            run_id, spec.name, idx, TaskState.RUNNING,
-            payload, identity=identity, input_hash=input_hash,
+            run_id,
+            spec.name,
+            idx,
+            TaskState.RUNNING,
+            payload,
+            identity=identity,
+            input_hash=input_hash,
         )
         kwargs = build_kwargs(spec, run_params, payload)
         try:
@@ -523,7 +591,10 @@ class LocalRunMixin:
         except Exception:
             store.update_task_failed(iid, traceback.format_exc())
             logger.error(
-                "Task %s[%d] failed:\n%s", spec.name, idx, traceback.format_exc(),
+                "Task %s[%d] failed:\n%s",
+                spec.name,
+                idx,
+                traceback.format_exc(),
             )
             return False
 
@@ -547,12 +618,19 @@ class LocalRunMixin:
         instance_ids: dict[int, int] = {}
         for idx, payload in pending:
             input_hash = compute_input_hash(
-                spec.name, spec.config.version, payload,
+                spec.name,
+                spec.config.version,
+                payload,
             )
             identity = compute_identity(input_hash, up_hashes)
             iid = store.insert_task_instance(
-                run_id, spec.name, idx, TaskState.RUNNING,
-                payload, identity=identity, input_hash=input_hash,
+                run_id,
+                spec.name,
+                idx,
+                TaskState.RUNNING,
+                payload,
+                identity=identity,
+                input_hash=input_hash,
             )
             instance_ids[idx] = iid
 
@@ -586,15 +664,17 @@ class LocalRunMixin:
                         store.update_task_failed(iid, traceback.format_exc())
                         logger.error(
                             "Task %s[%d] failed:\n%s",
-                            spec.name, idx, traceback.format_exc(),
+                            spec.name,
+                            idx,
+                            traceback.format_exc(),
                         )
                         all_ok = False
         except (AttributeError, TypeError) as exc:
             # Function not picklable — fall back to sequential.
             logger.warning(
-                "Parallel execution failed for %s (%s), "
-                "falling back to sequential.",
-                spec.name, exc,
+                "Parallel execution failed for %s (%s), falling back to sequential.",
+                spec.name,
+                exc,
             )
             for idx, payload in pending:
                 iid = instance_ids[idx]
