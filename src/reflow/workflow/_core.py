@@ -169,6 +169,7 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
                         step,
                         spec.name,
                         pname,
+                        broadcast=result.broadcast,
                     )
 
         self._topological_order()

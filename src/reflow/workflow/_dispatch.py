@@ -171,9 +171,13 @@ class DispatchMixin:
                     first_up.config.array,
                     param_type,
                     spec.config.array,
+                    broadcast=result.broadcast,
                 )
 
             if wire == WireMode.DIRECT:
+                resolved[pname] = all_values[0] if all_values else None
+            elif wire == WireMode.BROADCAST:
+                # Pass the whole upstream output as-is.
                 resolved[pname] = all_values[0] if all_values else None
             elif wire in (
                 WireMode.FAN_OUT,
@@ -199,6 +203,9 @@ class DispatchMixin:
         except Exception:
             return None
         for pname, result in spec.result_deps.items():
+            # Broadcast params never determine the fan-out dimension.
+            if result.broadcast:
+                continue
             raw_ann = hints.get(pname)
             if raw_ann is None:
                 continue
@@ -215,12 +222,17 @@ class DispatchMixin:
                     first_up.config.array,
                     param_type,
                     spec.config.array,
+                    broadcast=result.broadcast,
                 )
             except TypeError:
                 continue
             if wire in (WireMode.FAN_OUT, WireMode.CHAIN_FLATTEN):
                 return pname
-        return next(iter(spec.result_deps), None)
+        # Fall back to the first non-broadcast result dep.
+        for pname, result in spec.result_deps.items():
+            if not result.broadcast:
+                return pname
+        return None
 
     # --- cache -------------------------------------------------------------
 
@@ -443,6 +455,11 @@ class DispatchMixin:
         if not fan_items:
             return None
 
+        # Identify broadcast params so we never index into them.
+        broadcast_params: set[str] = {
+            pname for pname, res in spec.result_deps.items() if res.broadcast
+        }
+
         up_hashes = self._collect_upstream_output_hashes(store, run_id, spec)
         pending_indices: list[int] = []
 
@@ -451,7 +468,10 @@ class DispatchMixin:
             for pname, value in result_inputs.items():
                 if pname == fan_param:
                     continue
-                if isinstance(value, list) and len(value) == len(fan_items):
+                # Broadcast params always get the whole value.
+                if pname in broadcast_params:
+                    payload[pname] = value
+                elif isinstance(value, list) and len(value) == len(fan_items):
                     payload[pname] = value[idx]
                 else:
                     payload[pname] = value
