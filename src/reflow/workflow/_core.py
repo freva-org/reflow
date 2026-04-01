@@ -8,6 +8,7 @@ and workflow description.  Dispatch and worker logic live in the
 
 from __future__ import annotations
 
+import difflib
 import getpass
 import inspect
 import logging
@@ -41,6 +42,14 @@ from ._helpers import default_executor, make_run_id, resolve_executor
 from ._worker import WorkerMixin
 
 logger = logging.getLogger(__name__)
+
+
+def _suggest_name(unknown: str, known: set[str] | dict[str, Any]) -> str:
+    """Return a 'did you mean ...' hint, or empty string."""
+    matches = difflib.get_close_matches(unknown, list(known), n=1, cutoff=0.6)
+    if matches:
+        return f"  Did you mean {matches[0]!r}?"
+    return ""
 
 
 class Workflow(DispatchMixin, WorkerMixin, Flow):
@@ -125,15 +134,17 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
             for pname, result in spec.result_deps.items():
                 for step in result.steps:
                     if step not in self.tasks:
+                        hint = _suggest_name(step, self.tasks)
                         raise ValueError(
                             f"Task {spec.name!r} param {pname!r} "
-                            f"references unknown task {step!r}."
+                            f"references unknown task {step!r}.{hint}"
                         )
             for dep in spec.config.after:
                 if dep not in self.tasks:
+                    hint = _suggest_name(dep, self.tasks)
                     raise ValueError(
                         f"Task {spec.name!r} after=[{dep!r}] "
-                        f"references unknown task {dep!r}."
+                        f"references unknown task {dep!r}.{hint}"
                     )
 
         for spec in self.tasks.values():
@@ -176,7 +187,8 @@ class Workflow(DispatchMixin, WorkerMixin, Flow):
         for name, spec in self.tasks.items():
             for dep in self._effective_dependencies(spec):
                 if dep not in self.tasks:
-                    raise ValueError(f"Task {name!r} depends on unknown {dep!r}.")
+                    hint = _suggest_name(dep, self.tasks)
+                    raise ValueError(f"Task {name!r} depends on unknown {dep!r}.{hint}")
                 in_degree[name] += 1
                 children[dep].append(name)
 
