@@ -83,22 +83,18 @@ nav:
   - Getting started: getting-started.md
   - Guide:
       - User guide: guide.md
-      - Scheduler backends: schedulers.md
+      - Schedulers: schedulers.md
       - Caching and retries: caching.md
-      - Manifest store: stores.md
-  - Reference:
-      - CLI reference: cli-reference.md
-      - Python reference: python-reference.md
+  - Usage Reference:
+      - CLI: cli-reference.md
+      - Python API: python-reference.md
   - API Reference:
       - Core: api/core.md
-      - Parameters and results: api/params.md
+      - Parameters: api/params.md
       - Executors: api/executors.md
       - Stores: api/stores.md
-      - Other elements: api/other.md
-  - Project:
-      - Architecture: architecture.md
-      - Development: development.md
-      - Future service API: future-service-api.md
+      - Other: api/other.md
+  - Development: development.md
   - Changelog: whats-new.md
 
 exclude_docs: |

@@ -1,121 +1,161 @@
 # Python reference
 
-## Main imports
+## Imports
 
 ```python
 from reflow import (
-    Workflow,
-    Flow,
-    Run,
-    Param,
-    Result,
-    RunDir,
-    # Executors
-    SlurmExecutor,
-    PBSExecutor,
-    LSFExecutor,
-    SGEExecutor,
-    FluxExecutor,
-    LocalExecutor,
-    # Low-level
-    Executor,
-    JobResources,
-    Config,
-    ManifestCodec,
+    Workflow,       # main entry point
+    Flow,           # reusable task group
+    Run,            # handle to a submitted run
+    Param,          # CLI parameter descriptor
+    Result,         # data dependency descriptor
+    RunDir,         # working directory marker
+    Config,         # user configuration
 )
 ```
 
 ## Workflow
 
-The main entry point.  Validates the graph, submits work, dispatches
-tasks, and exposes status / cancel / retry.
+### Creating a workflow
 
 ```python
-wf = Workflow("pipeline")
-wf = Workflow("pipeline", config=my_config)
+wf = Workflow("my_pipeline")
 ```
 
-Key methods:
+### Registering tasks
 
-- `wf.job(...)` — register a singleton task
-- `wf.job(array=True, ...)` — register an array task
-- `wf.include(flow, prefix=...)` — compose a reusable flow
-- `wf.validate()` — check the graph (called automatically on submit)
-- `wf.cli(argv=...)` — run the auto-generated CLI
-- `wf.submit(run_dir=, ...)` — create and dispatch a run
-- `wf.submit_run(run_dir, parameters, ...)` — lower-level submission (used by CLI)
-- `wf.dispatch(run_id, store, run_dir, ...)` — continue dispatching
-- `wf.worker(run_id, store, run_dir, task_name, ...)` — execute one task instance
-- `wf.cancel_run(run_id, store, ...)` — cancel active jobs
-- `wf.retry_failed(run_id, store, run_dir, ...)` — resubmit failed tasks
-- `wf.run_status(run_id, store)` — get run state
-- `wf.describe()` — JSON workflow manifest
-- `wf.describe_typed()` — typed `WorkflowDescription` object
+```python
+@wf.job(cpus=4, time="01:00:00", mem="8G")
+def step_a(x: Annotated[str, Param(help="Input")]) -> list[str]:
+    return [x, x + "_copy"]
 
-## Submission API
+@wf.job(array=True)
+def step_b(item: Annotated[str, Result(step="step_a")]) -> str:
+    return item.upper()
+```
+
+### Submitting to a scheduler
 
 ```python
 run = wf.submit(
-    run_dir="/scratch/run-001",
-    executor="pbs",              # or "lsf", "sge", "flux", "local"
-    force=False,                 # skip cache entirely
-    force_tasks=["prepare"],     # skip cache for specific tasks
-    verify=True,                 # verify cached Path outputs
-    store=my_store,              # optional custom store
-    start="2026-01-01",          # task parameters as kwargs
+    run_dir="/scratch/run1",       # working directory
+    x="hello",                     # task parameters
+    executor="pbs",                # scheduler (or "slurm", "lsf", "sge", "flux")
+    force=False,                   # skip cache if True
+    force_tasks=["step_a"],        # force specific tasks only
+    verify=True,                   # check cached files still exist
 )
 ```
 
-## Run handle
+Returns a [`Run`](#run) handle.
 
-The `Run` object is returned by `wf.submit()` and provides a
-user-facing control surface:
-
-```python
-run.status()          # dict with run state + per-task breakdown
-run.cancel()          # cancel all active jobs
-run.retry()           # resubmit failed/cancelled tasks
-```
-
-Attributes: `run.run_id`, `run.run_dir`, `run.store`, `run.workflow`.
-
-## Flow
-
-A reusable task collection without execution machinery:
+### Running locally (no scheduler)
 
 ```python
-flow = Flow("shared-conversion")
-
-@flow.job()
-def step_a(...) -> ...: ...
-
-wf.include(flow, prefix="cmip6")
+run = wf.run_local(
+    run_dir="/tmp/test",
+    x="hello",                     # same parameters as submit
+    max_workers=1,                 # parallelize array jobs (default: 1)
+    force=False,
+    on_error="stop",               # "stop" or "continue"
+)
 ```
 
-## Store API
+Executes the full DAG in-process, in topological order. Array tasks
+are expanded and optionally parallelized across `max_workers` processes.
+No scheduler or subprocess overhead.
 
-Most users do not need to instantiate a store, but you can:
+With `on_error="continue"`, failed tasks are recorded and their
+downstream dependants are skipped, but the run continues.
+
+Returns a [`Run`](#run) handle.
+
+### Validation
 
 ```python
-from reflow.stores.sqlite import SqliteStore
-
-# Use the shared default database
-store = SqliteStore.default(wf.config)
-store.init()
-
-# Or for an isolated test
-store = SqliteStore.for_run_dir("/tmp/reflow-test")
+wf.validate()    # raises ValueError for missing refs, cycles, type mismatches
 ```
 
-## Helper functions
+Validation runs automatically on `submit`, `run_local`, and `cli`.
 
-Public helpers in `reflow.executors.helpers`:
+### Including flows
 
-- `default_executor(config)` — return the right executor for the configured `mode`
-- `resolve_executor(executor)` — resolve a shorthand string (`"pbs"`, `"lsf"`, …) to an instance
+```python
+from reflow import Flow
 
-Public helpers in `reflow.workflow`:
+preprocessing = Flow("preprocess")
 
-- `make_run_id(workflow_name)` — generate a `<name>-<date>-<hex>` run ID
-- `build_kwargs(spec, run_parameters, task_input)` — build function kwargs for a worker
-- `resolve_index(explicit)` — resolve array index from env vars
+@preprocessing.job()
+def download() -> list[str]: ...
+
+wf.include(preprocessing, prefix="pre")
+# Task becomes "pre_download"
+```
+
+### CLI
+
+```python
+if __name__ == "__main__":
+    wf.cli()
+```
+
+### Describe
+
+```python
+wf.describe()          # JSON-safe dict of the workflow structure
+wf.describe_typed()    # typed WorkflowDescription object
+```
+
+## Run
+
+A `Run` is the handle returned by `submit` and `run_local`:
+
+```python
+run = wf.submit(run_dir="/tmp/r", x="hello")
+
+run.run_id       # "my_pipeline-20260401-a1b2"
+run.run_dir      # Path("/tmp/r")
+
+run.status()     # print status to stdout
+run.status(as_dict=True)   # return as dict
+
+run.cancel()               # cancel active jobs
+run.cancel(task="step_a")  # cancel one task
+
+run.retry()                # retry failed tasks
+run.retry(task="step_b")   # retry one task
+```
+
+## Executors
+
+```python
+from reflow import (
+    SlurmExecutor, PBSExecutor, LSFExecutor,
+    SGEExecutor, FluxExecutor, LocalExecutor,
+)
+
+# Pass to submit for explicit control:
+run = wf.submit(
+    run_dir="/tmp/r",
+    executor=PBSExecutor(qsub="/opt/pbs/bin/qsub"),
+    x="hello",
+)
+```
+
+Or use the string shorthand: `executor="pbs"`, `executor="slurm"`, etc.
+
+## Configuration
+
+```python
+from reflow import Config, load_config
+
+config = load_config()    # reads ~/.config/reflow/config.toml
+wf = Workflow("name", config=config)
+```
+
+Generate a fully commented config file:
+
+```python
+from reflow import ensure_config_exists
+ensure_config_exists()    # writes ~/.config/reflow/config.toml if missing
+```

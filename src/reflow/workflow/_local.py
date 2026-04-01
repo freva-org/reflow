@@ -4,7 +4,8 @@ Executes all tasks in topological order without any subprocess or
 scheduler overhead.  Array tasks are expanded inline and optionally
 run in parallel using :mod:`concurrent.futures`.
 
-Mixed into :class:`~reflow.workflow.Workflow` via multiple inheritance.
+Mixed into [`reflow.workflow.Workflow`][reflow.workflow.Workflow]
+via multiple inheritance.
 """
 
 from __future__ import annotations
@@ -56,7 +57,7 @@ class LocalRunMixin:
     """In-process execution of the full workflow DAG.
 
     All methods reference ``self.tasks``, ``self.config``, etc. which
-    are provided by the concrete :class:`Workflow` class through MRO.
+    are provided by the concrete `Workflow` class through MRO.
     """
 
     def run_local(
@@ -103,7 +104,7 @@ class LocalRunMixin:
         Returns
         -------
         Run
-            An interactive :class:`~reflow.Run` handle.
+            An interactive [`reflow.Run`][reflow.Run] handle.
 
         Raises
         ------

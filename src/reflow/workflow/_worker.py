@@ -1,6 +1,6 @@
 """Worker mixin for the Workflow class.
 
-Contains the :meth:`worker` method that executes a single task
+Contains the [`worker`][WorkerMixin.worker] method that executes a single task
 instance inside a scheduler job (or local subprocess).
 """
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class WorkerMixin:
-    """Worker execution logic, mixed into :class:`~reflow.workflow.Workflow`."""
+    """Worker execution logic, mixed into `reflow.workflow.Workflow`."""
 
     def worker(
         self,
@@ -43,8 +43,8 @@ class WorkerMixin:
         writes from array job workers on distributed filesystems.
 
         Signal handling: SIGTERM and SIGINT are converted to
-        :class:`~reflow.signals.TaskInterrupted` so that the error
-        handler writes a FAILED result file with the traceback.
+        [`reflow.signals.TaskInterrupted`][reflow.signals.TaskInterrupted]
+        so that the error handler writes a FAILED result file with the traceback.
         """
         if task_name not in self.tasks:  # type: ignore[attr-defined]
             raise KeyError(f"Unknown task: {task_name!r}")

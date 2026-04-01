@@ -1,44 +1,36 @@
 # User guide
 
-This page covers the core abstractions: tasks, parameters, data
-wiring, array jobs, and reusable flows.
-
 ## Tasks
 
-A task is a Python function decorated with `@wf.job()`.  Decorator
-arguments control scheduler resources:
+A task is a Python function decorated with `@wf.job()`:
+
+```python
+@wf.job(cpus=4, time="02:00:00", mem="16G")
+def process(run_dir: RunDir = RunDir()) -> str:
+    return str(run_dir / "output.txt")
+```
+
+The decorator arguments control scheduler resources. All of them are optional:
 
 ```python
 @wf.job(
     cpus=4,                  # cores per task
-    time="02:00:00",         # walltime
+    time="02:00:00",         # walltime limit
     mem="16G",               # memory
-    array=True,              # run as an array job
+    array=True,              # run as a parallel array job
     array_parallelism=10,    # max concurrent array elements
-    cache=True,              # Merkle-DAG caching (default: True)
+    cache=True,              # Merkle-DAG caching (default)
     version="2",             # bump to invalidate cache
-    after=["cleanup"],       # explicit ordering dependency
-    partition="gpu",         # scheduler-agnostic: works on all backends
+    after=["cleanup"],       # ordering dependency (no data)
+    partition="gpu",         # scheduler-agnostic queue name
 )
-def my_task(...) -> ...:
-    ...
 ```
-
-There are two task kinds:
-
-**Singleton** (`@wf.job()`)
-:   Produces a single task instance.
-
-**Array** (`@wf.job(array=True)`)
-:   Produces one instance per input element, submitted as a
-    scheduler array job.
 
 ## Parameters
 
 ### Plain parameters
 
-Any function parameter that is not a `RunDir` or `Result` becomes a
-CLI flag automatically:
+Any argument that isn't a `RunDir` or `Result` becomes a CLI flag:
 
 ```python
 @wf.job()
@@ -46,200 +38,281 @@ def ingest(source: str, limit: int = 100) -> str:
     return f"{source}:{limit}"
 ```
 
-```bash
-python flow.py submit --run-dir /scratch/run --source input.nc --limit 200
+```console
+$ python pipeline.py submit --run-dir /tmp/r --source input.csv --limit 200
 ```
 
-### Rich metadata with `Param`
+### Annotated parameters with `Param`
 
-Use `Param(...)` inside `Annotated[...]` for help text, short flags,
-or local scoping:
+Add help text, short flags, or local scoping:
 
 ```python
-from typing import Annotated
-from reflow import Param
-
 @wf.job()
 def ingest(
     source: Annotated[str, Param(help="Input file", short="-s")],
-    limit: Annotated[int, Param(help="Maximum rows")] = 100,
+    limit: Annotated[int, Param(help="Max rows")] = 100,
 ) -> str:
     return source
 ```
 
-### Global vs local parameters
+### Local namespacing
 
-By default, parameters are **global** — one shared CLI flag.  Set
-`namespace="local"` to prefix the flag with the task name:
+When two tasks share a parameter name, use `namespace="local"` to
+prefix the flag with the task name:
 
 ```python
 @wf.job()
-def convert(
-    chunk: Annotated[int, Param(help="Chunk size", namespace="local")] = 256,
-) -> str:
-    return str(chunk)
+def step_a(
+    chunk: Annotated[int, Param(namespace="local")] = 256,
+) -> str: ...
+
+@wf.job()
+def step_b(
+    chunk: Annotated[int, Param(namespace="local")] = 512,
+) -> str: ...
 ```
 
-This becomes `--convert-chunk` on the CLI, avoiding collisions when
-multiple tasks share a parameter name.
+This gives you `--step-a-chunk` and `--step-b-chunk` on the CLI.
 
 ### Literal choices
 
-`Literal[...]` annotations become argparse choices:
+`Literal` annotations become argparse choices:
 
 ```python
-from typing import Literal
-
 @wf.job()
-def prepare(
-    model: Annotated[Literal["era5", "icon"], Param(help="Model")],
+def train(
+    backend: Annotated[Literal["cpu", "gpu", "tpu"], Param(help="Device")],
 ) -> str:
-    return model
+    return backend
 ```
 
 ### RunDir
 
-Parameters typed as `RunDir` (or simply named `run_dir`) are injected
-with a `pathlib.Path` pointing to the shared working directory.  They
-never appear on the CLI.
+Parameters typed as `RunDir` receive the shared working directory as a
+`pathlib.Path`. They never appear on the CLI:
 
 ```python
-from reflow import RunDir
-
 @wf.job()
-def prepare(run_dir: RunDir = RunDir()) -> str:
-    return str(run_dir / "output")
+def process(run_dir: RunDir = RunDir()) -> str:
+    output = run_dir / "results"
+    output.mkdir(exist_ok=True)
+    return str(output / "data.csv")
 ```
 
-## Data wiring with Result
+## Data wiring with `Result`
 
-`Result` declares that a parameter receives output from an upstream
-task.  The upstream automatically becomes a scheduling dependency.
+`Result` tells reflow that a parameter receives output from an upstream
+task. The dependency is created automatically:
 
 ```python
-from reflow import Result
+@wf.job()
+def step_a() -> str:
+    return "hello"
 
 @wf.job()
-def prepare() -> str:
-    return "prepared"
-
-@wf.job()
-def publish(item: Annotated[str, Result(step="prepare")]) -> str:
-    return item.upper()
+def step_b(msg: Annotated[str, Result(step="step_a")]) -> str:
+    return msg.upper()
 ```
 
-### Multi-step input
+### Wire modes
 
-Combine outputs from several upstream tasks with `steps=[...]`:
+Reflow looks at the types and figures out how data should flow:
+
+| Upstream returns | Downstream takes | What happens |
+|---|---|---|
+| `str` | `str` | **Direct** — value passed as-is |
+| `list[str]` | `str` (array job) | **Fan-out** — one element per job |
+| `str` (array job) | `list[str]` | **Gather** — all outputs collected |
+| `str` (array job) | `str` (array job) | **Chain** — 1:1 index mapping |
+
+### Fan-out
+
+The most common pattern. A singleton returns a list, and an array job
+processes one element at a time:
 
 ```python
 @wf.job()
-def merge(
-    item: Annotated[str, Result(steps=["prepare_a", "prepare_b"])],
+def find_files() -> list[str]:
+    return ["a.txt", "b.txt", "c.txt"]
+
+@wf.job(array=True)
+def process(path: Annotated[str, Result(step="find_files")]) -> str:
+    return path.upper()
+```
+
+This creates three parallel `process` jobs.
+
+### Gather
+
+The reverse — collect all array outputs into one task:
+
+```python
+@wf.job()
+def report(
+    results: Annotated[list[str], Result(step="process")],
+) -> str:
+    return f"processed {len(results)} files"
+```
+
+### Chain
+
+Two array jobs with matching types chain index-by-index:
+
+```python
+@wf.job(array=True)
+def step_1(item: Annotated[str, Result(step="find_files")]) -> str:
+    return item.lower()
+
+@wf.job(array=True)
+def step_2(item: Annotated[str, Result(step="step_1")]) -> str:
+    return item.strip()
+```
+
+### Broadcast
+
+Sometimes you want to pass a value to every element of an array job
+**without splitting it**. If the types match (e.g. `list[str]` →
+`list[str]`), reflow infers broadcast automatically:
+
+```python
+@wf.job()
+def load_config() -> dict:
+    return {"threshold": 0.5, "method": "linear"}
+
+@wf.job()
+def find_files() -> list[str]:
+    return ["a.txt", "b.txt", "c.txt"]
+
+@wf.job(array=True)
+def process(
+    path: Annotated[str, Result(step="find_files")],
+    config: Annotated[dict, Result(step="load_config", broadcast=True)],
+) -> str:
+    # Every array element gets the full config dict
+    return f"{path}:{config['method']}"
+```
+
+Without `broadcast=True`, reflow would try to fan out the dict and
+fail. The `broadcast` flag says "pass this whole value to every
+element."
+
+Type-inferred broadcast works too — if upstream returns `list[str]`
+and the downstream array parameter is also `list[str]`, reflow
+broadcasts instead of fanning out:
+
+```python
+@wf.job()
+def all_labels() -> list[str]:
+    return ["cat", "dog", "bird"]
+
+@wf.job(array=True)
+def classify(
+    image: Annotated[str, Result(step="find_images")],
+    labels: Annotated[list[str], Result(step="all_labels")],
+) -> str:
+    # 'labels' is the full list in every array element
+    return f"classified {image} into {labels}"
+```
+
+### Combining multiple upstreams
+
+Use `steps=[...]` to concatenate outputs from several tasks:
+
+```python
+@wf.job(array=True)
+def process(
+    item: Annotated[str, Result(steps=["source_a", "source_b"])],
 ) -> str:
     return item
 ```
 
 ### Ordering without data
 
-When you need scheduling order but no data transfer, use `after=[...]`:
+When you need "run B after A" but no data transfer:
 
 ```python
-@wf.job(after=["prepare"])
-def cleanup() -> str:
+@wf.job(after=["setup"])
+def compute() -> str:
     return "done"
 ```
 
-## Wire modes
+### Typo protection
 
-Reflow inspects the upstream return type and the downstream parameter
-type to decide how data flows between tasks:
-
-| Upstream return | Downstream param | Mode |
-|---|---|---|
-| `T` (singleton) | `T` (singleton) | **Direct** — value passed as-is |
-| `list[T]` (singleton) | `T` (array) | **Fan-out** — one element per array slot |
-| `T` (array) | `list[T]` (singleton) | **Gather** — collect all into a list |
-| `list[T]` (array) | `list[T]` (singleton) | **Gather + flatten** |
-| `T` (array) | `T` (array) | **Chain** — index-wise 1:1 mapping |
-
-### Fan-out
-
-The most common pattern: a singleton returns a list, and the downstream
-array task processes one element at a time.
-
-```python
-@wf.job()
-def prepare() -> list[str]:
-    return ["a.nc", "b.nc", "c.nc"]
-
-@wf.job(array=True)
-def convert(item: Annotated[str, Result(step="prepare")]) -> str:
-    return item.replace(".nc", ".zarr")
-```
-
-This creates three `convert` instances.
-
-### Gather
-
-The reverse: collect all array outputs into a single downstream task.
-
-```python
-@wf.job()
-def publish(paths: Annotated[list[str], Result(step="convert")]) -> str:
-    return f"{len(paths)} done"
-```
-
-### Chain
-
-Two array tasks with matching element types chain index-wise:
+If you misspell a task name, reflow suggests the closest match:
 
 ```python
 @wf.job(array=True)
-def preprocess(item: Annotated[str, Result(step="prepare")]) -> str:
-    return item
-
-@wf.job(array=True)
-def convert(item: Annotated[str, Result(step="preprocess")]) -> str:
-    return item
+def process(item: Annotated[str, Result(step="preprae")]) -> str:
+    ...
 ```
 
-### Limiting array parallelism
-
-```python
-@wf.job(array=True, array_parallelism=20, time="01:00:00", mem="8G")
-def convert(item: Annotated[str, Result(step="prepare")]) -> str:
-    return item
+```
+ValueError: Task 'process' param 'item' references unknown task 'preprae'.
+  Did you mean 'prepare'?
 ```
 
 ## Reusable flows
 
-A `Flow` is a reusable group of task definitions without execution
-machinery.  Build libraries of flows and compose them into workflows:
+A `Flow` is a group of task definitions without execution machinery.
+Build libraries of tested components and compose them:
 
 ```python
-from reflow import Flow
+from reflow import Flow, Workflow
 
-preprocessing = Flow("preprocess")
+# Define a reusable flow
+ingestion = Flow("ingest")
 
-@preprocessing.job()
-def download(...) -> list[str]: ...
+@ingestion.job()
+def download() -> list[str]:
+    return ["file_1", "file_2"]
 
-@preprocessing.job(array=True)
-def convert(item: Annotated[str, Result(step="download")]) -> str: ...
+@ingestion.job(array=True)
+def validate(item: Annotated[str, Result(step="download")]) -> str:
+    return item
 
-# Compose into a workflow:
-wf = Workflow("experiment")
-wf.include(preprocessing, prefix="pre")
-# Tasks become "pre.download", "pre.convert"
-# Internal Result references are rewritten automatically.
+# Compose into a workflow
+wf = Workflow("pipeline")
+wf.include(ingestion, prefix="raw")
+# Tasks become "raw_download" and "raw_validate"
+# Internal Result references are rewritten automatically
 ```
 
-You can include multiple flows, each with its own prefix, building
-complex pipelines from tested, reusable components.
+You can include multiple flows, each with its own prefix.
 
-## Typed manifest serialisation
+## Local execution
 
-The manifest layer uses a built-in typed serialiser so values such as
-`Path`, `datetime`, `UUID`, enums, tuples, and dataclasses can
-round-trip cleanly through JSON storage.
+For development and testing, run the full pipeline without a scheduler:
+
+```python
+run = wf.run_local(run_dir="/tmp/test")
+print(run.status(as_dict=True))
+```
+
+`run_local` executes tasks in topological order in-process. It supports
+the same caching, force, and verify options as `submit`:
+
+```python
+run = wf.run_local(
+    run_dir="/tmp/test",
+    source="data.csv",       # same parameters as submit
+    max_workers=4,           # parallelize array jobs across processes
+    force=True,              # skip cache
+    on_error="continue",     # don't stop on first failure
+)
+```
+
+With `on_error="continue"`, failed tasks are recorded but the run
+keeps going — downstream tasks that depend on failures are skipped.
+
+## Array parallelism
+
+Limit how many array elements run at once:
+
+```python
+@wf.job(array=True, array_parallelism=20)
+def process(item: Annotated[str, Result(step="prepare")]) -> str:
+    return item
+```
+
+This submits all elements but tells the scheduler to run at most 20
+concurrently.

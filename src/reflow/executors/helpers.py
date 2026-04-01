@@ -18,8 +18,8 @@ def default_executor(config: Any) -> Any:
 
     Reads ``config.executor_mode`` (or the ``REFLOW_MODE`` env var)
     to decide which backend to instantiate.  Falls back to
-    :class:`~reflow.executors.slurm.SlurmExecutor` when no mode is
-    configured.
+    [`reflow.executors.slurm.SlurmExecutor`][reflow.executors.slurm.SlurmExecutor]
+    when no mode is configured.
 
     Parameters
     ----------

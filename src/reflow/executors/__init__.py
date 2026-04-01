@@ -81,10 +81,10 @@ class JobResources:
 class Executor(abc.ABC):
     """Base class for workload-manager executors.
 
-    Subclasses must implement :meth:`submit`, :meth:`cancel`, and
-    :meth:`job_state`.  The :attr:`array_index_env_var` class attribute
-    tells the worker which environment variable carries the array task
-    index at runtime.
+    Subclasses must implement [`submit`][submit], [`cancel`][cancel], and
+    [`job_state`][job_state].  The `array_index_env_var`
+    class attribute tells the worker which environment variable carries the
+    array task index at runtime.
 
     Key normalisation
     -----------------
@@ -164,8 +164,7 @@ class Executor(abc.ABC):
         native key wins (it is more specific).
         """
         if not self._KEY_ALIASES:
-            return {k: v for k, v in options.items()
-                    if k not in self._internal_keys}
+            return {k: v for k, v in options.items() if k not in self._internal_keys}
         out: dict[str, Any] = {}
         for key, value in options.items():
             if key in self._internal_keys:
@@ -186,9 +185,7 @@ class Executor(abc.ABC):
         if value is None or value is False:
             return []
         flag = (
-            f"--{key.replace('_', '-')}"
-            if not str(key).startswith("-")
-            else str(key)
+            f"--{key.replace('_', '-')}" if not str(key).startswith("-") else str(key)
         )
         if value is True:
             return [flag]
