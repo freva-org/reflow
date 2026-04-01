@@ -434,7 +434,7 @@
   <span class="md-ellipsis">
     
   
-    Scheduler backends
+    Schedulers
   
 
     
@@ -463,34 +463,6 @@
     
   
     Caching and retries
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../stores/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Manifest store
   
 
     
@@ -543,7 +515,7 @@
   <span class="md-ellipsis">
     
   
-    Reference
+    Usage Reference
   
 
     
@@ -559,7 +531,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Reference
+    Usage Reference
   
 
           </label>
@@ -579,7 +551,7 @@
   <span class="md-ellipsis">
     
   
-    CLI reference
+    CLI
   
 
     
@@ -607,7 +579,7 @@
   <span class="md-ellipsis">
     
   
-    Python reference
+    Python API
   
 
     
@@ -724,7 +696,7 @@
   <span class="md-ellipsis">
     
   
-    Parameters and results
+    Parameters
   
 
     
@@ -1260,7 +1232,7 @@
   <span class="md-ellipsis">
     
   
-    Other elements
+    Other
   
 
     
@@ -1283,88 +1255,6 @@
     
       
       
-  
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Project
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Project
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Architecture
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
   
   
   
@@ -1386,42 +1276,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../future-service-api/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Future service API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -1542,10 +1396,22 @@
 
 
         <p>Base class for workload-manager executors.</p>
-<p>Subclasses must implement :meth:<code>submit</code>, :meth:<code>cancel</code>, and
-:meth:<code>job_state</code>.  The :attr:<code>array_index_env_var</code> class attribute
-tells the worker which environment variable carries the array task
-index at runtime.</p>
+<p>Subclasses must implement <a class="autorefs autorefs-internal" title="            submit(resources, command)
+
+  
+      abstractmethod
+  " href="#reflow.executors.Executor.submit"><code>submit</code></a>, <a class="autorefs autorefs-internal" title="            cancel(job_id)
+
+  
+      abstractmethod
+  " href="#reflow.executors.Executor.cancel"><code>cancel</code></a>, and
+<a class="autorefs autorefs-internal" title="            job_state(job_id)
+
+  
+      abstractmethod
+  " href="#reflow.executors.Executor.job_state"><code>job_state</code></a>.  The <code>array_index_env_var</code>
+class attribute tells the worker which environment variable carries the
+array task index at runtime.</p>
 
 
 <details class="key-normalisation" open>
@@ -3206,8 +3072,8 @@ Auto-detected when <code>None</code>.</p>
         <p>Return the default executor based on config mode.</p>
 <p>Reads <code>config.executor_mode</code> (or the <code>REFLOW_MODE</code> env var)
 to decide which backend to instantiate.  Falls back to
-:class:<code>~reflow.executors.slurm.SlurmExecutor</code> when no mode is
-configured.</p>
+<a class="autorefs autorefs-internal" title="              reflow.executors.slurm.SlurmExecutor(mode='sbatch', sbatch='sbatch', scancel='scancel', sacct='sacct', python='', config=None)" href="#reflow.executors.slurm.SlurmExecutor"><code>reflow.executors.slurm.SlurmExecutor</code></a>
+when no mode is configured.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3309,8 +3175,8 @@ configured.</p>
 <a id="__codelineno-0-18" name="__codelineno-0-18"></a>
 <a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    Reads ``config.executor_mode`` (or the ``REFLOW_MODE`` env var)</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    to decide which backend to instantiate.  Falls back to</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    :class:`~reflow.executors.slurm.SlurmExecutor` when no mode is</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    configured.</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    [`reflow.executors.slurm.SlurmExecutor`][reflow.executors.slurm.SlurmExecutor]</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    when no mode is configured.</span>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    Parameters</span>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    ----------</span>
@@ -3492,7 +3358,7 @@ configured.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../params/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Parameters and results">
+          <a href="../params/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Parameters">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3502,7 +3368,7 @@ configured.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Parameters and results
+                Parameters
               </div>
             </div>
           </a>
