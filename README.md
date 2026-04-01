@@ -6,7 +6,7 @@ Decorator-based HPC workflow engine with Result-based data wiring,
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![CI](https://github.com/freva-org/reflow/actions/workflows/ci.yaml/badge.svg)](https://github.com/freva-org/reflow/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/freva-org/reflow/graph/badge.svg?token=ZoqyoUkeJw)](https://codecov.io/gh/freva-org/reflow)
-[![Docs](https://img.shields.io/badge/docs-reflow--docs.org-blue?logo=tinder)](https://www.reflow-docs.org)
+[![Docs](https://img.shields.io/badge/docs-reflow--docs.org-blue?logo=read-the-docs)](https://www.reflow-docs.org)
 [![PyPI](https://img.shields.io/pypi/v/reflow-hpc?logo=pypi)](https://pypi.org/project/reflow-hpc)
 [![Python Versions](https://img.shields.io/pypi/pyversions/reflow-hpc)](https://pypi.org/project/reflow-hpc/)
 
