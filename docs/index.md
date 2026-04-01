@@ -11,7 +11,7 @@ tasks with type annotations. Submit to any scheduler with one command.
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](https://raw.githubusercontent.com/freva-org/reflow/refs/heads/main/LICENSE)
 [![CI](https://github.com/freva-org/reflow/actions/workflows/ci.yaml/badge.svg)](https://github.com/freva-org/reflow/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/freva-org/reflow/graph/badge.svg?token=ZoqyoUkeJw)](https://codecov.io/gh/freva-org/reflow)
-[![PyPI](https://img.shields.io/pypi/v/reflow-hpc)](https://pypi.org/project/reflow-hpc)
+[![PyPI](https://img.shields.io/pypi/v/reflow-hpc?logo=pypi)](https://pypi.org/project/reflow-hpc)
 [![Python Versions](https://img.shields.io/pypi/pyversions/reflow-hpc)](https://pypi.org/project/reflow-hpc/)
 
 [![Works with](https://img.shields.io/badge/works_with-Slurm%20%7C%20PBS%20%7C%20LSF%20%7C%20SGE%20%7C%20Flux-teal)](schedulers.md)
