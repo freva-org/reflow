@@ -6,45 +6,47 @@ Decorator-based HPC workflow engine with Result-based data wiring,
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 [![CI](https://github.com/freva-org/reflow/actions/workflows/ci.yaml/badge.svg)](https://github.com/freva-org/reflow/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/freva-org/reflow/graph/badge.svg?token=ZoqyoUkeJw)](https://codecov.io/gh/freva-org/reflow)
-[![Docs](https://img.shields.io/badge/docs-reflow--docs.org-blue)](https://reflow-doc.org)
-[![PyPI](https://img.shields.io/pypi/v/reflow-hpc)](https://pypi.org/project/reflow-hpc)
+[![Docs](https://img.shields.io/badge/docs-reflow--docs.org-blue?logo=read-the-docs)](https://www.reflow-docs.org)
+[![PyPI](https://img.shields.io/pypi/v/reflow-hpc?logo=pypi)](https://pypi.org/project/reflow-hpc)
 [![Python Versions](https://img.shields.io/pypi/pyversions/reflow-hpc)](https://pypi.org/project/reflow-hpc/)
 
-[![Works with](https://img.shields.io/badge/works_with-Slurm%20%7C%20PBS%20%7C%20LSF%20%7C%20SGE%20%7C%20Flux-teal)](https://reflow-docs.org/latest/schedulers/)
+[![Works with](https://img.shields.io/badge/works_with-Slurm%20%7C%20PBS%20%7C%20LSF%20%7C%20SGE%20%7C%20Flux-teal)](https://www.reflow-docs.org/latest/schedulers/)
 
 
 ```console
-python -m pip install reflow-hpc
+pip install reflow-hpc
 ```
 
 ```python
-from reflow
-from pathlib import Path
 from typing import Annotated
+from reflow import Workflow, Param, Result
 
+wf = Workflow("etl")
 
-wf = reflow.Workflow("climate")
-
-@wf.job(cpus=4, time="02:00:00", mem="16G")
-def prepare(
-    start: Annotated[str, reflow.Param(help="Start date")],
-    run_dir: RunDir = reflow.RunDir(),
+@wf.job(cpus=2, time="00:10:00", mem="4G")
+def extract(
+    source: Annotated[str, Param(help="Input file path")],
 ) -> list[str]:
-    """Download and preprocess input files."""
-    return [str(f) for f in (run_dir / "input").glob("*.nc")]
+    """Read a data source and split it into chunks."""
+    return [f"chunk_{i}" for i in range(5)]
 
-@wf.job(array=True, cpus=8, time="04:00:00", mem="32G")
-def compute(
-    nc_file: Annotated[str, reflow.Result(step="prepare")],
-    run_dir: RunDir = reflow.RunDir(),
+@wf.job(array=True, cpus=4, time="01:00:00", mem="8G")
+def transform(
+    chunk: Annotated[str, Result(step="extract")],
 ) -> str:
-    """Process a single input file (one per array element)."""
-    return str(run_dir / "output" / Path(nc_file).name)
+    """Process one chunk. Runs as a parallel array job."""
+    return chunk.upper()
+
+@wf.job(time="00:05:00")
+def load(
+    results: Annotated[list[str], Result(step="transform")],
+) -> str:
+    """Collect all results."""
+    return f"loaded {len(results)} items"
 
 if __name__ == "__main__":
     wf.cli()
 ```
-
 
 ```console
 $ python pipeline.py submit --run-dir /scratch/run1 --source data.csv
@@ -60,10 +62,13 @@ between them with `Result`, and let reflow handle the rest.
 
 **Automatic fan-out**: return a `list` from a task, mark the
 downstream as `array=True`, and reflow submits one array element
-per item with zero boilerplate.
+per item.
 
-**Merkle-DAG caching**:  each task instance gets a content-addressed
-identity.  Re-runs skip tasks whose inputs haven't changed.
+**Merkle-DAG caching**: each task gets a content-addressed identity.
+Re-runs skip tasks whose inputs haven't changed.
+
+**Broadcast mode**: pass a value to every array element without
+splitting it — `Result(step="config", broadcast=True)`.
 
 **Broadcast mode**: pass a value to every array element without
 splitting it — `Result(step="config", broadcast=True)`.
@@ -72,12 +77,22 @@ splitting it — `Result(step="config", broadcast=True)`.
 them into workflows with `wf.include(flow, prefix="...")`.
 
 **Auto-generated CLI**: `wf.cli()` produces a full argparse CLI
+<<<<<<< HEAD
 with `submit`, `status`, `cancel`, `retry`, `dag`, and `describe`
 subcommands.
+=======
+with `submit`, `status`, `cancel`, `retry`, `dag`, and `describe`.
+>>>>>>> 29b88530522da4ce37ee9915cfbf0de51f6f806f
 
 **Multi-scheduler**: works with Slurm, PBS Pro / Torque, LSF,
-SGE / UGE, and Flux out of the box.  Write scheduler-agnostic config
+SGE / UGE, and Flux. Write scheduler-agnostic config
 and reflow translates to the right flags.
+
+**Local execution**: run the full pipeline on your laptop with
+`wf.run_local()` — no scheduler needed.
+
+**Typo protection**: misspell a task name in `Result(step=...)`
+and reflow suggests the closest match.
 
 
 ## Installation
@@ -86,169 +101,112 @@ and reflow translates to the right flags.
 pip install reflow-hpc
 ```
 
-Requires Python 3.10+.  The only runtime dependency is
-[tomli](https://pypi.org/project/tomli/) on Python 3.10 (stdlib
-`tomllib` is used on 3.11+).
+Requires Python 3.10+.
 
 
-## Scheduler backends
+## Quick start
 
-Reflow supports five workload managers.  Set the backend in your
-config file (`~/.config/reflow/config.toml`) or via the `REFLOW_MODE`
-environment variable:
-
-| Backend | `mode` value | Submit | Cancel | Status |
-|---------|-------------|--------|--------|--------|
-| Slurm | `sbatch` (default) | `sbatch` | `scancel` | `sacct` |
-| PBS Pro / Torque | `qsub-pbs` | `qsub` | `qdel` | `qstat` |
-| LSF | `bsub` | `bsub` | `bkill` | `bjobs` |
-| SGE / UGE | `qsub-sge` | `qsub` | `qdel` | `qstat` |
-| Flux | `flux` | `flux submit` | `flux cancel` | `flux jobs` |
-
-Use `dry-run` as the mode to log commands without submitting.
-
-### Scheduler-agnostic config
-
-You never need to know which scheduler is active.  Use either
-`partition` or `queue`, `reflow` maps them automatically:
-
-```toml
-# ~/.config/reflow/config.toml
-[executor]
-mode = "qsub-pbs"          # or "sbatch", "bsub", "qsub-sge", "flux"
-
-[executor.submit_options]
-partition = "compute"       # → -q compute on PBS, --partition compute on Slurm
-account  = "my_project"    # → -A my_project on PBS, --account my_project on Slurm
-```
-
-Or set the executor at submit time:
-
-```python
-# Config-driven (reads mode from config/env)
-run = wf.submit(run_dir="/scratch/run1", start="2025-01-01")
-
-# Explicit shorthand
-run = wf.submit(run_dir="/scratch/run1", start="2025-01-01", executor="pbs")
-
-# Explicit instance with custom paths
-from reflow import PBSExecutor
-exc = PBSExecutor(qsub="/opt/pbs/bin/qsub", array_flag="-t")
-run = wf.submit(run_dir="/scratch/run1", start="2025-01-01", executor=exc)
-```
-
-### Environment variables
-
-All config values can be overridden with `REFLOW_*` environment
-variables.  The most common ones:
-
-| Variable | Effect |
-|----------|--------|
-| `REFLOW_MODE` | Scheduler backend (`sbatch`, `qsub-pbs`, `bsub`, …) |
-| `REFLOW_PYTHON` | Python interpreter for worker jobs |
-| `REFLOW_PARTITION` | Default partition / queue |
-| `REFLOW_ACCOUNT` | Default account / project |
-
-
-## Core concepts
-
-### Tasks
-
-A task is a Python function decorated with `@wf.job()`.  Parameters
-control scheduler resources:
-
-```python
-@wf.job(
-    cpus=4,                  # cores per task
-    time="02:00:00",         # walltime
-    mem="16G",               # memory
-    array=True,              # run as an array job
-    array_parallelism=10,    # max concurrent array elements
-    cache=True,              # enable Merkle-DAG caching (default)
-    version="2",             # bump to invalidate cache
-    after=["cleanup"],       # explicit ordering dependency
-    partition="gpu",         # scheduler-agnostic: works on all backends
-)
-def my_task(...) -> ...:
-    ...
-```
-
-### Data wiring with Result
+### Data wiring
 
 `Result` declares that a parameter receives output from an upstream
-task.  Reflow resolves it at dispatch time:
+task. Reflow infers the wiring mode from the types:
+
+| Upstream returns | Downstream takes | Mode |
+|---|---|---|
+| `T` | `T` | Direct |
+| `list[T]` | `T` (array job) | Fan-out |
+| `T` (array job) | `list[T]` | Gather |
+| `T` (array job) | `T` (array job) | Chain |
+
+### Broadcast
+
+Pass a whole value to every array element instead of splitting it:
 
 ```python
 @wf.job()
-def step_a() -> list[str]:
-    return ["file1.nc", "file2.nc"]
+def load_config() -> dict:
+    return {"threshold": 0.5}
 
 @wf.job(array=True)
-def step_b(
-    nc_file: Annotated[str, Result(step="step_a")],
+def process(
+    item: Annotated[str, Result(step="find_files")],
+    config: Annotated[dict, Result(step="load_config", broadcast=True)],
 ) -> str:
-    # Each array element gets one item from step_a's list.
-    ...
+    return f"{item}:{config['threshold']}"
 ```
 
-Wire modes are inferred from types:
-
-| Upstream | Downstream | Mode |
-|----------|-----------|------|
-| `T` (singleton) | `T` (singleton) | Direct |
-| `list[T]` (singleton) | `T` (array) | Fan-out — one element per array slot |
-| `T` (array) | `list[T]` (singleton) | Gather — collect all into a list |
-| `list[T]` (array) | `list[T]` (singleton) | Gather + flatten |
-
-### CLI parameters with Param
+### CLI parameters
 
 ```python
 @wf.job()
 def ingest(
-    start: Annotated[str, Param(help="Start date, ISO-8601")],
-    model: Annotated[Literal["era5", "icon"], Param(help="Model")] = "era5",
-    chunk: Annotated[int, Param(help="Chunk size", namespace="local")] = 256,
-) -> list[str]:
-    ...
+    source: Annotated[str, Param(help="Input file")],
+    limit: Annotated[int, Param(help="Max rows")] = 100,
+) -> str:
+    return source
 ```
-
-This generates:
 
 ```console
 $ python pipeline.py submit --help
-  --start START          Start date, ISO-8601 (required)
-  --model {era5,icon}    Model (default: era5)
-  --ingest-chunk CHUNK   Chunk size (default: 256)
+  --source SOURCE   Input file (required)
+  --limit LIMIT     Max rows (default: 100)
 ```
 
-`namespace="local"` prefixes the flag with the task name to avoid
-collisions.
+### Local execution
 
-### RunDir
-
-Parameters typed as `RunDir` (or named `run_dir`) receive a
-`pathlib.Path` pointing to the shared working directory.  They
-never appear on the CLI.
-
-### Reusable Flows
-
-Build libraries of task groups and compose them:
+Run the full pipeline in-process — no scheduler, no subprocesses:
 
 ```python
-from reflow import Flow
+run = wf.run_local(
+    run_dir="/tmp/test",
+    source="data.csv",
+    max_workers=4,          # parallelize array jobs
+    on_error="continue",    # don't stop on first failure
+)
+run.status()
+```
 
-preprocessing = Flow("preprocess")
+### Python API
 
-@preprocessing.job()
-def download(...) -> list[str]: ...
+```python
+run = wf.submit(
+    run_dir="/scratch/run1",
+    source="data.csv",
+    executor="pbs",         # or "slurm", "lsf", "sge", "flux"
+    force=True,             # skip cache
+)
 
-@preprocessing.job(array=True)
-def convert(item: Annotated[str, Result(step="download")]) -> str: ...
+run.status()
+run.cancel()
+run.retry()
+```
 
-# In your workflow:
-wf = Workflow("experiment")
-wf.include(preprocessing, prefix="pre")
-# Tasks become "pre.download", "pre.convert"
+
+## Scheduler backends
+
+Set the backend in `~/.config/reflow/config.toml` or via the
+`REFLOW_MODE` environment variable:
+
+| Backend | `mode` value |
+|---------|-------------|
+| Slurm | `sbatch` (default) |
+| PBS Pro / Torque | `qsub-pbs` |
+| LSF | `bsub` |
+| SGE / UGE | `qsub-sge` |
+| Flux | `flux` |
+
+Use `dry-run` to log commands without submitting.
+
+Scheduler-agnostic config — use `partition` or `queue` and reflow
+maps them to the right flags:
+
+```toml
+[executor]
+mode = "qsub-pbs"
+
+[executor.submit_options]
+partition = "compute"
+account  = "my_project"
 ```
 
 
@@ -256,62 +214,42 @@ wf.include(preprocessing, prefix="pre")
 
 ```console
 $ python pipeline.py submit    --run-dir DIR [--param VALUE ...]
-$ python pipeline.py status    --run-id ID
-$ python pipeline.py cancel    --run-id ID [--task NAME]
-$ python pipeline.py retry     --run-id ID [--task NAME]
-$ python pipeline.py dag       # print task dependency graph
-$ python pipeline.py describe  # JSON workflow manifest
-$ python pipeline.py runs      # list all runs
-```
-
-
-## Python API
-
-```python
-run = wf.submit(
-    run_dir="/scratch/run1",
-    start="2025-01-01",
-    executor="pbs",         # or "lsf", "sge", "flux", "local"
-    force=True,             # skip cache, re-run everything
-    force_tasks=["step_a"], # skip cache for specific tasks only
-    verify=True,            # verify cached Path outputs still exist
-)
-
-run.status()          # dict with run state + per-task breakdown
-run.cancel()          # cancel all active jobs
-run.retry()           # resubmit failed/cancelled tasks
+$ python pipeline.py status    RUN_ID
+$ python pipeline.py cancel    RUN_ID [--task NAME]
+$ python pipeline.py retry     RUN_ID [--task NAME]
+$ python pipeline.py dag
+$ python pipeline.py describe
+$ python pipeline.py runs
 ```
 
 
 ## Configuration
 
-Run `python -c "from reflow import ensure_config_exists; ensure_config_exists()"` to
-generate a fully commented config at `~/.config/reflow/config.toml`.
+Generate a fully commented config:
+
+```console
+python -c "from reflow import ensure_config_exists; ensure_config_exists()"
+```
 
 Key sections:
 
 ```toml
 [executor]
-mode = "sbatch"             # scheduler backend
-python = "/path/to/python"  # interpreter for workers
+mode = "sbatch"
+python = "/path/to/python"
 
 [executor.submit_options]
-partition = "compute"       # or queue = "batch" — both work
+partition = "compute"
 account = "my_project"
-signal = "B:INT@60"         # pre-termination signal
-
-[notifications]
-mail_user = "you@example.org"
-mail_type = "FAIL"
 
 [dispatch]
 cpus = 1
 time = "00:10:00"
 mem = "1G"
-
-[defaults]
-run_dir = "/scratch/$USER/reflow"
 ```
+
+All values can be overridden with `REFLOW_*` environment variables
+(`REFLOW_MODE`, `REFLOW_PARTITION`, `REFLOW_ACCOUNT`, etc.).
 
 
 ## Development
