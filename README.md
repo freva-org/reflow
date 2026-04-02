@@ -205,7 +205,7 @@ account  = "my_project"
 ## CLI reference
 
 ```console
-$ python pipeline.py submit    --run-dir DIR [--param VALUE ...]
+$ python pipeline.py submit    --run-dir DIR [--param VALUE ...] [--force] [--force-tasks TASK ...]
 $ python pipeline.py status    RUN_ID
 $ python pipeline.py cancel    RUN_ID [--task NAME]
 $ python pipeline.py retry     RUN_ID [--task NAME]

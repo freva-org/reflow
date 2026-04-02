@@ -4,7 +4,7 @@ Define tasks with Python decorators, wire data flow with ``Result``
 annotations, and submit to HPC schedulers with an auto-generated CLI.
 """
 
-__version__ = "2604.2.0"
+__version__ = "2604.3.0"
 
 from ._types import RunState, TaskState
 from .config import (

@@ -29,7 +29,14 @@ hash changes.
 
 ## Forcing recomputation
 
-Skip the cache entirely:
+From the CLI:
+
+```console
+$ python pipeline.py submit --run-dir /tmp/r --source data.csv --force
+$ python pipeline.py submit --run-dir /tmp/r --source data.csv --force-tasks process
+```
+
+From Python:
 
 ```python
 # Force everything

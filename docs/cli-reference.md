@@ -13,6 +13,18 @@ Create a new run and start dispatching:
 $ python pipeline.py submit --run-dir /scratch/r1 --source data.csv
 ```
 
+Skip the cache and re-run everything:
+
+```console
+$ python pipeline.py submit --run-dir /scratch/r1 --source data.csv --force
+```
+
+Skip the cache for specific tasks only:
+
+```console
+$ python pipeline.py submit --run-dir /scratch/r1 --source data.csv --force-tasks extract transform
+```
+
 ### `status`
 
 Show status for a run:
@@ -69,6 +81,16 @@ $ python pipeline.py describe
 ### `--run-dir`
 
 Shared working directory. Required for `submit`.
+
+### `--force`
+
+Skip the Merkle cache entirely and re-run all tasks.
+Only applies to `submit`.
+
+### `--force-tasks`
+
+Skip the cache for specific tasks only. Accepts one or more task
+names. Only applies to `submit`.
 
 ### `--store-path`
 
