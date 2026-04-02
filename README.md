@@ -70,19 +70,11 @@ Re-runs skip tasks whose inputs haven't changed.
 **Broadcast mode**: pass a value to every array element without
 splitting it — `Result(step="config", broadcast=True)`.
 
-**Broadcast mode**: pass a value to every array element without
-splitting it — `Result(step="config", broadcast=True)`.
-
 **Reusable flows**: build a library of `Flow` objects and compose
 them into workflows with `wf.include(flow, prefix="...")`.
 
 **Auto-generated CLI**: `wf.cli()` produces a full argparse CLI
-<<<<<<< HEAD
-with `submit`, `status`, `cancel`, `retry`, `dag`, and `describe`
-subcommands.
-=======
 with `submit`, `status`, `cancel`, `retry`, `dag`, and `describe`.
->>>>>>> 29b88530522da4ce37ee9915cfbf0de51f6f806f
 
 **Multi-scheduler**: works with Slurm, PBS Pro / Torque, LSF,
 SGE / UGE, and Flux. Write scheduler-agnostic config
@@ -213,7 +205,7 @@ account  = "my_project"
 ## CLI reference
 
 ```console
-$ python pipeline.py submit    --run-dir DIR [--param VALUE ...]
+$ python pipeline.py submit    --run-dir DIR [--param VALUE ...] [--force] [--force-tasks TASK ...]
 $ python pipeline.py status    RUN_ID
 $ python pipeline.py cancel    RUN_ID [--task NAME]
 $ python pipeline.py retry     RUN_ID [--task NAME]
