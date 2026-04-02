@@ -56,6 +56,19 @@ def _add_submit_parser(subparsers: Any, workflow: Any) -> None:
         type=str,
         help="Explicit path to SQLite manifest.  [default: shared user cache DB]",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Skip the Merkle cache entirely and re-run all tasks.",
+    )
+    parser.add_argument(
+        "--force-tasks",
+        nargs="+",
+        default=None,
+        metavar="TASK",
+        help="Skip the cache for specific tasks only.",
+    )
 
     all_resolved: list[ResolvedParam] = []
     for spec in workflow.tasks.values():
@@ -245,7 +258,9 @@ def parse_args(workflow: Any, argv: list[str] | None = None) -> argparse.Namespa
 
 
 def _make_store(
-    args: argparse.Namespace, workflow: Any, readonly: bool = False,
+    args: argparse.Namespace,
+    workflow: Any,
+    readonly: bool = False,
 ) -> SqliteStore:
     """Create a SqliteStore from parsed args."""
     if getattr(args, "store_path", None):
@@ -296,6 +311,8 @@ _INTERNAL_KEYS = frozenset(
         "task",
         "index",
         "output_json",
+        "force",
+        "force_tasks",
     }
 )
 
@@ -317,6 +334,11 @@ def _cmd_submit(wf: Any, args: argparse.Namespace) -> int:
             parameters[key] = value
     if task_local:
         parameters["__task_params__"] = task_local
+    if getattr(args, "force", False):
+        parameters["__force__"] = True
+    force_tasks = getattr(args, "force_tasks", None)
+    if force_tasks:
+        parameters["__force_tasks__"] = force_tasks
 
     run_id = wf.submit_run(run_dir=run_dir, parameters=parameters, store=store)
     print(f"run_id   = {run_id}")

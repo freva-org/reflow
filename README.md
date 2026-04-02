@@ -47,10 +47,10 @@ if __name__ == "__main__":
 
 
 ```console
-$ python pipeline.py submit --run-dir /scratch/run1 --start 2025-01-01
-Created run climate-20250301-a1b2 in /scratch/run1
+$ python pipeline.py submit --run-dir /scratch/run1 --source data.csv
+Created run etl-20260401-a1b2 in /scratch/run1
 
-$ python pipeline.py status --run-id climate-20250301-a1b2
+$ python pipeline.py status etl-20260401-a1b2
 ```
 
 ## Features
@@ -65,12 +65,15 @@ per item with zero boilerplate.
 **Merkle-DAG caching**:  each task instance gets a content-addressed
 identity.  Re-runs skip tasks whose inputs haven't changed.
 
+**Broadcast mode**: pass a value to every array element without
+splitting it — `Result(step="config", broadcast=True)`.
+
 **Reusable flows**: build a library of `Flow` objects and compose
 them into workflows with `wf.include(flow, prefix="...")`.
 
 **Auto-generated CLI**: `wf.cli()` produces a full argparse CLI
 with `submit`, `status`, `cancel`, `retry`, `dag`, and `describe`
-subcommands.  Parameters annotated with `Param` become CLI flags.
+subcommands.
 
 **Multi-scheduler**: works with Slurm, PBS Pro / Torque, LSF,
 SGE / UGE, and Flux out of the box.  Write scheduler-agnostic config
