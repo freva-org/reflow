@@ -721,6 +721,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-force" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --force
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-force-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --force-tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-store-path" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1133,36 +1155,48 @@ interface. Task parameters annotated with <code>Param</code> become CLI flags.</
 <p>Create a new run and start dispatching:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>submit<span class="w"> </span>--run-dir<span class="w"> </span>/scratch/r1<span class="w"> </span>--source<span class="w"> </span>data.csv
 </code></pre></div>
+<p>Skip the cache and re-run everything:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>submit<span class="w"> </span>--run-dir<span class="w"> </span>/scratch/r1<span class="w"> </span>--source<span class="w"> </span>data.csv<span class="w"> </span>--force
+</code></pre></div>
+<p>Skip the cache for specific tasks only:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>submit<span class="w"> </span>--run-dir<span class="w"> </span>/scratch/r1<span class="w"> </span>--source<span class="w"> </span>data.csv<span class="w"> </span>--force-tasks<span class="w"> </span>extract<span class="w"> </span>transform
+</code></pre></div>
 <h3 id="status"><code>status</code><a class="headerlink" href="#status" title="Permanent link">&para;</a></h3>
 <p>Show status for a run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
 </code></pre></div>
 <h3 id="cancel"><code>cancel</code><a class="headerlink" href="#cancel" title="Permanent link">&para;</a></h3>
 <p>Cancel active jobs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
 </code></pre></div>
 <h3 id="retry"><code>retry</code><a class="headerlink" href="#retry" title="Permanent link">&para;</a></h3>
 <p>Retry failed or cancelled tasks:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
 </code></pre></div>
 <h3 id="runs"><code>runs</code><a class="headerlink" href="#runs" title="Permanent link">&para;</a></h3>
 <p>List all runs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs
 </code></pre></div>
 <h3 id="dag"><code>dag</code><a class="headerlink" href="#dag" title="Permanent link">&para;</a></h3>
 <p>Print the task dependency graph:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag
 </code></pre></div>
 <h3 id="describe"><code>describe</code><a class="headerlink" href="#describe" title="Permanent link">&para;</a></h3>
 <p>Print the full workflow manifest as JSON:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>describe
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>describe
 </code></pre></div>
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
 <h3 id="-run-dir"><code>--run-dir</code><a class="headerlink" href="#-run-dir" title="Permanent link">&para;</a></h3>
 <p>Shared working directory. Required for <code>submit</code>.</p>
+<h3 id="-force"><code>--force</code><a class="headerlink" href="#-force" title="Permanent link">&para;</a></h3>
+<p>Skip the Merkle cache entirely and re-run all tasks.
+Only applies to <code>submit</code>.</p>
+<h3 id="-force-tasks"><code>--force-tasks</code><a class="headerlink" href="#-force-tasks" title="Permanent link">&para;</a></h3>
+<p>Skip the cache for specific tasks only. Accepts one or more task
+names. Only applies to <code>submit</code>.</p>
 <h3 id="-store-path"><code>--store-path</code><a class="headerlink" href="#-store-path" title="Permanent link">&para;</a></h3>
 <p>Path to the SQLite manifest database.  Overrides the default
 (<code>~/.cache/reflow/manifest.db</code>).</p>
