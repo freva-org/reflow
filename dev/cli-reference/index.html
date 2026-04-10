@@ -765,6 +765,83 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-last-n" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --last N
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --all
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-since-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --since DATE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-until-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --until DATE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-status-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --status STATE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-yes-y" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --yes, -y
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-version" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1166,27 +1243,49 @@ interface. Task parameters annotated with <code>Param</code> become CLI flags.</
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
 </code></pre></div>
-<h3 id="cancel"><code>cancel</code><a class="headerlink" href="#cancel" title="Permanent link">&para;</a></h3>
-<p>Cancel active jobs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
+<p>Failed array elements are shown automatically beneath each task:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">  produce               SUCCESS=1</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">  compute               FAILED=2, SUCCESS=298</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">    [47]    FAILED       job=12345</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">    [183]   FAILED       job=12346</span>
 </code></pre></div>
+<p>Show error tracebacks for failed instances:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID<span class="w"> </span>--errors
+</code></pre></div>
+<p>Long tracebacks are truncated to the last 15 lines. JSON output
+includes the full <code>failed_instances</code> list:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>status<span class="w"> </span>RUN_ID<span class="w"> </span>--json
+</code></pre></div>
+<h3 id="cancel"><code>cancel</code><a class="headerlink" href="#cancel" title="Permanent link">&para;</a></h3>
+<p>Cancel active jobs in one or more runs:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>cancel<span class="w"> </span>RUN1<span class="w"> </span>RUN2<span class="w"> </span>RUN3<span class="w"> </span>--yes
+</code></pre></div>
+<p>When cancelling multiple runs, a confirmation prompt is shown unless
+<code>--yes</code> (or <code>-y</code>) is passed.</p>
 <h3 id="retry"><code>retry</code><a class="headerlink" href="#retry" title="Permanent link">&para;</a></h3>
 <p>Retry failed or cancelled tasks:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID<span class="w"> </span>--task<span class="w"> </span>process
 </code></pre></div>
 <h3 id="runs"><code>runs</code><a class="headerlink" href="#runs" title="Permanent link">&para;</a></h3>
-<p>List all runs:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs
+<p>List runs, most recent first.  By default the last 20 are shown:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs<span class="w"> </span>--last<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs<span class="w"> </span>--all
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs<span class="w"> </span>--status<span class="w"> </span>FAILED
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs<span class="w"> </span>--since<span class="w"> </span><span class="m">2025</span>-03-01
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>runs<span class="w"> </span>--since<span class="w"> </span><span class="m">2025</span>-03-01<span class="w"> </span>--until<span class="w"> </span><span class="m">2025</span>-04-01
 </code></pre></div>
 <h3 id="dag"><code>dag</code><a class="headerlink" href="#dag" title="Permanent link">&para;</a></h3>
 <p>Print the task dependency graph:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag
 </code></pre></div>
 <h3 id="describe"><code>describe</code><a class="headerlink" href="#describe" title="Permanent link">&para;</a></h3>
 <p>Print the full workflow manifest as JSON:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>describe
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>describe
 </code></pre></div>
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
 <h3 id="-run-dir"><code>--run-dir</code><a class="headerlink" href="#-run-dir" title="Permanent link">&para;</a></h3>
@@ -1202,6 +1301,24 @@ names. Only applies to <code>submit</code>.</p>
 (<code>~/.cache/reflow/manifest.db</code>).</p>
 <h3 id="-task"><code>--task</code><a class="headerlink" href="#-task" title="Permanent link">&para;</a></h3>
 <p>Filter <code>status</code>, <code>cancel</code>, or <code>retry</code> to a single task.</p>
+<h3 id="-errors"><code>--errors</code><a class="headerlink" href="#-errors" title="Permanent link">&para;</a></h3>
+<p>Show error tracebacks for failed instances.  Only applies to
+<code>status</code>.</p>
+<h3 id="-last-n"><code>--last N</code><a class="headerlink" href="#-last-n" title="Permanent link">&para;</a></h3>
+<p>Show the last <em>N</em> runs.  Default is 20.  Only applies to <code>runs</code>.</p>
+<h3 id="-all"><code>--all</code><a class="headerlink" href="#-all" title="Permanent link">&para;</a></h3>
+<p>Show all runs (overrides <code>--last</code>).  Only applies to <code>runs</code>.</p>
+<h3 id="-since-date"><code>--since DATE</code><a class="headerlink" href="#-since-date" title="Permanent link">&para;</a></h3>
+<p>Only show runs created at or after <em>DATE</em> (ISO-8601).  Only
+applies to <code>runs</code>.</p>
+<h3 id="-until-date"><code>--until DATE</code><a class="headerlink" href="#-until-date" title="Permanent link">&para;</a></h3>
+<p>Only show runs created before <em>DATE</em> (ISO-8601).  Only applies
+to <code>runs</code>.</p>
+<h3 id="-status-state"><code>--status STATE</code><a class="headerlink" href="#-status-state" title="Permanent link">&para;</a></h3>
+<p>Filter by run status (<code>RUNNING</code>, <code>SUCCESS</code>, <code>FAILED</code>, <code>CANCELLED</code>).
+Only applies to <code>runs</code>.</p>
+<h3 id="-yes-y"><code>--yes</code>, <code>-y</code><a class="headerlink" href="#-yes-y" title="Permanent link">&para;</a></h3>
+<p>Skip the confirmation prompt when cancelling multiple runs.</p>
 <h3 id="-version"><code>--version</code><a class="headerlink" href="#-version" title="Permanent link">&para;</a></h3>
 <p>Print the reflow version.</p>
 

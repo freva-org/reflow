@@ -893,6 +893,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v260440" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2604.4.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v260430" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -974,6 +985,21 @@
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
 <p>All notable changes to this project will be documented in this file.</p>
+<h2 id="v260440">v2604.4.0<a class="headerlink" href="#v260440" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Improved <code>runs</code> command</strong>: shows the last 20 runs by default instead
+  of all. New flags <code>--last N</code>, <code>--all</code>, <code>--since</code>, <code>--until</code>, and
+  <code>--status</code> for filtering.</li>
+<li><strong>Improved <code>status</code> command</strong>: failed array elements are now shown
+  automatically beneath each task summary. New <code>--errors</code> flag prints
+  error tracebacks (truncated to 15 lines).</li>
+<li><strong>Bulk cancel</strong>: <code>cancel</code> now accepts multiple run IDs.  A
+  confirmation prompt is shown unless <code>--yes</code> is passed.</li>
+<li><strong>Python API</strong>: <code>run_status()</code> returns a <code>failed_instances</code> key.
+  New <code>cancel_runs()</code> method on <code>Workflow</code>.  <code>Run.status()</code> accepts
+  an <code>errors=</code> parameter.  <code>store.list_runs()</code> accepts <code>limit</code>,
+  <code>since</code>, <code>until</code>, and <code>status</code> keyword arguments.</li>
+</ul>
 <h2 id="v260430">v2604.3.0<a class="headerlink" href="#v260430" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Added <code>--force</code> and <code>--force-task</code> for forcing tasks / all DAG to submit.</li>

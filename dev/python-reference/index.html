@@ -756,6 +756,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Run">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bulk-cancel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bulk cancel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#listing-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Listing runs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1201,37 +1229,52 @@ downstream dependants are skipped, but the run continues.</p>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">run</span><span class="o">.</span><span class="n">run_dir</span>      <span class="c1"># Path(&quot;/tmp/r&quot;)</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
 <a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>     <span class="c1"># print status to stdout</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">as_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># return as dict</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">run</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>               <span class="c1"># cancel active jobs</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="n">run</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;step_a&quot;</span><span class="p">)</span>  <span class="c1"># cancel one task</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">()</span>                <span class="c1"># retry failed tasks</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;step_b&quot;</span><span class="p">)</span>   <span class="c1"># retry one task</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    <span class="c1"># also print error tracebacks for failed instances</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">as_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># return as dict (includes &quot;failed_instances&quot; key)</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="n">run</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>               <span class="c1"># cancel active jobs</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="n">run</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;step_a&quot;</span><span class="p">)</span>  <span class="c1"># cancel one task</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">()</span>                <span class="c1"># retry failed tasks</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;step_b&quot;</span><span class="p">)</span>   <span class="c1"># retry one task</span>
+</code></pre></div>
+<h3 id="bulk-cancel">Bulk cancel<a class="headerlink" href="#bulk-cancel" title="Permanent link">&para;</a></h3>
+<p>Cancel multiple runs at once from the workflow level:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">wf</span><span class="o">.</span><span class="n">cancel_runs</span><span class="p">([</span><span class="s2">&quot;run-001&quot;</span><span class="p">,</span> <span class="s2">&quot;run-002&quot;</span><span class="p">,</span> <span class="s2">&quot;run-003&quot;</span><span class="p">],</span> <span class="n">store</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="listing-runs">Listing runs<a class="headerlink" href="#listing-runs" title="Permanent link">&para;</a></h3>
+<p>The store supports filtering when listing runs:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">store</span><span class="o">.</span><span class="n">list_runs</span><span class="p">(</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">graph_name</span><span class="o">=</span><span class="s2">&quot;my_pipeline&quot;</span><span class="p">,</span>   <span class="c1"># filter by workflow name</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">limit</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>                   <span class="c1"># most recent N</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">since</span><span class="o">=</span><span class="s2">&quot;2025-03-01&quot;</span><span class="p">,</span>         <span class="c1"># created at or after (ISO-8601)</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">until</span><span class="o">=</span><span class="s2">&quot;2025-04-01&quot;</span><span class="p">,</span>         <span class="c1"># created before</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">status</span><span class="o">=</span><span class="s2">&quot;FAILED&quot;</span><span class="p">,</span>            <span class="c1"># filter by run status</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="executors">Executors<a class="headerlink" href="#executors" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">SlurmExecutor</span><span class="p">,</span> <span class="n">PBSExecutor</span><span class="p">,</span> <span class="n">LSFExecutor</span><span class="p">,</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">SGEExecutor</span><span class="p">,</span> <span class="n">FluxExecutor</span><span class="p">,</span> <span class="n">LocalExecutor</span><span class="p">,</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="p">)</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1"># Pass to submit for explicit control:</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="n">executor</span><span class="o">=</span><span class="n">PBSExecutor</span><span class="p">(</span><span class="n">qsub</span><span class="o">=</span><span class="s2">&quot;/opt/pbs/bin/qsub&quot;</span><span class="p">),</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="n">SlurmExecutor</span><span class="p">,</span> <span class="n">PBSExecutor</span><span class="p">,</span> <span class="n">LSFExecutor</span><span class="p">,</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="n">SGEExecutor</span><span class="p">,</span> <span class="n">FluxExecutor</span><span class="p">,</span> <span class="n">LocalExecutor</span><span class="p">,</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="p">)</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># Pass to submit for explicit control:</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    <span class="n">executor</span><span class="o">=</span><span class="n">PBSExecutor</span><span class="p">(</span><span class="n">qsub</span><span class="o">=</span><span class="s2">&quot;/opt/pbs/bin/qsub&quot;</span><span class="p">),</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="p">)</span>
 </code></pre></div>
 <p>Or use the string shorthand: <code>executor="pbs"</code>, <code>executor="slurm"</code>, etc.</p>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">load_config</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">()</span>    <span class="c1"># reads ~/.config/reflow/config.toml</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">load_config</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">()</span>    <span class="c1"># reads ~/.config/reflow/config.toml</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
 </code></pre></div>
 <p>Generate a fully commented config file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_config_exists</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">ensure_config_exists</span><span class="p">()</span>    <span class="c1"># writes ~/.config/reflow/config.toml if missing</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_config_exists</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">ensure_config_exists</span><span class="p">()</span>    <span class="c1"># writes ~/.config/reflow/config.toml if missing</span>
 </code></pre></div>
 
 
