@@ -117,13 +117,36 @@ run.run_id       # "my_pipeline-20260401-a1b2"
 run.run_dir      # Path("/tmp/r")
 
 run.status()     # print status to stdout
-run.status(as_dict=True)   # return as dict
+run.status(errors=True)    # also print error tracebacks for failed instances
+run.status(as_dict=True)   # return as dict (includes "failed_instances" key)
 
 run.cancel()               # cancel active jobs
 run.cancel(task="step_a")  # cancel one task
 
 run.retry()                # retry failed tasks
 run.retry(task="step_b")   # retry one task
+```
+
+### Bulk cancel
+
+Cancel multiple runs at once from the workflow level:
+
+```python
+wf.cancel_runs(["run-001", "run-002", "run-003"], store)
+```
+
+### Listing runs
+
+The store supports filtering when listing runs:
+
+```python
+store.list_runs(
+    graph_name="my_pipeline",   # filter by workflow name
+    limit=10,                   # most recent N
+    since="2025-03-01",         # created at or after (ISO-8601)
+    until="2025-04-01",         # created before
+    status="FAILED",            # filter by run status
+)
 ```
 
 ## Executors

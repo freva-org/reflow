@@ -54,8 +54,30 @@ class Store(abc.ABC):
         self,
         graph_name: str | None = None,
         user_id: str | None = None,
+        *,
+        limit: int | None = None,
+        since: str | None = None,
+        until: str | None = None,
+        status: str | None = None,
     ) -> list[dict[str, Any]]:
-        """List runs, optionally filtered."""
+        """List runs, optionally filtered.
+
+        Parameters
+        ----------
+        graph_name : str or None
+            Filter by workflow name.
+        user_id : str or None
+            Filter by user.
+        limit : int or None
+            Maximum number of runs to return (most recent first).
+        since : str or None
+            Only runs created at or after this ISO-8601 timestamp.
+        until : str or None
+            Only runs created before this ISO-8601 timestamp.
+        status : str or None
+            Only runs with this status (e.g. ``"RUNNING"``, ``"FAILED"``).
+
+        """
 
     # --- task specs --------------------------------------------------------
 

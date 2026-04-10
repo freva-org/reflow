@@ -415,6 +415,39 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             store.update_run_status(run_id, RunState.CANCELLED)
         return cancelled
 
+    def cancel_runs(
+        self,
+        run_ids: list[str],
+        store: Store,
+        task_name: str | None = None,
+        executor: Executor | None = None,
+    ) -> int:
+        """Cancel multiple runs at once.
+
+        Parameters
+        ----------
+        run_ids : list[str]
+            Run identifiers to cancel.
+        store : Store
+            Manifest store.
+        task_name : str or None
+            Optional task filter applied to every run.
+        executor : Executor or None
+            Explicit executor override.
+
+        Returns
+        -------
+        int
+            Total number of task instances cancelled across all runs.
+
+        """
+        total = 0
+        for run_id in run_ids:
+            total += self.cancel_run(
+                run_id, store, task_name=task_name, executor=executor,
+            )
+        return total
+
     def retry_failed(
         self,
         run_id: str,
@@ -464,10 +497,15 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         run_row = store.get_run(run_id)
         if run_row is None:
             raise KeyError(f"Unknown run_id: {run_id!r}")
+        instances = store.list_task_instances(run_id)
+        failed_instances = [
+            inst for inst in instances if inst.get("state") == TaskState.FAILED.value
+        ]
         return {
             "run": run_row,
             "summary": store.task_state_summary(run_id),
-            "instances": store.list_task_instances(run_id),
+            "instances": instances,
+            "failed_instances": failed_instances,
         }
 
     # --- describe (for future server registration) -------------------------

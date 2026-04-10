@@ -312,6 +312,11 @@ class SqliteStore(Store):
         self,
         graph_name: str | None = None,
         user_id: str | None = None,
+        *,
+        limit: int | None = None,
+        since: str | None = None,
+        until: str | None = None,
+        status: str | None = None,
     ) -> list[RunRecord]:
         clauses: list[str] = []
         params: list[Any] = []
@@ -321,9 +326,19 @@ class SqliteStore(Store):
         if user_id is not None:
             clauses.append("user_id = ?")
             params.append(user_id)
+        if since is not None:
+            clauses.append("created_at >= ?")
+            params.append(since)
+        if until is not None:
+            clauses.append("created_at < ?")
+            params.append(until)
+        if status is not None:
+            clauses.append("status = ?")
+            params.append(status)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        limit_clause = f" LIMIT {int(limit)}" if limit is not None else ""
         rows = self.conn.execute(
-            f"SELECT * FROM runs{where} ORDER BY created_at DESC",
+            f"SELECT * FROM runs{where} ORDER BY created_at DESC{limit_clause}",
             params,
         ).fetchall()
         return [
@@ -336,10 +351,22 @@ class SqliteStore(Store):
         self,
         graph_name: str | None = None,
         user_id: str | None = None,
+        *,
+        limit: int | None = None,
+        since: str | None = None,
+        until: str | None = None,
+        status: str | None = None,
     ) -> list[dict[str, Any]]:
         return [
             record.to_public_dict()
-            for record in self.list_run_records(graph_name, user_id)
+            for record in self.list_run_records(
+                graph_name,
+                user_id,
+                limit=limit,
+                since=since,
+                until=until,
+                status=status,
+            )
         ]
 
     # --- task specs --------------------------------------------------------

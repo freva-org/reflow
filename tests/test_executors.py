@@ -1,32 +1,34 @@
-"""Tests for multi-backend executor support.
-
-Covers PBSExecutor, LSFExecutor, SGEExecutor, FluxExecutor,
-the updated Executor ABC (dependency_options, _render_submit_option),
-the extended resolve_executor / resolve_index helpers, and the
-extended _rosetta_stone config translator.
-"""
+"""test_executors.py - refactored reflow tests."""
 
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from reflow import (
     Config,
+    Flow,
     FluxExecutor,
     JobResources,
-    LocalExecutor,
     LSFExecutor,
+    LocalExecutor,
     PBSExecutor,
     SGEExecutor,
     SlurmExecutor,
+    Workflow,
 )
+from reflow.workflow._helpers import default_executor, make_run_id, resolve_executor
 from reflow.config import _rosetta_stone
 from reflow.workflow._helpers import default_executor, resolve_executor, resolve_index
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Executor ABC — base class features
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# _types.py
 # ═══════════════════════════════════════════════════════════════════════════
 
 
@@ -74,11 +76,6 @@ class TestExecutorBase:
             var = cls.array_index_env_var
             assert var not in seen, f"Duplicate env var: {var}"
             seen.add(var)
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# PBSExecutor
-# ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestPBSExecutor:
@@ -184,11 +181,6 @@ class TestPBSExecutor:
         assert exc.qsub == "/custom/qsub"
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# LSFExecutor
-# ═══════════════════════════════════════════════════════════════════════════
-
-
 class TestLSFExecutor:
     def test_dry_run(self) -> None:
         exc = LSFExecutor(mode="dry-run")
@@ -282,11 +274,6 @@ class TestLSFExecutor:
         exc = LSFExecutor.from_environment()
         assert exc.mode == "dry-run"
         assert exc.bsub == "/custom/bsub"
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# SGEExecutor
-# ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestSGEExecutor:
@@ -396,11 +383,6 @@ class TestSGEExecutor:
         assert exc.qsub == "/custom/qsub"
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# FluxExecutor
-# ═══════════════════════════════════════════════════════════════════════════
-
-
 class TestFluxExecutor:
     def test_dry_run(self) -> None:
         exc = FluxExecutor(mode="dry-run")
@@ -499,11 +481,6 @@ class TestFluxExecutor:
         assert exc.flux == "/custom/flux"
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_executor — new shorthands
-# ═══════════════════════════════════════════════════════════════════════════
-
-
 class TestResolveExecutorExtended:
     def test_pbs(self) -> None:
         exc = resolve_executor("pbs")
@@ -539,11 +516,6 @@ class TestResolveExecutorExtended:
     def test_instance_passthrough(self) -> None:
         exc = FluxExecutor(mode="dry-run")
         assert resolve_executor(exc) is exc
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_index — multi-backend env vars
-# ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestResolveIndexMultiBackend:
@@ -618,11 +590,6 @@ class TestResolveIndexMultiBackend:
         assert resolve_index(None) == 1
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# _rosetta_stone — extended backends
-# ═══════════════════════════════════════════════════════════════════════════
-
-
 class TestRosettaStoneExtended:
     def test_sbatch_backend(self) -> None:
         assert _rosetta_stone("sbatch", "partition") == "partition"
@@ -656,11 +623,6 @@ class TestRosettaStoneExtended:
             _rosetta_stone("sbatch", "nonexistent_key")
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# SlurmExecutor — verify _render_submit_option now inherited
-# ═══════════════════════════════════════════════════════════════════════════
-
-
 class TestSlurmExecutorRefactored:
     def test_render_inherited(self) -> None:
         exc = SlurmExecutor(mode="dry-run")
@@ -689,11 +651,6 @@ class TestSlurmExecutorRefactored:
         assert "sbatch" in SlurmExecutor._internal_keys
         assert "scancel" in SlurmExecutor._internal_keys
         assert "sacct" in SlurmExecutor._internal_keys
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Cross-scheduler key normalisation
-# ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestKeyNormalization:
@@ -916,11 +873,6 @@ class TestKeyNormalization:
         assert result == {"partition": "gpu", "account": "proj"}
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# _default_executor — config-driven backend selection
-# ═══════════════════════════════════════════════════════════════════════════
-
-
 class TestDefaultExecutor:
     """_default_executor reads mode from config/env to pick the backend."""
 
@@ -977,3 +929,270 @@ class TestDefaultExecutor:
         cfg = Config({"executor": {"mode": "bsub"}})
         exc = default_executor(cfg)
         assert isinstance(exc, FluxExecutor)
+
+
+class TestLocalExecutor:
+    def test_submit_returns_job_id(self) -> None:
+        exc = LocalExecutor(capture_output=True)
+        jid = exc.submit(JobResources(job_name="test"), ["echo", "hello"])
+        assert jid.startswith("local-")
+
+    def test_job_state_completed(self) -> None:
+        exc = LocalExecutor(capture_output=True)
+        jid = exc.submit(JobResources(job_name="test"), ["true"])
+        assert exc.job_state(jid) == "COMPLETED"
+
+    def test_job_state_failed(self) -> None:
+        exc = LocalExecutor(capture_output=True)
+        jid = exc.submit(JobResources(job_name="test"), ["false"])
+        assert exc.job_state(jid) == "FAILED"
+
+    def test_job_state_unknown(self) -> None:
+        exc = LocalExecutor()
+        assert exc.job_state("unknown-id") is None
+
+    def test_cancel_noop(self) -> None:
+        exc = LocalExecutor()
+        exc.cancel("some-id")  # should not raise
+
+
+class TestSlurmExecutorExtended:
+    def test_dry_run_returns_dryrun_id(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        jid = exc.submit(JobResources(job_name="test"), ["echo"])
+        assert jid == "DRYRUN"
+
+    def test_cancel_dryrun_noop(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        exc.cancel("DRYRUN")  # should not raise
+
+    def test_job_state_dryrun(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        assert exc.job_state("DRYRUN") is None
+
+    def test_from_environment_defaults(self) -> None:
+        exc = SlurmExecutor.from_environment(Config())
+        assert exc.sbatch == "sbatch"
+        assert exc.scancel == "scancel"
+        assert exc.sacct == "sacct"
+
+    def test_from_environment_env_override(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("REFLOW_MODE", "dry-run")
+        monkeypatch.setenv("REFLOW_SBATCH", "/custom/sbatch")
+        exc = SlurmExecutor.from_environment()
+        assert exc.mode == "dry-run"
+        assert exc.sbatch == "/custom/sbatch"
+
+    def test_sbatch_array_rendering(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        res = JobResources(job_name="test", array="0-9%4")
+        cmd = exc._build_sbatch(res, ["python", "w.py"])
+        assert "--array" in cmd
+        assert "0-9%4" in cmd
+
+    def test_sbatch_output_error_paths(self, tmp_path: Path) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        res = JobResources(
+            job_name="test",
+            output_path=tmp_path / "out.log",
+            error_path=tmp_path / "err.log",
+        )
+        cmd = exc._build_sbatch(res, ["echo"])
+        assert "--output" in cmd
+        assert "--error" in cmd
+
+    def test_render_submit_option_none(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        assert exc._render_submit_option("key", None) == []
+        assert exc._render_submit_option("key", False) == []
+
+    def test_render_submit_option_bool_true(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        assert exc._render_submit_option("exclusive", True) == ["--exclusive"]
+
+    def test_render_submit_option_list(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        result = exc._render_submit_option("exclude", ["n1", "n2"])
+        assert result == ["--exclude", "n1", "--exclude", "n2"]
+
+    def test_skips_internal_keys(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        res = JobResources(
+            job_name="test",
+            submit_options={"python": "/usr/bin/python", "partition": "gpu"},
+        )
+        cmd = exc._build_sbatch(res, ["echo"])
+        assert "--python" not in cmd
+        assert "--partition" in cmd
+
+    def test_dependency_in_submit_options(self) -> None:
+        exc = SlurmExecutor(mode="dry-run")
+        res = JobResources(
+            job_name="test",
+            submit_options={"dependency": "afterany:123:456"},
+        )
+        cmd = exc._build_sbatch(res, ["echo"])
+        assert "--dependency" in cmd
+        assert "afterany:123:456" in cmd
+
+
+class TestSchedulerNativeOptions:
+    def test_flow_collects_submit_options(self) -> None:
+        flow = Flow("sched")
+
+        @flow.job(partition="compute", qos="debug", queue="workq")
+        def task() -> str:
+            return "ok"
+
+        cfg = flow.tasks["task"].config
+        assert cfg.submit_options["partition"] == "compute"
+        assert cfg.submit_options["qos"] == "debug"
+        assert cfg.submit_options["queue"] == "workq"
+
+    def test_workflow_applies_config_defaults(self, tmp_path: Path) -> None:
+        wf = Workflow(
+            "sched",
+            config=Config(
+                {
+                    "executor": {
+                        "submit_options": {"partition": "cfgpart", "account": "cfgacc"}
+                    }
+                }
+            ),
+        )
+
+        @wf.job()
+        def task() -> str:
+            return "ok"
+
+        resources = wf._single_resources(tmp_path, wf.tasks["task"])
+        assert resources.submit_options["partition"] == "cfgpart"
+        assert resources.submit_options["account"] == "cfgacc"
+
+    def test_code_submit_options_override_config(self, tmp_path: Path) -> None:
+        wf = Workflow(
+            "sched",
+            config=Config(
+                {
+                    "executor": {
+                        "submit_options": {"partition": "cfgpart", "account": "cfgacc"}
+                    }
+                }
+            ),
+        )
+
+        @wf.job(partition="codepart", qos="debug")
+        def task() -> str:
+            return "ok"
+
+        resources = wf._single_resources(tmp_path, wf.tasks["task"])
+        assert resources.submit_options["partition"] == "codepart"
+        assert resources.submit_options["qos"] == "debug"
+        assert resources.submit_options["account"] == "cfgacc"
+
+    def test_env_overrides_config(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("REFLOW_PARTITION", "envpart")
+        monkeypatch.setenv("REFLOW_ACCOUNT", "envacc")
+        wf = Workflow(
+            "sched",
+            config=Config({"executor": {"partition": "cfgpart", "account": "cfgacc"}}),
+        )
+
+        @wf.job()
+        def task() -> str:
+            return "ok"
+
+        resources = wf._single_resources(tmp_path, wf.tasks["task"])
+        assert resources.submit_options["partition"] == "envpart"
+        assert resources.submit_options["account"] == "envacc"
+
+    def test_slurm_executor_renders_submit_options(self) -> None:
+        executor = SlurmExecutor(mode="dry-run")
+        resources = JobResources(
+            job_name="job",
+            submit_options={
+                "partition": "compute",
+                "qos": "debug",
+                "exclusive": True,
+                "exclude": ["n1", "n2"],
+            },
+        )
+        cmd = executor._build_sbatch(resources, ["python", "worker.py"])
+        assert "--partition" in cmd
+        assert "compute" in cmd
+        assert "--qos" in cmd
+        assert "debug" in cmd
+        assert "--exclusive" in cmd
+        assert cmd.count("--exclude") == 2
+
+
+class TestSlurmMailSignal:
+    def test_mail_flags_in_sbatch(self) -> None:
+        from reflow.executors import JobResources
+        from reflow.executors.slurm import SlurmExecutor
+
+        exc = SlurmExecutor(mode="dry-run")
+        res = JobResources(
+            job_name="test",
+            submit_options={
+                "mail_user": "user@dkrz.de",
+                "mail_type": "FAIL,END",
+                "signal": "B:INT@60",
+            },
+        )
+        cmd = exc._build_sbatch(res, ["python", "test.py"])
+        assert "--mail-user" in cmd
+        assert "user@dkrz.de" in cmd
+        assert "--mail-type" in cmd
+        assert "FAIL,END" in cmd
+        assert "--signal" in cmd
+        assert "B:INT@60" in cmd
+
+    def test_no_mail_when_none(self) -> None:
+        from reflow.executors import JobResources
+        from reflow.executors.slurm import SlurmExecutor
+
+        exc = SlurmExecutor(mode="dry-run")
+        res = JobResources(job_name="test")
+        cmd = exc._build_sbatch(res, ["python", "test.py"])
+        assert "--mail-user" not in cmd
+        assert "--mail-type" not in cmd
+        assert "--signal" not in cmd
+
+
+class TestJobResourcesProperties:
+    def test_backward_compat_extra(self) -> None:
+        res = JobResources(
+            job_name="test",
+            submit_options={"partition": "gpu"},
+        )
+        assert res.extra["partition"] == "gpu"
+        assert res.extra is res.submit_options
+
+    def test_convenience_properties(self) -> None:
+        res = JobResources(
+            job_name="test",
+            submit_options={
+                "partition": "gpu",
+                "account": "acc",
+                "mail_user": "u@e",
+                "mail_type": "ALL",
+                "signal": "B:INT@30",
+            },
+        )
+        assert res.partition == "gpu"
+        assert res.account == "acc"
+        assert res.mail_user == "u@e"
+        assert res.mail_type == "ALL"
+        assert res.signal == "B:INT@30"
+
+    def test_none_properties(self) -> None:
+        res = JobResources(job_name="test")
+        assert res.partition is None
+        assert res.account is None
+        assert res.signal is None

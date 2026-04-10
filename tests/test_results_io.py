@@ -1,4 +1,4 @@
-"""Tests for reflow.results -- file-based worker results."""
+"""test_results_io.py - refactored reflow tests."""
 
 from __future__ import annotations
 
@@ -7,16 +7,13 @@ from pathlib import Path
 
 import pytest
 
-from reflow._types import TaskState
-from reflow.manifest import DEFAULT_CODEC
-from reflow.results import (
-    _result_filename,
-    _results_dir,
-    ingest_results,
-    write_result,
+from reflow import (
+    Result,
+    TaskState,
 )
+from reflow.manifest import DEFAULT_CODEC
 from reflow.stores.sqlite import SqliteStore
-
+from reflow.results import _result_filename, _results_dir, ingest_results, write_result
 
 # --- helpers ---------------------------------------------------------------
 
@@ -74,9 +71,6 @@ class TestResultFilename:
         assert _result_filename("download_source", 7) == "download_source__7.json"
 
 
-# --- _results_dir ----------------------------------------------------------
-
-
 class TestResultsDir:
     def test_creates_directory(self, cache_home: Path) -> None:
         d = _results_dir("run-123")
@@ -93,9 +87,6 @@ class TestResultsDir:
         d1 = _results_dir("run-aaa")
         d2 = _results_dir("run-bbb")
         assert d1 != d2
-
-
-# --- write_result ----------------------------------------------------------
 
 
 class TestWriteResult:
@@ -178,9 +169,6 @@ class TestWriteResult:
         d = _results_dir("r1")
         data = json.loads((d / "t__0.json").read_text())
         assert data["state"] == "SUCCESS"
-
-
-# --- ingest_results --------------------------------------------------------
 
 
 class TestIngestResults:

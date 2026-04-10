@@ -1,348 +1,30 @@
-"""Tests for new features and coverage improvements.
-
-Covers:
-- Feature 1: "Did you mean …" suggestions on unknown task names
-- Feature 2: Broadcast mode (Result.broadcast, WireMode.BROADCAST)
-- Feature 3: run_local (in-process dependency-aware execution)
-- Coverage gaps: _dispatch.py, _worker.py, run.py, params.py, cli.py
-"""
+"""test_cli.py - refactored reflow tests."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Literal
 from unittest.mock import patch
 
 import pytest
 
 from reflow import (
-    Config,
-    Flow,
-    LocalExecutor,
     Param,
     Result,
+    Run,
     RunDir,
-    RunState,
-    TaskState,
     Workflow,
 )
-from reflow.params import (
-    WireMode,
-    check_type_compatibility,
-    infer_wire_mode,
-)
 from reflow.stores.sqlite import SqliteStore
-from reflow.workflow._core import _suggest_name
-
-
+from reflow.cli import build_parser, parse_args, run_command
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Coverage: _dispatch.py  (dispatch loop, resolve, fan-out, finalize)
 # ═══════════════════════════════════════════════════════════════════════════
 
-
-class TestDispatchIntegration:
-    @staticmethod
-    def _build_wf() -> Workflow:
-        wf = Workflow("d", config=Config({"executor": {"mode": "dry-run"}}))
-
-        @wf.job()
-        def prep(x: Annotated[str, Param(help="X")]) -> list[str]:
-            return ["a", "b"]
-
-        @wf.array_job()
-        def conv(item: Annotated[str, Result(step="prep")]) -> str:
-            return item.upper()
-
-        return wf
-
-    def test_dispatch_singleton_and_array(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """Submit + dispatch cycle via dry-run executor."""
-        monkeypatch.setenv("REFLOW_MODE", "dry-run")
-        wf = self._build_wf()
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run = wf.submit(
-            run_dir=tmp_path / "r", x="val", store=st,
-        )
-        # Verify task instances were created
-        instances = st.list_task_instances(run.run_id)
-        assert len(instances) >= 1
-        assert run.run_id.startswith("d-")
-
-    def test_maybe_finalise_all_success(self, tmp_path: Path) -> None:
-        """_maybe_finalise_run marks run as SUCCESS when all tasks done."""
-        wf = Workflow("f")
-
-        @wf.job()
-        def a() -> str:
-            return "ok"
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "test-final-ok"
-        st.insert_run(run_id, "f", "u", {})
-        iid = st.insert_task_instance(run_id, "a", None, TaskState.SUCCESS, {})
-
-        wf._maybe_finalise_run(run_id, st)
-        run = st.get_run(run_id)
-        assert run["status"] == "SUCCESS"
-
-    def test_maybe_finalise_with_failure(self, tmp_path: Path) -> None:
-        wf = Workflow("f")
-
-        @wf.job()
-        def a() -> str:
-            return "ok"
-
-        @wf.job()
-        def b() -> str:
-            return "ok"
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "test-final-fail"
-        st.insert_run(run_id, "f", "u", {})
-        st.insert_task_instance(run_id, "a", None, TaskState.SUCCESS, {})
-        st.insert_task_instance(run_id, "b", None, TaskState.FAILED, {})
-
-        wf._maybe_finalise_run(run_id, st)
-        assert st.get_run(run_id)["status"] == "FAILED"
-
-    def test_maybe_finalise_active_noop(self, tmp_path: Path) -> None:
-        wf = Workflow("f")
-
-        @wf.job()
-        def a() -> str:
-            return "ok"
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "test-final-active"
-        st.insert_run(run_id, "f", "u", {})
-        st.insert_task_instance(run_id, "a", None, TaskState.RUNNING, {})
-
-        wf._maybe_finalise_run(run_id, st)
-        assert st.get_run(run_id)["status"] == "RUNNING"
-
-
 # ═══════════════════════════════════════════════════════════════════════════
-# Coverage: _worker.py
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-class TestWorkerMixin:
-    def _setup(self, tmp_path: Path) -> tuple[Workflow, SqliteStore, str]:
-        wf = Workflow("w")
-
-        @wf.job()
-        def task_ok(val: Annotated[str, Param(help="V")]) -> str:
-            return val.upper()
-
-        @wf.job()
-        def task_fail(val: Annotated[str, Param(help="V")]) -> str:
-            raise RuntimeError("worker boom")
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "w-test-001"
-        st.insert_run(run_id, "w", "u", {"val": "hello", "run_dir": str(tmp_path)})
-        return wf, st, run_id
-
-    def test_worker_success(self, tmp_path: Path) -> None:
-        wf, st, run_id = self._setup(tmp_path)
-        iid = st.insert_task_instance(
-            run_id, "task_ok", None, TaskState.PENDING, {},
-        )
-        st.update_task_submitted(run_id, "task_ok", "j1")
-
-        wf.worker(run_id, st, tmp_path, "task_ok")
-
-        # Result file should have been written and can be ingested
-        from reflow.results import ingest_results
-
-        n = ingest_results(run_id, st)
-        assert n == 1
-        row = st.get_task_instance(run_id, "task_ok", None)
-        assert row["state"] == "SUCCESS"
-
-    def test_worker_failure(self, tmp_path: Path) -> None:
-        wf, st, run_id = self._setup(tmp_path)
-        iid = st.insert_task_instance(
-            run_id, "task_fail", None, TaskState.PENDING, {},
-        )
-        st.update_task_submitted(run_id, "task_fail", "j2")
-
-        with pytest.raises(RuntimeError, match="worker boom"):
-            wf.worker(run_id, st, tmp_path, "task_fail")
-
-        from reflow.results import ingest_results
-
-        n = ingest_results(run_id, st)
-        assert n == 1
-        row = st.get_task_instance(run_id, "task_fail", None)
-        assert row["state"] == "FAILED"
-
-    def test_worker_unknown_task(self, tmp_path: Path) -> None:
-        wf, st, run_id = self._setup(tmp_path)
-        with pytest.raises(KeyError, match="Unknown task"):
-            wf.worker(run_id, st, tmp_path, "nonexistent")
-
-    def test_worker_missing_instance(self, tmp_path: Path) -> None:
-        wf, st, run_id = self._setup(tmp_path)
-        # No instance was inserted for task_ok
-        with pytest.raises(KeyError, match="Instance not found"):
-            wf.worker(run_id, st, tmp_path, "task_ok")
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Coverage: run.py (status printing, cancel, retry)
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-class TestRunStatus:
-    def test_status_prints(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
-    ) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def task(val: Annotated[str, Param(help="V")]) -> str:
-            return val
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        run = wf.run_local(run_dir=tmp_path / "r", val="hi", store=st)
-
-        # status() without as_dict should print to stdout
-        result = run.status()
-        assert result is None
-        out = capsys.readouterr().out
-        assert run.run_id in out
-        assert "SUCCESS" in out
-
-    def test_status_with_task_filter(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
-    ) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def a() -> str:
-            return "ok"
-
-        @wf.job()
-        def b(x: Annotated[str, Result(step="a")]) -> str:
-            return x
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        run = wf.run_local(run_dir=tmp_path / "r", store=st)
-
-        run.status(task="a")
-        out = capsys.readouterr().out
-        assert "a" in out
-
-    def test_status_as_dict(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def task() -> str:
-            return "ok"
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        run = wf.run_local(run_dir=tmp_path / "r", store=st)
-        info = run.status(as_dict=True)
-        assert isinstance(info, dict)
-        assert "run" in info
-        assert "summary" in info
-
-
-class TestRunCancelRetry:
-    def test_cancel(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
-    ) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def task() -> str:
-            return "ok"
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "w-cancel-001"
-        st.insert_run(run_id, "w", "u", {})
-        iid = st.insert_task_instance(
-            run_id, "task", None, TaskState.RUNNING, {},
-        )
-
-        from reflow.run import Run
-
-        run = Run(workflow=wf, run_id=run_id, run_dir=tmp_path, store=st)
-        n = run.cancel(executor=LocalExecutor())
-
-        out = capsys.readouterr().out
-        assert "Cancelled" in out
-        assert n == 1
-
-    def test_retry(
-        self, tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        monkeypatch.setenv("REFLOW_MODE", "dry-run")
-        wf = Workflow("w")
-
-        @wf.job()
-        def task(val: Annotated[str, Param(help="V")]) -> str:
-            return val
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "w-retry-001"
-        st.insert_run(run_id, "w", "u", {"val": "hi", "run_dir": str(tmp_path)})
-        st.insert_task_spec(run_id, "task", False, {}, [])
-        iid = st.insert_task_instance(
-            run_id, "task", None, TaskState.FAILED, {},
-        )
-
-        from reflow.run import Run
-
-        run = Run(workflow=wf, run_id=run_id, run_dir=tmp_path, store=st)
-        n = run.retry()
-
-        out = capsys.readouterr().out
-        assert "retry" in out.lower() or "Marked" in out
-        assert n == 1
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Coverage: params.py — broadcast-related edge cases
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-class TestParamsBroadcastEdgeCases:
-    def test_broadcast_direct_singleton_to_singleton(self) -> None:
-        """broadcast=True on a singleton->singleton still returns DIRECT."""
-        mode = infer_wire_mode(str, False, str, False, broadcast=False)
-        assert mode == WireMode.DIRECT
-
-    def test_gather_not_affected_by_broadcast(self) -> None:
-        """Gather mode (array->singleton list) unaffected by broadcast flag."""
-        mode = infer_wire_mode(str, True, list[str], False, broadcast=False)
-        assert mode == WireMode.GATHER
-
-    def test_chain_not_affected_by_broadcast(self) -> None:
-        mode = infer_wire_mode(str, True, str, True, broadcast=False)
-        assert mode == WireMode.CHAIN
-
-    def test_chain_flatten_not_affected(self) -> None:
-        mode = infer_wire_mode(list[str], True, str, True, broadcast=False)
-        assert mode == WireMode.CHAIN_FLATTEN
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Coverage: cli.py — submit, status, cancel, retry, runs commands
+# _types.py
 # ═══════════════════════════════════════════════════════════════════════════
 
 
@@ -423,17 +105,13 @@ class TestCLICommands:
         wf = self._make_wf()
 
         args = parse_args(
-            wf, ["submit", "--run-dir", str(tmp_path / "r"), "--x", "val"],
+            wf,
+            ["submit", "--run-dir", str(tmp_path / "r"), "--x", "val"],
         )
         rc = run_command(wf, args)
         assert rc == 0
         out = capsys.readouterr().out
         assert "Created run" in out or "cli_test" in out
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# CLI: --force and --force-tasks flags
-# ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestCLIForceFlags:
@@ -591,159 +269,173 @@ class TestCLIForceFlags:
         assert "force_tasks" not in params
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Coverage: workflow/_core.py — cancel_run, retry_failed, run_status
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-class TestWorkflowCancelRetryStatus:
-    def test_cancel_run(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
+class TestCLI:
+    @staticmethod
+    def _make_wf() -> Workflow:
+        wf = Workflow("cli_test")
 
         @wf.job()
-        def task() -> str:
-            return "ok"
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "w-cr-001"
-        st.insert_run(run_id, "w", "u", {})
-        iid = st.insert_task_instance(
-            run_id, "task", None, TaskState.SUBMITTED, {},
-        )
-
-        n = wf.cancel_run(run_id, st, executor=LocalExecutor())
-        assert n == 1
-        assert st.get_task_instance(run_id, "task", None)["state"] == "CANCELLED"
-
-    def test_run_status_unknown(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def task() -> str:
-            return "ok"
-
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-
-        with pytest.raises(KeyError, match="Unknown run_id"):
-            wf.run_status("nonexistent", st)
-
-    def test_describe_typed(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def step_a(x: Annotated[str, Param(help="X")]) -> list[str]:
+        def prepare(
+            start: Annotated[str, Param(help="Start")],
+            model: Annotated[Literal["era5", "icon"], Param(help="Model")] = "era5",
+            run_dir: RunDir = RunDir(),
+        ) -> list[str]:
             return []
 
         @wf.array_job()
-        def step_b(item: Annotated[str, Result(step="step_a")]) -> str:
+        def convert(
+            item: Annotated[str, Result(step="prepare")],
+            bucket: Annotated[str, Param(help="B")],
+        ) -> str:
             return item
 
-        desc = wf.describe_typed()
-        assert desc.name == "w"
-        assert len(desc.tasks) == 2
+        return wf
 
-    def test_describe_json(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
+    def test_parser_builds(self) -> None:
+        from reflow.cli import build_parser
 
-        @wf.job()
-        def step_a(x: Annotated[str, Param(help="X")]) -> str:
-            return "ok"
+        assert build_parser(self._make_wf()).prog == "cli_test"
 
-        d = wf.describe()
-        assert d["name"] == "w"
-        # Should be JSON-serializable
-        json.dumps(d)
+    def test_submit_parses(self) -> None:
+        from reflow.cli import build_parser
 
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Coverage: _dispatch.py — _all_deps_satisfied, _resolve_result_inputs
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-class TestDispatchHelpers:
-    def test_all_deps_satisfied_false(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def upstream() -> str:
-            return "ok"
-
-        @wf.job()
-        def downstream(x: Annotated[str, Result(step="upstream")]) -> str:
-            return x
-
-        wf.validate()
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "w-deps-001"
-        st.insert_run(run_id, "w", "u", {})
-
-        # upstream not submitted yet
-        assert not wf._all_deps_satisfied(st, run_id, wf.tasks["downstream"])
-
-    def test_all_deps_satisfied_true(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
-
-        @wf.job()
-        def upstream() -> str:
-            return "ok"
-
-        @wf.job()
-        def downstream(x: Annotated[str, Result(step="upstream")]) -> str:
-            return x
-
-        wf.validate()
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        st.init()
-        run_id = "w-deps-002"
-        st.insert_run(run_id, "w", "u", {})
-        iid = st.insert_task_instance(
-            run_id, "upstream", None, TaskState.SUCCESS, {},
+        args = build_parser(self._make_wf()).parse_args(
+            [
+                "submit",
+                "--run-dir",
+                "/tmp",
+                "--start",
+                "2025-01-01",
+                "--bucket",
+                "b",
+                "--model",
+                "icon",
+            ]
         )
-        st.update_task_success(iid, "ok")
+        assert args.start == "2025-01-01"
+        assert args.model == "icon"
 
-        assert wf._all_deps_satisfied(st, run_id, wf.tasks["downstream"])
+    def test_literal_choices_enforced(self) -> None:
+        from reflow.cli import build_parser
 
-    def test_effective_dependencies(self) -> None:
-        wf = Workflow("w")
+        with pytest.raises(SystemExit):
+            build_parser(self._make_wf()).parse_args(
+                [
+                    "submit",
+                    "--run-dir",
+                    "/tmp",
+                    "--start",
+                    "x",
+                    "--bucket",
+                    "b",
+                    "--model",
+                    "invalid",
+                ]
+            )
+
+    def test_hidden_commands(self) -> None:
+        from reflow.cli import build_parser, parse_args
+
+        wf = self._make_wf()
+        assert "dispatch" not in build_parser(wf).format_help()
+        args = parse_args(wf, ["dispatch", "--run-id", "x", "--run-dir", "/tmp"])
+        assert args._command == "dispatch"
+
+    def test_describe_command(self) -> None:
+        from reflow.cli import parse_args
+
+        wf = self._make_wf()
+        args = parse_args(wf, ["describe"])
+        assert args._command == "describe"
+
+
+class TestCLIExtended:
+    @staticmethod
+    def _make_wf() -> Workflow:
+        wf = Workflow("cli_ext")
 
         @wf.job()
-        def a() -> str:
+        def task_a(
+            x: Annotated[str, Param(help="X")],
+            run_dir: RunDir = RunDir(),
+        ) -> str:
             return "ok"
 
-        @wf.job()
-        def b() -> str:
-            return "ok"
+        return wf
 
-        @wf.job(after=["b"])
-        def c(x: Annotated[str, Result(step="a")]) -> str:
-            return x
+    def test_dag_command(self, capsys: pytest.CaptureFixture[str]) -> None:
+        from reflow.cli import parse_args, run_command
 
-        wf.validate()
-        deps = wf._effective_dependencies(wf.tasks["c"])
-        assert "a" in deps
-        assert "b" in deps
+        wf = self._make_wf()
+        args = parse_args(wf, ["dag"])
+        rc = run_command(wf, args)
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "task_a" in out
 
+    def test_describe_command(self, capsys: pytest.CaptureFixture[str]) -> None:
+        from reflow.cli import parse_args, run_command
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Coverage: Run.__repr__
-# ═══════════════════════════════════════════════════════════════════════════
+        wf = self._make_wf()
+        args = parse_args(wf, ["describe"])
+        rc = run_command(wf, args)
+        assert rc == 0
+        out = capsys.readouterr().out
+        manifest = json.loads(out)
+        assert manifest["name"] == "cli_ext"
 
+    def test_worker_parser_builds(self) -> None:
+        from reflow.cli import parse_args
 
-class TestRunRepr:
-    def test_repr(self, tmp_path: Path) -> None:
-        wf = Workflow("w")
+        wf = self._make_wf()
+        args = parse_args(
+            wf,
+            [
+                "worker",
+                "--run-id",
+                "r1",
+                "--run-dir",
+                "/tmp",
+                "--task",
+                "task_a",
+            ],
+        )
+        assert args._command == "worker"
+        assert args.task == "task_a"
 
-        @wf.job()
-        def task() -> str:
-            return "ok"
+    def test_worker_parser_with_index(self) -> None:
+        from reflow.cli import parse_args
 
-        st = SqliteStore(str(tmp_path / "db.sqlite"))
-        run = wf.run_local(run_dir=tmp_path / "r", store=st)
+        wf = self._make_wf()
+        args = parse_args(
+            wf,
+            [
+                "worker",
+                "--run-id",
+                "r1",
+                "--run-dir",
+                "/tmp",
+                "--task",
+                "t",
+                "--index",
+                "3",
+            ],
+        )
+        assert args.index == 3
 
-        r = repr(run)
-        assert "Run(" in r
-        assert run.run_id in r
-        assert "w" in r
+    def test_dispatch_parser_with_verify(self) -> None:
+        from reflow.cli import parse_args
+
+        wf = self._make_wf()
+        args = parse_args(
+            wf,
+            [
+                "dispatch",
+                "--run-id",
+                "r1",
+                "--run-dir",
+                "/tmp",
+                "--verify",
+            ],
+        )
+        assert args.verify is True

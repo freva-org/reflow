@@ -122,17 +122,29 @@ def _add_status_parser(sp: Any) -> None:
     p.add_argument(
         "--json", dest="output_json", action="store_true", help="JSON output."
     )
+    p.add_argument(
+        "--errors",
+        action="store_true",
+        default=False,
+        help="Show error tracebacks for failed instances.",
+    )
     p.set_defaults(_command="status")
 
 
 def _add_cancel_parser(sp: Any) -> None:
     p = sp.add_parser(
         "cancel",
-        help="Cancel active tasks in a run.",
+        help="Cancel active tasks in one or more runs.",
     )
-    p.add_argument("run_id", type=str, help="Run identifier.")
+    p.add_argument("run_ids", nargs="+", type=str, help="One or more run identifiers.")
     _add_store_flags(p)
     p.add_argument("--task", default=None, type=str)
+    p.add_argument(
+        "--yes", "-y",
+        action="store_true",
+        default=False,
+        help="Skip confirmation prompt when cancelling multiple runs.",
+    )
     p.set_defaults(_command="cancel")
 
 
@@ -161,9 +173,44 @@ def _add_retry_parser(sp: Any) -> None:
 def _add_runs_parser(sp: Any) -> None:
     p = sp.add_parser(
         "runs",
-        help="List all runs.",
+        help="List runs (most recent first, default last 20).",
     )
     _add_store_flags(p)
+    p.add_argument(
+        "--last", "-n",
+        type=int,
+        default=20,
+        metavar="N",
+        help="Show the last N runs (default: 20).",
+    )
+    p.add_argument(
+        "--all",
+        dest="show_all",
+        action="store_true",
+        default=False,
+        help="Show all runs (overrides --last).",
+    )
+    p.add_argument(
+        "--since",
+        default=None,
+        type=str,
+        metavar="DATE",
+        help="Only runs created at or after this date (ISO-8601).",
+    )
+    p.add_argument(
+        "--until",
+        default=None,
+        type=str,
+        metavar="DATE",
+        help="Only runs created before this date (ISO-8601).",
+    )
+    p.add_argument(
+        "--status",
+        default=None,
+        type=str,
+        metavar="STATE",
+        help="Filter by run status (e.g. RUNNING, FAILED, CANCELLED, SUCCESS).",
+    )
     p.set_defaults(_command="runs")
 
 
@@ -308,11 +355,19 @@ _INTERNAL_KEYS = frozenset(
         "run_dir",
         "store_path",
         "run_id",
+        "run_ids",
         "task",
         "index",
         "output_json",
         "force",
         "force_tasks",
+        "errors",
+        "yes",
+        "show_all",
+        "last",
+        "since",
+        "until",
+        "status",
     }
 )
 
@@ -346,6 +401,9 @@ def _cmd_submit(wf: Any, args: argparse.Namespace) -> int:
     return 0
 
 
+_MAX_ERROR_LINES = 15
+
+
 def _cmd_status(wf: Any, args: argparse.Namespace) -> int:
     store = _make_store(args, wf)
     store.init()
@@ -370,12 +428,43 @@ def _cmd_status(wf: Any, args: argparse.Namespace) -> int:
         t for t in summary if t not in ordered
     ]
     task_filter = getattr(args, "task", None)
+    show_errors = getattr(args, "errors", False)
+
+    # Build a lookup of failed instances by task name.
+    failed_by_task: dict[str, list[dict[str, Any]]] = {}
+    for inst in info.get("failed_instances", []):
+        tname = inst.get("task_name", "")
+        failed_by_task.setdefault(tname, []).append(inst)
+
     for tname in ordered:
         if task_filter and tname != task_filter:
             continue
         states = summary[tname]
         parts = [f"{s}={n}" for s, n in sorted(states.items())]
         print(f"  {tname:20s}  {', '.join(parts)}")
+
+        # Auto-show failed instances for this task.
+        task_failures = failed_by_task.get(tname, [])
+        if task_failures:
+            for inst in task_failures:
+                idx = inst.get("array_index")
+                idx_str = f"[{idx}]" if idx is not None else "   "
+                jid = inst.get("job_id", "-")
+                print(f"    {idx_str:6s}  FAILED       job={jid}")
+                if show_errors:
+                    err = inst.get("error_text") or ""
+                    if err:
+                        lines = err.strip().splitlines()
+                        if len(lines) > _MAX_ERROR_LINES:
+                            for line in lines[-_MAX_ERROR_LINES:]:
+                                print(f"           {line}")
+                            print(
+                                f"           ... ({len(lines) - _MAX_ERROR_LINES}"
+                                " more lines, see full log for details)"
+                            )
+                        else:
+                            for line in lines:
+                                print(f"           {line}")
 
     if task_filter:
         print()
@@ -393,8 +482,26 @@ def _cmd_status(wf: Any, args: argparse.Namespace) -> int:
 def _cmd_cancel(wf: Any, args: argparse.Namespace) -> int:
     store = _make_store(args, wf)
     store.init()
-    n = wf.cancel_run(args.run_id, store, task_name=getattr(args, "task", None))
-    print(f"Cancelled {n} task instance(s).")
+    run_ids: list[str] = args.run_ids
+    skip_confirm = getattr(args, "yes", False)
+
+    if len(run_ids) > 1 and not skip_confirm:
+        print(f"About to cancel {len(run_ids)} run(s):")
+        for rid in run_ids:
+            print(f"  {rid}")
+        try:
+            answer = input("Proceed? [y/N] ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\nAborted.")
+            return 1
+        if answer not in ("y", "yes"):
+            print("Aborted.")
+            return 1
+
+    n = wf.cancel_runs(
+        run_ids, store, task_name=getattr(args, "task", None),
+    )
+    print(f"Cancelled {n} task instance(s) across {len(run_ids)} run(s).")
     return 0
 
 
@@ -415,12 +522,28 @@ def _cmd_retry(wf: Any, args: argparse.Namespace) -> int:
 def _cmd_runs(wf: Any, args: argparse.Namespace) -> int:
     store = _make_store(args, wf)
     store.init()
-    rows = store.list_runs(graph_name=wf.name)
+    show_all = getattr(args, "show_all", False)
+    limit = None if show_all else getattr(args, "last", 20)
+    since = getattr(args, "since", None)
+    until = getattr(args, "until", None)
+    status_filter = getattr(args, "status", None)
+    if status_filter:
+        status_filter = status_filter.upper()
+
+    rows = store.list_runs(
+        graph_name=wf.name,
+        limit=limit,
+        since=since,
+        until=until,
+        status=status_filter,
+    )
     if not rows:
         print("No runs found.")
         return 0
     for row in rows:
         print(f"  {row['run_id']}  {row['status']:12s}  {row['created_at']}")
+    if limit is not None and len(rows) == limit:
+        print(f"\n  (showing last {limit} — use --all to see all runs)")
     return 0
 
 
