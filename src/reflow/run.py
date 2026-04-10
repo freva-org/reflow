@@ -60,6 +60,7 @@ class Run:
         self,
         task: str | None = None,
         as_dict: bool = False,
+        errors: bool = False,
     ) -> dict[str, Any] | None:
         """Show or return the current run status.
 
@@ -69,6 +70,8 @@ class Run:
             Filter by task name.
         as_dict : bool
             If ``True``, return the raw dict instead of printing.
+        errors : bool
+            If ``True``, show error tracebacks for failed instances.
 
         """
         info = self.workflow.run_status(self.run_id, self.store)
@@ -91,12 +94,37 @@ class Run:
         except ValueError:
             ordered = sorted(summary)
 
+        # Build lookup of failed instances by task.
+        failed_by_task: dict[str, list[dict[str, Any]]] = {}
+        for inst in info.get("failed_instances", []):
+            tname = inst.get("task_name", "")
+            failed_by_task.setdefault(tname, []).append(inst)
+
         for tname in ordered:
             if task and tname != task:
                 continue
             states = summary[tname]
             parts = [f"{s}={n}" for s, n in sorted(states.items())]
             print(f"  {tname:20s}  {', '.join(parts)}")
+
+            # Auto-show failed instances.
+            task_failures = failed_by_task.get(tname, [])
+            for inst in task_failures:
+                idx = inst.get("array_index")
+                idx_str = f"[{idx}]" if idx is not None else "   "
+                job_id = inst.get("job_id", "-")
+                print(f"    {idx_str:6s}  FAILED       job={job_id}")
+                if errors:
+                    err = inst.get("error_text") or ""
+                    if err:
+                        lines = err.strip().splitlines()
+                        for line in lines[-15:]:
+                            print(f"           {line}")
+                        if len(lines) > 15:
+                            print(
+                                f"           ... ({len(lines) - 15}"
+                                " more lines, see full log for details)"
+                            )
 
         if task:
             print()
