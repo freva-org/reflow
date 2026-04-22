@@ -60,7 +60,9 @@ class SlurmExecutor(Executor):
             return "DRYRUN"
         logger.debug("sbatch: %s", " ".join(cmd))
         try:
-            output = subprocess.check_output(cmd, text=True, stderr=subprocess.PIPE).strip()
+            output = subprocess.check_output(
+                cmd, text=True, stderr=subprocess.PIPE
+            ).strip()
         except subprocess.CalledProcessError as e:
             raise RuntimeError(e.stderr) from e
 
