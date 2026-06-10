@@ -137,7 +137,7 @@ commands =
 setenv =
     VIRTUALENV_SYSTEM_SITE_PACKAGES=true
 description = "Run the unit tests."
-deps = -e .[dev]
+deps = -e .[dev,pretty]
 commands =
     python3 -m pytest -vv --cov=reflow --cov-report=html:coverage_report --junitxml report.xml --cov-report xml tests/
     python3 -m coverage report --fail-under=65 --precision=2
