@@ -8,6 +8,13 @@ Build a complete workflow from scratch in five minutes.
 pip install reflow-hpc
 ```
 
+For a prettier terminal diagram from the [`dag`](cli-reference.md#dag)
+command, install the optional `pretty` extra:
+
+```console
+pip install 'reflow-hpc[pretty]'
+```
+
 ## Step 1 — create a workflow
 
 ```python
