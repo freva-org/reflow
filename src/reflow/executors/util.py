@@ -33,7 +33,8 @@ class ExecutorError(RuntimeError):
     def __init__(self, result: CommandResult) -> None:
         self.result = result
         super().__init__(
-            f"Command {result.cmd!r} failed (exit {result.returncode}):\n{result.stderr}"
+            f"Command {result.cmd!r} failed "
+            f"(exit {result.returncode}):\n{result.stderr}"
         )
 
 

@@ -200,7 +200,7 @@ class SqliteStore(Store):
             self._conn.close()
             self._conn = None
 
-    def __enter__(self) -> "SqliteStore":
+    def __enter__(self) -> SqliteStore:
         return self
 
     def __exit__(self, *_: object) -> None:
