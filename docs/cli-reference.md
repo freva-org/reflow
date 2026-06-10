@@ -98,7 +98,73 @@ Print the task dependency graph:
 
 ```console
 $ python pipeline.py dag
+  gather_sources
+  prepare_shared  <- gather_sources
+  download_source [array]  <- gather_sources
+  convert_source [array]  <- download_source, prepare_shared
+  gather_temp_levels  <- convert_source
+  finalize [array]  <- gather_temp_levels
 ```
+
+Array tasks are marked `[array]`; the `<-` arrow lists each task's
+dependencies.
+
+Use `--format` to choose a different rendering. The `text`, `mermaid`,
+and `dot` formats have no extra dependencies:
+
+```console
+$ python pipeline.py dag --format mermaid
+flowchart TD
+    gather_sources[gather_sources]
+    download_source[[download_source]]
+    convert_source[[convert_source]]
+    gather_sources --> download_source
+    download_source --> convert_source
+    prepare_shared --> convert_source
+```
+
+`mermaid` output renders directly in GitHub and in mkdocs-material, so it
+is handy for embedding a workflow diagram in documentation. `dot` emits
+Graphviz source you can pipe to the `dot` binary:
+
+```console
+$ python pipeline.py dag --format dot | dot -Tpng -o dag.png
+```
+
+In both `mermaid` and `dot`, array tasks are drawn with a distinct shape
+(a subroutine box `[[...]]` in Mermaid, a doubled border in Graphviz) so
+they stand out from singleton tasks.
+
+The `phart` format draws a pretty Unicode diagram directly in the
+terminal, with the multi-parent fan-in rendered without duplicating
+shared nodes:
+
+```console
+$ python pipeline.py dag --format phart
+                       [gather_sources]
+                              ↓
+    <<download_source>>───────+───────────→[prepare_shared]
+            ↓                                     ↓
+            +────────→<<convert_source>>──────────+
+                              ↓
+                    →[gather_temp_levels]
+                              ↓
+                         <<finalize>>
+```
+
+Array tasks appear as `<<name>>` and singletons as `[name]`. This format
+needs an optional dependency:
+
+```console
+$ pip install 'reflow-hpc[pretty]'
+```
+
+If the extra is not installed, `--format phart` prints the plain `text`
+diagram to stdout and a one-line install hint to stderr, then exits
+successfully — so redirecting the output (for example
+`dag --format phart > graph.txt`) still produces a clean diagram. Pass
+`--ascii` to force 7-bit ASCII instead of Unicode box characters, which
+is useful for terminals or logs that do not handle Unicode well.
 
 ### `describe`
 
@@ -164,6 +230,17 @@ Only applies to `runs`.
 ### `--yes`, `-y`
 
 Skip the confirmation prompt when cancelling multiple runs.
+
+### `--format`
+
+Output format for `dag`: `text` (default), `mermaid`, `dot`, or
+`phart`. Only applies to `dag`. See the [`dag`](#dag) command above for
+details and examples.
+
+### `--ascii`
+
+For `dag --format phart`, force 7-bit ASCII output instead of Unicode
+box-drawing characters. Only applies to `dag`.
 
 ### `--version`
 
