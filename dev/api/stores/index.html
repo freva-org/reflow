@@ -3339,16 +3339,7 @@ config or <code>REFLOW_STORE_PATH</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/sqlite.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-547">547</a></span>
-<span class="normal"><a href="#__codelineno-0-548">548</a></span>
-<span class="normal"><a href="#__codelineno-0-549">549</a></span>
-<span class="normal"><a href="#__codelineno-0-550">550</a></span>
-<span class="normal"><a href="#__codelineno-0-551">551</a></span>
-<span class="normal"><a href="#__codelineno-0-552">552</a></span>
-<span class="normal"><a href="#__codelineno-0-553">553</a></span>
-<span class="normal"><a href="#__codelineno-0-554">554</a></span>
-<span class="normal"><a href="#__codelineno-0-555">555</a></span>
-<span class="normal"><a href="#__codelineno-0-556">556</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-556">556</a></span>
 <span class="normal"><a href="#__codelineno-0-557">557</a></span>
 <span class="normal"><a href="#__codelineno-0-558">558</a></span>
 <span class="normal"><a href="#__codelineno-0-559">559</a></span>
@@ -3372,40 +3363,49 @@ config or <code>REFLOW_STORE_PATH</code>.</p>
 <span class="normal"><a href="#__codelineno-0-577">577</a></span>
 <span class="normal"><a href="#__codelineno-0-578">578</a></span>
 <span class="normal"><a href="#__codelineno-0-579">579</a></span>
-<span class="normal"><a href="#__codelineno-0-580">580</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-547" name="__codelineno-0-547"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_output_hash</span><span class="p">(</span>
-<a id="__codelineno-0-548" name="__codelineno-0-548"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">array_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-549" name="__codelineno-0-549"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-550" name="__codelineno-0-550"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the output hash for a specific task instance.</span>
-<a id="__codelineno-0-551" name="__codelineno-0-551"></a>
-<a id="__codelineno-0-552" name="__codelineno-0-552"></a><span class="sd">    Parameters</span>
-<a id="__codelineno-0-553" name="__codelineno-0-553"></a><span class="sd">    ----------</span>
-<a id="__codelineno-0-554" name="__codelineno-0-554"></a><span class="sd">    run_id : str</span>
-<a id="__codelineno-0-555" name="__codelineno-0-555"></a><span class="sd">        Run identifier.</span>
-<a id="__codelineno-0-556" name="__codelineno-0-556"></a><span class="sd">    task_name : str</span>
-<a id="__codelineno-0-557" name="__codelineno-0-557"></a><span class="sd">        Task name.</span>
-<a id="__codelineno-0-558" name="__codelineno-0-558"></a><span class="sd">    array_index : int or None</span>
-<a id="__codelineno-0-559" name="__codelineno-0-559"></a><span class="sd">        Array index, or None for singleton.</span>
+<span class="normal"><a href="#__codelineno-0-580">580</a></span>
+<span class="normal"><a href="#__codelineno-0-581">581</a></span>
+<span class="normal"><a href="#__codelineno-0-582">582</a></span>
+<span class="normal"><a href="#__codelineno-0-583">583</a></span>
+<span class="normal"><a href="#__codelineno-0-584">584</a></span>
+<span class="normal"><a href="#__codelineno-0-585">585</a></span>
+<span class="normal"><a href="#__codelineno-0-586">586</a></span>
+<span class="normal"><a href="#__codelineno-0-587">587</a></span>
+<span class="normal"><a href="#__codelineno-0-588">588</a></span>
+<span class="normal"><a href="#__codelineno-0-589">589</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-556" name="__codelineno-0-556"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_output_hash</span><span class="p">(</span>
+<a id="__codelineno-0-557" name="__codelineno-0-557"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">array_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-558" name="__codelineno-0-558"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-559" name="__codelineno-0-559"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the output hash for a specific task instance.</span>
 <a id="__codelineno-0-560" name="__codelineno-0-560"></a>
-<a id="__codelineno-0-561" name="__codelineno-0-561"></a><span class="sd">    Returns</span>
-<a id="__codelineno-0-562" name="__codelineno-0-562"></a><span class="sd">    -------</span>
-<a id="__codelineno-0-563" name="__codelineno-0-563"></a><span class="sd">    str</span>
-<a id="__codelineno-0-564" name="__codelineno-0-564"></a><span class="sd">        Output hash, or empty string if not found.</span>
-<a id="__codelineno-0-565" name="__codelineno-0-565"></a>
-<a id="__codelineno-0-566" name="__codelineno-0-566"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-567" name="__codelineno-0-567"></a>    <span class="k">if</span> <span class="n">array_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-568" name="__codelineno-0-568"></a>        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<a id="__codelineno-0-569" name="__codelineno-0-569"></a>            <span class="s2">&quot;SELECT output_hash FROM task_instances &quot;</span>
-<a id="__codelineno-0-570" name="__codelineno-0-570"></a>            <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND &quot;</span>
-<a id="__codelineno-0-571" name="__codelineno-0-571"></a>            <span class="s2">&quot;array_index IS NULL AND state = ?&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-572" name="__codelineno-0-572"></a>            <span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-<a id="__codelineno-0-573" name="__codelineno-0-573"></a>        <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-<a id="__codelineno-0-574" name="__codelineno-0-574"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-575" name="__codelineno-0-575"></a>        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<a id="__codelineno-0-576" name="__codelineno-0-576"></a>            <span class="s2">&quot;SELECT output_hash FROM task_instances &quot;</span>
-<a id="__codelineno-0-577" name="__codelineno-0-577"></a>            <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND array_index = ? AND state = ?&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-578" name="__codelineno-0-578"></a>            <span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">array_index</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-<a id="__codelineno-0-579" name="__codelineno-0-579"></a>        <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-<a id="__codelineno-0-580" name="__codelineno-0-580"></a>    <span class="k">return</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="ow">and</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+<a id="__codelineno-0-561" name="__codelineno-0-561"></a><span class="sd">    Parameters</span>
+<a id="__codelineno-0-562" name="__codelineno-0-562"></a><span class="sd">    ----------</span>
+<a id="__codelineno-0-563" name="__codelineno-0-563"></a><span class="sd">    run_id : str</span>
+<a id="__codelineno-0-564" name="__codelineno-0-564"></a><span class="sd">        Run identifier.</span>
+<a id="__codelineno-0-565" name="__codelineno-0-565"></a><span class="sd">    task_name : str</span>
+<a id="__codelineno-0-566" name="__codelineno-0-566"></a><span class="sd">        Task name.</span>
+<a id="__codelineno-0-567" name="__codelineno-0-567"></a><span class="sd">    array_index : int or None</span>
+<a id="__codelineno-0-568" name="__codelineno-0-568"></a><span class="sd">        Array index, or None for singleton.</span>
+<a id="__codelineno-0-569" name="__codelineno-0-569"></a>
+<a id="__codelineno-0-570" name="__codelineno-0-570"></a><span class="sd">    Returns</span>
+<a id="__codelineno-0-571" name="__codelineno-0-571"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-572" name="__codelineno-0-572"></a><span class="sd">    str</span>
+<a id="__codelineno-0-573" name="__codelineno-0-573"></a><span class="sd">        Output hash, or empty string if not found.</span>
+<a id="__codelineno-0-574" name="__codelineno-0-574"></a>
+<a id="__codelineno-0-575" name="__codelineno-0-575"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-576" name="__codelineno-0-576"></a>    <span class="k">if</span> <span class="n">array_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-577" name="__codelineno-0-577"></a>        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="__codelineno-0-578" name="__codelineno-0-578"></a>            <span class="s2">&quot;SELECT output_hash FROM task_instances &quot;</span>
+<a id="__codelineno-0-579" name="__codelineno-0-579"></a>            <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND &quot;</span>
+<a id="__codelineno-0-580" name="__codelineno-0-580"></a>            <span class="s2">&quot;array_index IS NULL AND state = ?&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-581" name="__codelineno-0-581"></a>            <span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+<a id="__codelineno-0-582" name="__codelineno-0-582"></a>        <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+<a id="__codelineno-0-583" name="__codelineno-0-583"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-584" name="__codelineno-0-584"></a>        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="__codelineno-0-585" name="__codelineno-0-585"></a>            <span class="s2">&quot;SELECT output_hash FROM task_instances &quot;</span>
+<a id="__codelineno-0-586" name="__codelineno-0-586"></a>            <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND array_index = ? AND state = ?&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-587" name="__codelineno-0-587"></a>            <span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">array_index</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+<a id="__codelineno-0-588" name="__codelineno-0-588"></a>        <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+<a id="__codelineno-0-589" name="__codelineno-0-589"></a>    <span class="k">return</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="ow">and</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3428,23 +3428,23 @@ config or <code>REFLOW_STORE_PATH</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/sqlite.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-582">582</a></span>
-<span class="normal"><a href="#__codelineno-0-583">583</a></span>
-<span class="normal"><a href="#__codelineno-0-584">584</a></span>
-<span class="normal"><a href="#__codelineno-0-585">585</a></span>
-<span class="normal"><a href="#__codelineno-0-586">586</a></span>
-<span class="normal"><a href="#__codelineno-0-587">587</a></span>
-<span class="normal"><a href="#__codelineno-0-588">588</a></span>
-<span class="normal"><a href="#__codelineno-0-589">589</a></span>
-<span class="normal"><a href="#__codelineno-0-590">590</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-582" name="__codelineno-0-582"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all_output_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-583" name="__codelineno-0-583"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get output hashes for all successful instances of a task.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-584" name="__codelineno-0-584"></a>    <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<a id="__codelineno-0-585" name="__codelineno-0-585"></a>        <span class="s2">&quot;SELECT output_hash FROM task_instances &quot;</span>
-<a id="__codelineno-0-586" name="__codelineno-0-586"></a>        <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND state = ? &quot;</span>
-<a id="__codelineno-0-587" name="__codelineno-0-587"></a>        <span class="s2">&quot;ORDER BY array_index&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-588" name="__codelineno-0-588"></a>        <span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-<a id="__codelineno-0-589" name="__codelineno-0-589"></a>    <span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-<a id="__codelineno-0-590" name="__codelineno-0-590"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-591">591</a></span>
+<span class="normal"><a href="#__codelineno-0-592">592</a></span>
+<span class="normal"><a href="#__codelineno-0-593">593</a></span>
+<span class="normal"><a href="#__codelineno-0-594">594</a></span>
+<span class="normal"><a href="#__codelineno-0-595">595</a></span>
+<span class="normal"><a href="#__codelineno-0-596">596</a></span>
+<span class="normal"><a href="#__codelineno-0-597">597</a></span>
+<span class="normal"><a href="#__codelineno-0-598">598</a></span>
+<span class="normal"><a href="#__codelineno-0-599">599</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-591" name="__codelineno-0-591"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all_output_hashes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-592" name="__codelineno-0-592"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get output hashes for all successful instances of a task.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-593" name="__codelineno-0-593"></a>    <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="__codelineno-0-594" name="__codelineno-0-594"></a>        <span class="s2">&quot;SELECT output_hash FROM task_instances &quot;</span>
+<a id="__codelineno-0-595" name="__codelineno-0-595"></a>        <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND state = ? &quot;</span>
+<a id="__codelineno-0-596" name="__codelineno-0-596"></a>        <span class="s2">&quot;ORDER BY array_index&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-597" name="__codelineno-0-597"></a>        <span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+<a id="__codelineno-0-598" name="__codelineno-0-598"></a>    <span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+<a id="__codelineno-0-599" name="__codelineno-0-599"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3468,16 +3468,7 @@ config or <code>REFLOW_STORE_PATH</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/sqlite.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-690">690</a></span>
-<span class="normal"><a href="#__codelineno-0-691">691</a></span>
-<span class="normal"><a href="#__codelineno-0-692">692</a></span>
-<span class="normal"><a href="#__codelineno-0-693">693</a></span>
-<span class="normal"><a href="#__codelineno-0-694">694</a></span>
-<span class="normal"><a href="#__codelineno-0-695">695</a></span>
-<span class="normal"><a href="#__codelineno-0-696">696</a></span>
-<span class="normal"><a href="#__codelineno-0-697">697</a></span>
-<span class="normal"><a href="#__codelineno-0-698">698</a></span>
-<span class="normal"><a href="#__codelineno-0-699">699</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-699">699</a></span>
 <span class="normal"><a href="#__codelineno-0-700">700</a></span>
 <span class="normal"><a href="#__codelineno-0-701">701</a></span>
 <span class="normal"><a href="#__codelineno-0-702">702</a></span>
@@ -3485,24 +3476,33 @@ config or <code>REFLOW_STORE_PATH</code>.</p>
 <span class="normal"><a href="#__codelineno-0-704">704</a></span>
 <span class="normal"><a href="#__codelineno-0-705">705</a></span>
 <span class="normal"><a href="#__codelineno-0-706">706</a></span>
-<span class="normal"><a href="#__codelineno-0-707">707</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-690" name="__codelineno-0-690"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_cached_record</span><span class="p">(</span>
-<a id="__codelineno-0-691" name="__codelineno-0-691"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-692" name="__codelineno-0-692"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-693" name="__codelineno-0-693"></a>    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-694" name="__codelineno-0-694"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TaskInstanceRecord</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-695" name="__codelineno-0-695"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the most recent successful instance matching the identity.</span>
-<a id="__codelineno-0-696" name="__codelineno-0-696"></a>
-<a id="__codelineno-0-697" name="__codelineno-0-697"></a><span class="sd">    Searches across all runs.</span>
-<a id="__codelineno-0-698" name="__codelineno-0-698"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-699" name="__codelineno-0-699"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">identity</span><span class="p">:</span>
-<a id="__codelineno-0-700" name="__codelineno-0-700"></a>        <span class="k">return</span> <span class="kc">None</span>
-<a id="__codelineno-0-701" name="__codelineno-0-701"></a>    <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<a id="__codelineno-0-702" name="__codelineno-0-702"></a>        <span class="s2">&quot;SELECT * FROM task_instances &quot;</span>
-<a id="__codelineno-0-703" name="__codelineno-0-703"></a>        <span class="s2">&quot;WHERE task_name = ? AND identity = ? AND state = ? &quot;</span>
-<a id="__codelineno-0-704" name="__codelineno-0-704"></a>        <span class="s2">&quot;ORDER BY created_at DESC LIMIT 1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-705" name="__codelineno-0-705"></a>        <span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-<a id="__codelineno-0-706" name="__codelineno-0-706"></a>    <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-<a id="__codelineno-0-707" name="__codelineno-0-707"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_task_instance_record</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-707">707</a></span>
+<span class="normal"><a href="#__codelineno-0-708">708</a></span>
+<span class="normal"><a href="#__codelineno-0-709">709</a></span>
+<span class="normal"><a href="#__codelineno-0-710">710</a></span>
+<span class="normal"><a href="#__codelineno-0-711">711</a></span>
+<span class="normal"><a href="#__codelineno-0-712">712</a></span>
+<span class="normal"><a href="#__codelineno-0-713">713</a></span>
+<span class="normal"><a href="#__codelineno-0-714">714</a></span>
+<span class="normal"><a href="#__codelineno-0-715">715</a></span>
+<span class="normal"><a href="#__codelineno-0-716">716</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-699" name="__codelineno-0-699"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_cached_record</span><span class="p">(</span>
+<a id="__codelineno-0-700" name="__codelineno-0-700"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-701" name="__codelineno-0-701"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-702" name="__codelineno-0-702"></a>    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-703" name="__codelineno-0-703"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TaskInstanceRecord</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-704" name="__codelineno-0-704"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the most recent successful instance matching the identity.</span>
+<a id="__codelineno-0-705" name="__codelineno-0-705"></a>
+<a id="__codelineno-0-706" name="__codelineno-0-706"></a><span class="sd">    Searches across all runs.</span>
+<a id="__codelineno-0-707" name="__codelineno-0-707"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-708" name="__codelineno-0-708"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">identity</span><span class="p">:</span>
+<a id="__codelineno-0-709" name="__codelineno-0-709"></a>        <span class="k">return</span> <span class="kc">None</span>
+<a id="__codelineno-0-710" name="__codelineno-0-710"></a>    <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="__codelineno-0-711" name="__codelineno-0-711"></a>        <span class="s2">&quot;SELECT * FROM task_instances &quot;</span>
+<a id="__codelineno-0-712" name="__codelineno-0-712"></a>        <span class="s2">&quot;WHERE task_name = ? AND identity = ? AND state = ? &quot;</span>
+<a id="__codelineno-0-713" name="__codelineno-0-713"></a>        <span class="s2">&quot;ORDER BY created_at DESC LIMIT 1&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-714" name="__codelineno-0-714"></a>        <span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+<a id="__codelineno-0-715" name="__codelineno-0-715"></a>    <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+<a id="__codelineno-0-716" name="__codelineno-0-716"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_task_instance_record</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
