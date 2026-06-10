@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 import os
 import shlex
-import subprocess
 import sys
 
 from ..config import Config
 from . import Executor, JobResources
+from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
 
@@ -59,23 +59,23 @@ class SlurmExecutor(Executor):
             logger.info("DRY-RUN: %s", " ".join(cmd))
             return "DRYRUN"
         logger.debug("sbatch: %s", " ".join(cmd))
-        output = subprocess.check_output(cmd, text=True).strip()
-        logger.info("Submitted job %s", output)
-        return output
+        output = run_cmd(cmd)
+        logger.info("Submitted job %s", output.stdout)
+        return output.stdout
 
     def cancel(self, job_id: str) -> None:
         if job_id == "DRYRUN":
             return
         try:
-            subprocess.check_call([self.scancel, job_id])
-        except subprocess.CalledProcessError as exc:
-            logger.warning("scancel %s returned %d", job_id, exc.returncode)
+            run_cmd([self.scancel, job_id])
+        except ExecutorError as exc:
+            logger.warning("scancel %s returned %d", job_id, exc.result.returncode)
 
     def job_state(self, job_id: str) -> str | None:
         if job_id == "DRYRUN":
             return None
         try:
-            output = subprocess.check_output(
+            output = run_cmd(
                 [
                     self.sacct,
                     "-j",
@@ -84,11 +84,10 @@ class SlurmExecutor(Executor):
                     "--parsable2",
                     "--format=State",
                 ],
-                text=True,
-            ).strip()
-        except subprocess.CalledProcessError:
+            )
+        except ExecutorError:
             return None
-        lines = [ln.strip() for ln in output.splitlines() if ln.strip()]
+        lines = [ln.strip() for ln in output.stdout.splitlines() if ln.strip()]
         return lines[0] if lines else None
 
     def _build_sbatch(self, resources: JobResources, command: list[str]) -> list[str]:

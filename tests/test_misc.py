@@ -81,3 +81,16 @@ class TestVersion:
         # --version should be a recognised option
         help_text = parser.format_help()
         assert "--version" in help_text
+
+
+class TestGracefulShutdownSignal:
+    def test_sigterm_raises_task_interrupted(self) -> None:
+        """_signal_handler (line 48) is hit when SIGTERM fires inside the context."""
+        import os
+        import signal as sig
+
+        with pytest.raises(TaskInterrupted) as exc_info:
+            with graceful_shutdown():
+                os.kill(os.getpid(), sig.SIGTERM)
+
+        assert exc_info.value.signal_number == sig.SIGTERM

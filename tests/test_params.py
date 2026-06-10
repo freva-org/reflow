@@ -373,3 +373,186 @@ class TestParamsExtended:
         )
         assert rp.cli_flag() == "--convert-chunk-size"
         assert rp.dest_name() == "convert_chunk_size"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Param CLI building: short_flag, nargs, bool/datetime types
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestParamCliBuildExtended:
+    def test_short_flag_included_in_names(self) -> None:
+        """short_flag on a ResolvedParam adds a short flag to add_to_parser."""
+        import argparse, inspect
+        from typing import Annotated
+        from reflow import Workflow, Param
+        from reflow.params import collect_cli_params
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def task(x: Annotated[str, Param(help="X", short="-x")]) -> str:
+            return x
+
+        spec = wf.tasks["task"]
+        sig = inspect.signature(spec.func)
+        params = collect_cli_params("task", spec.func, sig)
+        x_rp = next(p for p in params if p.name == "x")
+        assert x_rp.short_flag == "-x"
+        parser = argparse.ArgumentParser()
+        x_rp.add_to_parser(parser)
+        args = parser.parse_args(["-x", "hello"])
+        assert args.x == "hello"
+
+    def test_list_type_gets_nargs_plus(self) -> None:
+        """A list[str] param produces a ResolvedParam with is_list=True."""
+        import argparse, inspect
+        from typing import Annotated
+        from reflow import Workflow, Param
+        from reflow.params import collect_cli_params
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def task(items: Annotated[list[str], Param(help="items")]) -> str:
+            return ",".join(items)
+
+        spec = wf.tasks["task"]
+        sig = inspect.signature(spec.func)
+        params = collect_cli_params("task", spec.func, sig)
+        items_rp = next(p for p in params if p.name == "items")
+        assert items_rp.is_list
+        parser = argparse.ArgumentParser()
+        items_rp.add_to_parser(parser)
+        args = parser.parse_args(["--items", "a", "b"])
+        assert args.items == ["a", "b"]
+
+    def test_bool_argparse_type_true(self) -> None:
+        """_parse_bool returns True for truthy string values."""
+        from reflow.params import _parse_bool
+        for v in ("1", "true", "yes", "on", "True", "YES"):
+            assert _parse_bool(v) is True
+
+    def test_bool_argparse_type_false(self) -> None:
+        from reflow.params import _parse_bool
+        for v in ("0", "false", "no", "off", "False", "NO"):
+            assert _parse_bool(v) is False
+
+    def test_bool_argparse_type_invalid(self) -> None:
+        import argparse
+        from reflow.params import _parse_bool
+        with pytest.raises(argparse.ArgumentTypeError, match="Invalid boolean"):
+            _parse_bool("maybe")
+
+    def test_datetime_argparse_type_valid(self) -> None:
+        from reflow.params import _parse_datetime
+        from datetime import datetime
+        result = _parse_datetime("2024-01-15T12:00:00")
+        assert isinstance(result, datetime)
+        assert result.year == 2024
+
+    def test_datetime_argparse_type_invalid(self) -> None:
+        import argparse
+        from reflow.params import _parse_datetime
+        with pytest.raises(argparse.ArgumentTypeError, match="Invalid datetime"):
+            _parse_datetime("not-a-date")
+
+    def test_collect_cli_params_dedup_required(self) -> None:
+        """merge_resolved_params deduplicates global params across tasks."""
+        from typing import Annotated
+        from reflow import Workflow, Param
+        from reflow.params import collect_cli_params, merge_resolved_params
+        import inspect
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def task_a(x: Annotated[str, Param(help="X")]) -> str:
+            return x
+
+        @wf.job()
+        def task_b(x: Annotated[str, Param(help="X")]) -> str:
+            return x
+
+        all_params = []
+        for name, spec in wf.tasks.items():
+            sig = inspect.signature(spec.func)
+            all_params.extend(collect_cli_params(name, spec.func, sig))
+        merged = merge_resolved_params(all_params)
+        x_params = [p for p in merged if p.name == "x"]
+        assert len(x_params) == 1
+
+    def test_hints_exception_falls_back_gracefully(self) -> None:
+        """collect_cli_params handles functions where get_type_hints raises."""
+        from reflow.params import collect_cli_params
+        from unittest.mock import patch
+        import inspect
+        from typing import Annotated
+        from reflow import Workflow, Param
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def task(x: Annotated[str, Param(help="X")]) -> str:
+            return x
+
+        spec = wf.tasks["task"]
+        sig = inspect.signature(spec.func)
+        with patch("reflow.params.get_type_hints", side_effect=Exception("bad")):
+            params = collect_cli_params("task", spec.func, sig)
+        assert isinstance(params, list)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Remaining params.py gaps
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestParamsRemainingGaps:
+    def test_extract_base_type_returns_none_for_none(self) -> None:
+        from reflow.params import extract_base_type
+        assert extract_base_type(None) is None
+
+    def test_is_run_dir_type_error_returns_false(self) -> None:
+        from reflow.params import is_run_dir
+        assert is_run_dir(42) is False
+
+    def test_collect_cli_params_skips_result_deps(self) -> None:
+        import inspect
+        from reflow import Workflow, Result
+        from reflow.params import collect_cli_params
+        from typing import Annotated
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source() -> str:
+            return "v"
+
+        @wf.job()
+        def sink(x: Annotated[str, Result(step="source")]) -> str:
+            return x
+
+        spec = wf.tasks["sink"]
+        sig = inspect.signature(spec.func)
+        params = collect_cli_params("sink", spec.func, sig)
+        assert not any(p.name == "x" for p in params)
+
+    def test_collect_cli_params_hints_exception(self) -> None:
+        import inspect
+        from unittest.mock import patch
+        from reflow import Workflow, Param
+        from reflow.params import collect_cli_params
+        from typing import Annotated
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def task(x: Annotated[str, Param(help="X")]) -> str:
+            return x
+
+        spec = wf.tasks["task"]
+        sig = inspect.signature(spec.func)
+        with patch("typing.get_type_hints", side_effect=Exception("bad")):
+            params = collect_cli_params("task", spec.func, sig)
+        assert isinstance(params, list)

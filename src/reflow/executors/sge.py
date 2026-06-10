@@ -19,11 +19,11 @@ import logging
 import os
 import re
 import shlex
-import subprocess
 import sys
 
 from ..config import Config
 from . import Executor, JobResources
+from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ class SGEExecutor(Executor):
             logger.info("DRY-RUN: %s", " ".join(cmd))
             return "DRYRUN"
         logger.debug("qsub: %s", " ".join(cmd))
-        output = subprocess.check_output(cmd, text=True).strip()
+        output = run_cmd(cmd).stdout.strip()
         # SGE qsub output varies:
         # "Your job 12345 ("name") has been submitted"
         # "Your job-array 12345.1-10:1 ("name") has been submitted"
@@ -108,20 +108,18 @@ class SGEExecutor(Executor):
         if job_id == "DRYRUN":
             return
         try:
-            subprocess.check_call([self.qdel, job_id])
-        except subprocess.CalledProcessError as exc:
-            logger.warning("qdel %s returned %d", job_id, exc.returncode)
+            run_cmd([self.qdel, job_id])
+        except ExecutorError as exc:
+            logger.warning("qdel %s returned %d", job_id, exc.result.returncode)
 
     def job_state(self, job_id: str) -> str | None:
         if job_id == "DRYRUN":
             return None
         try:
-            output = subprocess.check_output(
+            output = run_cmd(
                 [self.qstat, "-j", job_id],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            )
-        except subprocess.CalledProcessError:
+            ).stdout
+        except ExecutorError:
             # Job no longer in qstat — likely completed or removed.
             return self._check_qacct(job_id)
         except FileNotFoundError:
@@ -142,12 +140,10 @@ class SGEExecutor(Executor):
     def _check_qacct(self, job_id: str) -> str | None:
         """Fall back to qacct for completed jobs."""
         try:
-            output = subprocess.check_output(
+            output = run_cmd(
                 ["qacct", "-j", job_id],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError):
+            ).stdout
+        except (ExecutorError, FileNotFoundError):
             return None
         m = re.search(r"^exit_status\s+(\d+)", output, re.MULTILINE)
         if m is not None:

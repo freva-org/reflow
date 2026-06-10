@@ -200,6 +200,15 @@ class SqliteStore(Store):
             self._conn.close()
             self._conn = None
 
+    def __enter__(self) -> SqliteStore:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        self.close()
+
     def _decode_run_record(self, row: sqlite3.Row | None) -> RunRecord | None:
         if row is None:
             return None

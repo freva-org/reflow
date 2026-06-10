@@ -138,9 +138,10 @@ def _add_cancel_parser(sp: Any) -> None:
     )
     p.add_argument("run_ids", nargs="+", type=str, help="One or more run identifiers.")
     _add_store_flags(p)
-    p.add_argument("--task", default=None, type=str)
+    p.add_argument("--task", default=None, type=str, help="Name of the task")
     p.add_argument(
-        "--yes", "-y",
+        "--yes",
+        "-y",
         action="store_true",
         default=False,
         help="Skip confirmation prompt when cancelling multiple runs.",
@@ -159,7 +160,7 @@ def _add_retry_parser(sp: Any) -> None:
         help="Run identifier.",
     )
     _add_store_flags(p)
-    p.add_argument("--task", default=None, type=str)
+    p.add_argument("--task", default=None, type=str, help="Only retry this task")
     p.add_argument(
         "--no-verify",
         dest="verify",
@@ -177,7 +178,8 @@ def _add_runs_parser(sp: Any) -> None:
     )
     _add_store_flags(p)
     p.add_argument(
-        "--last", "-n",
+        "--last",
+        "-n",
         type=int,
         default=20,
         metavar="N",
@@ -251,7 +253,7 @@ def _build_worker_parser(prog: str) -> argparse.ArgumentParser:
     p = ReflowArgumentParser(prog=f"{prog} worker")
     p.add_argument("--run-id", required=True, type=str)
     _add_store_flags(p)
-    p.add_argument("--task", required=True, type=str)
+    p.add_argument("--task", required=True, type=str, help="Apply to this task only")
     p.add_argument("--index", default=None, type=int)
     p.set_defaults(_command="worker")
     return p
@@ -499,7 +501,9 @@ def _cmd_cancel(wf: Any, args: argparse.Namespace) -> int:
             return 1
 
     n = wf.cancel_runs(
-        run_ids, store, task_name=getattr(args, "task", None),
+        run_ids,
+        store,
+        task_name=getattr(args, "task", None),
     )
     print(f"Cancelled {n} task instance(s) across {len(run_ids)} run(s).")
     return 0

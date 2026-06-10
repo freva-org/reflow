@@ -10,11 +10,11 @@ from __future__ import annotations
 import logging
 import os
 import re
-import subprocess
 import sys
 
 from ..config import Config
 from . import Executor, JobResources
+from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +26,14 @@ _ARRAY_FLAG_TORQUE = "-t"
 def _detect_pbs_variant(qstat: str = "qstat") -> str:
     """Return ``"-J"`` for PBS Pro / OpenPBS or ``"-t"`` for Torque."""
     try:
-        out = subprocess.check_output(
+        result = run_cmd(
             [qstat, "--version"],
-            text=True,
-            stderr=subprocess.STDOUT,
-        ).lower()
-        if "pbs pro" in out or "openpbs" in out:
+        )
+        combined = (result.stdout + " " + result.stderr).lower()
+        if "pbs pro" in combined or "openpbs" in combined:
             return _ARRAY_FLAG_PBS_PRO
         return _ARRAY_FLAG_TORQUE
-    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+    except (ExecutorError, FileNotFoundError, OSError):
         # Default to PBS Pro if we can't detect.
         return _ARRAY_FLAG_PBS_PRO
 
@@ -107,7 +106,7 @@ class PBSExecutor(Executor):
             logger.info("DRY-RUN: %s", " ".join(cmd))
             return "DRYRUN"
         logger.debug("qsub: %s", " ".join(cmd))
-        output = subprocess.check_output(cmd, text=True).strip()
+        output = run_cmd(cmd).stdout
         # qsub returns a job ID like "12345.server" — take the numeric part.
         job_id = output.split(".")[0].strip()
         logger.info("Submitted job %s", job_id)
@@ -117,20 +116,18 @@ class PBSExecutor(Executor):
         if job_id == "DRYRUN":
             return
         try:
-            subprocess.check_call([self.qdel, job_id])
-        except subprocess.CalledProcessError as exc:
-            logger.warning("qdel %s returned %d", job_id, exc.returncode)
+            run_cmd([self.qdel, job_id])
+        except ExecutorError as exc:
+            logger.warning("qdel %s returned %d", job_id, exc.result.returncode)
 
     def job_state(self, job_id: str) -> str | None:
         if job_id == "DRYRUN":
             return None
         try:
-            output = subprocess.check_output(
+            output = run_cmd(
                 [self.qstat, "-f", "-x", job_id],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError):
+            ).stdout
+        except (ExecutorError, FileNotFoundError):
             return None
         # Parse "job_state = X" from qstat -f output.
         m = re.search(r"job_state\s*=\s*(\S+)", output)

@@ -19,6 +19,7 @@ import types as _types
 from datetime import datetime
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Literal,
     Union,
@@ -29,21 +30,24 @@ from typing import (
 
 # --- user-facing descriptor types ------------------------------------------
 
+if TYPE_CHECKING:
+    RunDir = Path
+else:
 
-class RunDir:
-    """Marker type for the run working directory.
+    class RunDir:
+        """Marker type for the run working directory.
 
-    A parameter typed as ``RunDir`` (or named ``run_dir``) is injected
-    with a ``pathlib.Path`` at runtime.  It never appears on the CLI.
+        A parameter typed as ``RunDir`` (or named ``run_dir``) is injected
+        with a ``pathlib.Path`` at runtime.  It never appears on the CLI.
 
-    Examples
-    --------
-    >>> @workflow.job()
-    ... def ingest(work_dir: RunDir, start: str) -> list[str]:
-    ...     output = work_dir / "output"
-    ...     ...
+        Examples
+        --------
+        >>> @workflow.job()
+        ... def ingest(work_dir: RunDir, start: str) -> list[str]:
+        ...     output = work_dir / "output"
+        ...     ...
 
-    """
+        """
 
 
 class Result:

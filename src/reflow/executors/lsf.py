@@ -11,11 +11,11 @@ import logging
 import os
 import re
 import shlex
-import subprocess
 import sys
 
 from ..config import Config
 from . import Executor, JobResources
+from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
 
@@ -83,13 +83,13 @@ class LSFExecutor(Executor):
             logger.info("DRY-RUN: %s", " ".join(cmd))
             return "DRYRUN"
         logger.debug("bsub: %s", " ".join(cmd))
-        output = subprocess.check_output(cmd, text=True).strip()
+        output: str = run_cmd(cmd).stdout
         # bsub output: "Job <12345> is submitted to queue <normal>."
         m = re.search(r"<(\d+)>", output)
         if m is None:
             logger.warning("Could not parse bsub output: %s", output)
             return output
-        job_id = m.group(1)
+        job_id: str = m.group(1)
         logger.info("Submitted job %s", job_id)
         return job_id
 
@@ -97,19 +97,18 @@ class LSFExecutor(Executor):
         if job_id == "DRYRUN":
             return
         try:
-            subprocess.check_call([self.bkill, job_id])
-        except subprocess.CalledProcessError as exc:
-            logger.warning("bkill %s returned %d", job_id, exc.returncode)
+            run_cmd([self.bkill, job_id])
+        except ExecutorError as exc:
+            logger.warning("bkill %s returned %d", job_id, exc.result.returncode)
 
     def job_state(self, job_id: str) -> str | None:
         if job_id == "DRYRUN":
             return None
         try:
-            output = subprocess.check_output(
+            output = run_cmd(
                 [self.bjobs, "-noheader", "-o", "stat", job_id],
-                text=True, stderr=subprocess.DEVNULL,
-            ).strip()
-        except (subprocess.CalledProcessError, FileNotFoundError):
+            ).stdout
+        except (ExecutorError, FileNotFoundError):
             return None
         if not output:
             return None
@@ -133,7 +132,9 @@ class LSFExecutor(Executor):
         return {"dependency_expr": expr}
 
     def _build_bsub(
-        self, resources: JobResources, command: list[str],
+        self,
+        resources: JobResources,
+        command: list[str],
     ) -> list[str]:
         parts: list[str] = [self.bsub]
 
