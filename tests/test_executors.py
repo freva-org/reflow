@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -12,16 +11,123 @@ from reflow import (
     Flow,
     FluxExecutor,
     JobResources,
-    LSFExecutor,
     LocalExecutor,
+    LSFExecutor,
     PBSExecutor,
     SGEExecutor,
     SlurmExecutor,
     Workflow,
 )
-from reflow.workflow._helpers import default_executor, make_run_id, resolve_executor
 from reflow.config import _rosetta_stone
-from reflow.workflow._helpers import default_executor, resolve_executor, resolve_index
+from reflow.executors.util import CommandResult, ExecutorError, run_cmd
+from reflow.workflow._helpers import (
+    default_executor,
+    resolve_executor,
+    resolve_index,
+)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# util.py — CommandResult, ExecutorError, run_cmd
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestCommandResult:
+    def test_fields(self) -> None:
+        r = CommandResult(cmd=["echo", "hi"], stdout="hi", stderr="", returncode=0)
+        assert r.cmd == ["echo", "hi"]
+        assert r.stdout == "hi"
+        assert r.stderr == ""
+        assert r.returncode == 0
+
+    def test_failed_result(self) -> None:
+        r = CommandResult(cmd=["false"], stdout="", stderr="oops", returncode=1)
+        assert r.returncode != 0
+        assert r.stderr == "oops"
+
+
+class TestExecutorError:
+    def test_message_contains_cmd_and_returncode(self) -> None:
+        r = CommandResult(cmd=["false"], stdout="", stderr="something failed", returncode=1)
+        exc = ExecutorError(r)
+        msg = str(exc)
+        assert "false" in msg
+        assert "1" in msg
+        assert "something failed" in msg
+
+    def test_result_attribute(self) -> None:
+        r = CommandResult(cmd=["false"], stdout="", stderr="err", returncode=2)
+        exc = ExecutorError(r)
+        assert exc.result is r
+
+    def test_is_runtime_error(self) -> None:
+        r = CommandResult(cmd=["false"], stdout="", stderr="", returncode=1)
+        assert isinstance(ExecutorError(r), RuntimeError)
+
+
+class TestRunCmd:
+    def test_success_captures_stdout(self) -> None:
+        result = run_cmd(["echo", "hello"])
+        assert result.stdout == "hello"
+        assert result.returncode == 0
+
+    def test_stdout_is_stripped(self) -> None:
+        result = run_cmd(["printf", "  trimmed  "])
+        assert result.stdout == "trimmed"
+
+    def test_stderr_captured_on_success(self) -> None:
+        result = run_cmd(["bash", "-c", "echo warn >&2"])
+        assert result.stderr == "warn"
+        assert result.returncode == 0
+
+    def test_nonzero_raises_executor_error(self) -> None:
+        with pytest.raises(ExecutorError) as exc_info:
+            run_cmd(["false"])
+        assert exc_info.value.result.returncode == 1
+
+    def test_executor_error_carries_stderr(self) -> None:
+        with pytest.raises(ExecutorError) as exc_info:
+            run_cmd(["bash", "-c", "echo boom >&2; exit 1"])
+        assert "boom" in exc_info.value.result.stderr
+
+    def test_check_false_does_not_raise(self) -> None:
+        result = run_cmd(["false"], check=False)
+        assert result.returncode == 1
+
+    def test_check_false_stdout_and_stderr_still_captured(self) -> None:
+        result = run_cmd(
+            ["bash", "-c", "echo out; echo err >&2; exit 1"],
+            check=False,
+        )
+        assert result.stdout == "out"
+        assert result.stderr == "err"
+        assert result.returncode == 1
+
+    def test_combine_stdout_stderr_at_call_site(self) -> None:
+        """Callers that need both streams just join them — no special flag needed."""
+        result = run_cmd(["bash", "-c", "echo out; echo err >&2"], check=False)
+        combined = (result.stdout + " " + result.stderr).lower()
+        assert "out" in combined
+        assert "err" in combined
+
+    def test_timeout_raises(self) -> None:
+        import subprocess
+        with pytest.raises(subprocess.TimeoutExpired):
+            run_cmd(["sleep", "10"], timeout=0.1)
+
+    def test_cwd_is_respected(self, tmp_path: Path) -> None:
+        result = run_cmd(["pwd"], cwd=str(tmp_path))
+        assert str(tmp_path) in result.stdout
+
+    def test_env_is_respected(self) -> None:
+        import os
+        env = {**os.environ, "REFLOW_TEST_VAR": "sentinel"}
+        result = run_cmd(["bash", "-c", "echo $REFLOW_TEST_VAR"], env=env)
+        assert result.stdout == "sentinel"
+
+    def test_command_not_found_raises(self) -> None:
+        with pytest.raises((ExecutorError, FileNotFoundError)):
+            run_cmd(["__reflow_no_such_binary__"])
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Executor ABC — base class features

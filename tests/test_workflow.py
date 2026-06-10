@@ -176,9 +176,9 @@ class TestSubmitAndRun:
 
     def test_run_repr(self) -> None:
         wf = Workflow("test")
-        store = SqliteStore(Path("/tmp/fake.db"))
-        run = Run(workflow=wf, run_id="test-123", run_dir=Path("/tmp"), store=store)
-        assert "test-123" in repr(run)
+        with SqliteStore(Path("/tmp/fake.db")) as store:
+            run = Run(workflow=wf, run_id="test-123", run_dir=Path("/tmp"), store=store)
+            assert "test-123" in repr(run)
 
 
 class TestWorkflowCancelRetryStatus:
@@ -785,3 +785,169 @@ class TestWorkflowHelpers:
     def test_resolve_index_no_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("SLURM_ARRAY_TASK_ID", raising=False)
         assert resolve_index(None) is None
+
+
+class TestRunStatusErrors:
+    def test_status_shows_error_text(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Errors flag causes error_text lines to appear in status output."""
+        wf = Workflow("w")
+
+        @wf.job()
+        def task() -> str:
+            raise RuntimeError("boom\n" * 20)  # > 15 lines to hit truncation
+
+        st = SqliteStore(str(tmp_path / "db.sqlite"))
+        run = wf.run_local(
+            run_dir=tmp_path / "r", store=st, on_error="continue"
+        )
+
+        run.status(errors=True)
+        out = capsys.readouterr().out
+        assert "FAILED" in out
+        # Truncation line should appear when error > 15 lines
+        assert "more lines" in out
+
+    def test_status_topo_value_error_fallback(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """ValueError from _topological_order is caught; tasks sorted alphabetically."""
+        from unittest.mock import patch
+
+        wf = Workflow("w")
+
+        @wf.job()
+        def beta() -> str:
+            return "ok"
+
+        @wf.job()
+        def alpha() -> str:
+            return "ok"
+
+        st = SqliteStore(str(tmp_path / "db.sqlite"))
+        run = wf.run_local(run_dir=tmp_path / "r", store=st)
+
+        with patch.object(
+            wf, "_topological_order", side_effect=ValueError("cycle")
+        ):
+            run.status()
+        out = capsys.readouterr().out
+        assert "alpha" in out or "beta" in out
+
+
+class TestWorkerUpdateRunningFailure:
+    def test_worker_continues_if_update_running_fails(
+        self, tmp_path: Path
+    ) -> None:
+        """update_task_running exception is swallowed; task still executes."""
+        from unittest.mock import patch
+
+        wf = Workflow("w")
+
+        @wf.job()
+        def task(val: Annotated[str, Param(help="V")]) -> str:
+            return val.upper()
+
+        st = SqliteStore(str(tmp_path / "db.sqlite"))
+        st.init()
+        run_id = "w-upd-001"
+        st.insert_run(run_id, "w", "u", {"val": "hi", "run_dir": str(tmp_path)})
+        iid = st.insert_task_instance(
+            run_id, "task", None, TaskState.PENDING, {}
+        )
+        st.update_task_submitted(run_id, "task", "j1")
+
+        with patch.object(st, "update_task_running", side_effect=Exception("db locked")):
+            wf.worker(run_id, st, tmp_path, "task")
+
+        from reflow.results import ingest_results
+        ingest_results(run_id, st)
+        row = st.get_task_instance(run_id, "task", None)
+        assert row["state"] == "SUCCESS"
+
+
+class TestValidateEdgeCases:
+    def test_validate_skips_task_when_hints_raises(self) -> None:
+        from unittest.mock import patch
+        from reflow import Workflow, Result
+        from typing import Annotated
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source() -> str:
+            return "ok"
+
+        @wf.job()
+        def sink(x: Annotated[str, Result(step="source")]) -> str:
+            return x
+
+        with patch("reflow.workflow._core.get_type_hints", side_effect=Exception("bad")):
+            wf.validate()  # must not raise
+
+    def test_validate_unknown_after_raises(self) -> None:
+        from reflow import Workflow
+
+        wf = Workflow("wf")
+
+        @wf.job(after=["nonexistent"])
+        def task() -> str:
+            return "ok"
+
+        with pytest.raises(ValueError, match="nonexistent"):
+            wf.validate()
+
+    def test_validate_upstream_no_return_type_skipped(self) -> None:
+        from reflow import Workflow, Result
+        from typing import Annotated
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source():  # no return annotation
+            return "ok"
+
+        @wf.job()
+        def sink(x: Annotated[str, Result(step="source")]) -> str:
+            return x
+
+        wf.validate()  # must not raise
+
+
+class TestCancelRunsJobId:
+    def test_cancel_run_calls_executor_cancel(self, tmp_path: Path) -> None:
+        """cancel_run calls executor.cancel for instances with a job_id."""
+        from unittest.mock import MagicMock
+        from reflow import Workflow, Param
+        from reflow.stores.sqlite import SqliteStore
+        from reflow._types import TaskState
+        from typing import Annotated
+
+        wf = Workflow("wf")
+
+        @wf.job()
+        def task(x: Annotated[str, Param(help="X")]) -> str:
+            return x
+
+        with SqliteStore(str(tmp_path / "db.sqlite")) as st:
+            # submit_run creates a PENDING instance; mark it RUNNING with a job_id
+            run_id = wf.submit_run(
+                run_dir=tmp_path / "r", store=st, parameters={"x": "v"}
+            )
+            row = st.get_task_instance(run_id, "task", None)
+            iid = int(row["id"])
+            st.update_task_running(iid)
+            st.conn.execute(
+                "UPDATE task_instances SET job_id = 'fake-job-42' WHERE id = ?",
+                (iid,),
+            )
+            st.conn.commit()
+
+            mock_exc = MagicMock()
+            wf.cancel_run(run_id, st, executor=mock_exc)
+            mock_exc.cancel.assert_called_once_with("fake-job-42")

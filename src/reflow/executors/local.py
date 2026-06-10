@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import logging
-import subprocess
 import uuid
 
 from . import Executor, JobResources
+from .util import CommandResult, run_cmd
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +20,13 @@ class LocalExecutor(Executor):
     def __init__(self, capture_output: bool = False) -> None:
         super().__init__()
         self.capture_output = capture_output
-        self._procs: dict[str, subprocess.CompletedProcess[str] | None] = {}
+        self._procs: dict[str, CommandResult | None] = {}
 
     def submit(self, resources: JobResources, command: list[str]) -> str:
         job_id = f"local-{uuid.uuid4().hex[:8]}"
         logger.info("LOCAL [%s]: %s", job_id, " ".join(command))
         try:
-            proc = subprocess.run(
-                command, text=True, capture_output=self.capture_output, check=False,
-            )
+            proc = run_cmd(command, check=False)
             self._procs[job_id] = proc
         except Exception:
             logger.exception("LOCAL [%s] failed to start", job_id)

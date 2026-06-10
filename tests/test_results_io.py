@@ -377,3 +377,44 @@ class TestIngestResults:
 
         assert d.exists()
         assert bad.exists()
+
+    def test_results_dir_removed_after_full_ingestion(
+        self, tmp_path: Path, cache_home: Path
+    ) -> None:
+        """Results directory is cleaned up when all files are ingested."""
+        store = _make_store(tmp_path)
+        ids = _insert_instances(store, "t", 2)
+
+        for i in range(2):
+            write_result(
+                "r1", "t", i,
+                instance_id=ids[i], state=TaskState.SUCCESS, output=f"v{i}",
+            )
+
+        d = _results_dir("r1")
+        assert d.exists()
+        ingest_results("r1", store)
+        # Directory removed when no JSON files remain
+        assert not d.exists()
+
+    def test_unlink_permission_error_is_swallowed(
+        self, tmp_path: Path, cache_home: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """OSError on unlink is silently ignored; ingestion still counts."""
+        store = _make_store(tmp_path)
+        ids = _insert_instances(store, "t", 1)
+
+        write_result(
+            "r1", "t", 0,
+            instance_id=ids[0], state=TaskState.SUCCESS, output="ok",
+        )
+
+        import pathlib
+        original_unlink = pathlib.Path.unlink
+
+        def _fail_unlink(self: pathlib.Path, missing_ok: bool = False) -> None:
+            raise OSError("simulated permission error")
+
+        monkeypatch.setattr(pathlib.Path, "unlink", _fail_unlink)
+        count = ingest_results("r1", store)
+        assert count == 1

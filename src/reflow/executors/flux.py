@@ -12,11 +12,11 @@ from __future__ import annotations
 
 import logging
 import os
-import subprocess
 import sys
 
 from ..config import Config
 from . import Executor, JobResources
+from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class FluxExecutor(Executor):
             logger.info("DRY-RUN: %s", " ".join(cmd))
             return "DRYRUN"
         logger.debug("flux submit: %s", " ".join(cmd))
-        output = subprocess.check_output(cmd, text=True).strip()
+        output = run_cmd(cmd).stdout
         # flux submit prints the job ID (an f-encoded integer).
         job_id = output.splitlines()[-1].strip() if output else output
         logger.info("Submitted job %s", job_id)
@@ -82,15 +82,15 @@ class FluxExecutor(Executor):
         if job_id == "DRYRUN":
             return
         try:
-            subprocess.check_call([self.flux, "cancel", job_id])
-        except subprocess.CalledProcessError as exc:
-            logger.warning("flux cancel %s returned %d", job_id, exc.returncode)
+            run_cmd([self.flux, "cancel", job_id])
+        except ExecutorError as exc:
+            logger.warning("flux cancel %s returned %d", job_id, exc.result.returncode)
 
     def job_state(self, job_id: str) -> str | None:
         if job_id == "DRYRUN":
             return None
         try:
-            output = subprocess.check_output(
+            output = run_cmd(
                 [
                     self.flux,
                     "jobs",
@@ -99,10 +99,8 @@ class FluxExecutor(Executor):
                     "{status_abbrev}",
                     job_id,
                 ],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            ).strip()
-        except (subprocess.CalledProcessError, FileNotFoundError):
+            ).stdout.strip()
+        except (ExecutorError, FileNotFoundError):
             return None
         if not output:
             return None
