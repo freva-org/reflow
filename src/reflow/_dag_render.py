@@ -19,7 +19,7 @@ phart.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .workflow import Workflow
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 FORMATS = ("text", "mermaid", "dot", "phart")
 
 
-def _edges(wf: "Workflow") -> list[tuple[str, str]]:
+def _edges(wf: Workflow) -> list[tuple[str, str]]:
     """Return (dependency, task) edges in topological order."""
     edges: list[tuple[str, str]] = []
     for tname in wf._topological_order():
@@ -37,11 +37,11 @@ def _edges(wf: "Workflow") -> list[tuple[str, str]]:
     return edges
 
 
-def _array_tasks(wf: "Workflow") -> set[str]:
+def _array_tasks(wf: Workflow) -> set[str]:
     return {name for name, spec in wf.tasks.items() if spec.config.array}
 
 
-def render_text(wf: "Workflow") -> str:
+def render_text(wf: Workflow) -> str:
     """Indented adjacency list (the original format)."""
     lines: list[str] = []
     for tname in wf._topological_order():
@@ -53,7 +53,7 @@ def render_text(wf: "Workflow") -> str:
     return "\n".join(lines)
 
 
-def render_mermaid(wf: "Workflow") -> str:
+def render_mermaid(wf: Workflow) -> str:
     """Mermaid ``flowchart TD`` source.
 
     Array tasks use the subroutine shape ``[[name]]``; singletons use the
@@ -72,7 +72,7 @@ def render_mermaid(wf: "Workflow") -> str:
     return "\n".join(lines)
 
 
-def render_dot(wf: "Workflow") -> str:
+def render_dot(wf: Workflow) -> str:
     """Graphviz DOT source.
 
     Array tasks are drawn as boxes with doubled borders (``peripheries=2``)
@@ -91,7 +91,7 @@ def render_dot(wf: "Workflow") -> str:
     return "\n".join(lines)
 
 
-def render_phart(wf: "Workflow", *, use_ascii: bool = False) -> str:
+def render_phart(wf: Workflow, *, use_ascii: bool = False) -> str:
     """Pretty ASCII/Unicode DAG via the optional phart + networkx extra.
 
     Array tasks are decorated with angle brackets ``<<name>>``; singletons
@@ -109,8 +109,7 @@ def render_phart(wf: "Workflow", *, use_ascii: bool = False) -> str:
     g.add_edges_from(_edges(wf))
 
     decorators = {
-        name: (("<<", ">>") if name in array else ("[", "]"))
-        for name in g.nodes
+        name: (("<<", ">>") if name in array else ("[", "]")) for name in g.nodes
     }
     renderer = ASCIIRenderer(
         g,
@@ -118,10 +117,11 @@ def render_phart(wf: "Workflow", *, use_ascii: bool = False) -> str:
         custom_decorators=decorators,
         use_ascii=use_ascii,
     )
-    return renderer.render().rstrip("\n")
+    result: str = renderer.render()
+    return result.rstrip("\n")
 
 
-def render(wf: "Workflow", fmt: str, *, use_ascii: bool = False) -> str:
+def render(wf: Workflow, fmt: str, *, use_ascii: bool = False) -> str:
     """Render the DAG in *fmt*. phart import errors propagate to the caller."""
     if fmt == "text":
         return render_text(wf)
