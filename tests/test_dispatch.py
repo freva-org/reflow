@@ -1152,3 +1152,405 @@ class TestDispatchRemainingGaps:
             with patch("typing.get_type_hints", side_effect=Exception("bad")):
                 result = wf._resolve_result_inputs(st, "r1", wf.tasks["sink"])
             assert isinstance(result, dict)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Targeted coverage for remaining _dispatch.py branches
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestDispatchBranchCoverage:
+    def test_resolve_result_inputs_hints_exception(self, tmp_path: Path) -> None:
+        """_resolve_result_inputs: get_type_hints raising → hints = {} (145-146)."""
+        from unittest.mock import patch
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source() -> str:
+            return "v"
+
+        @wf.job()
+        def sink(x: Annotated[str, Result(step="source")]) -> str:
+            return x
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {})
+            iid = st.insert_task_instance(
+                "r1", "source", None, TaskState.SUCCESS, {}
+            )
+            st.update_task_success(iid, "v")
+            with patch(
+                "reflow.workflow._dispatch.get_type_hints",
+                side_effect=Exception("bad"),
+            ):
+                result = wf._resolve_result_inputs(st, "r1", wf.tasks["sink"])
+            # With hints unavailable the dep can't be wired; result is a dict
+            assert isinstance(result, dict)
+
+    def test_find_fan_out_param_hints_exception_returns_none(
+        self, tmp_path: Path
+    ) -> None:
+        """_find_fan_out_param: get_type_hints raising → None (203-204)."""
+        from unittest.mock import patch
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source() -> list[str]:
+            return ["a"]
+
+        @wf.array_job()
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item
+
+        wf.validate()
+        with patch(
+            "reflow.workflow._dispatch.get_type_hints",
+            side_effect=Exception("bad"),
+        ):
+            assert wf._find_fan_out_param(wf.tasks["process"]) is None
+
+    def test_find_fan_out_param_broadcast_skipped(self, tmp_path: Path) -> None:
+        """Broadcast dep is skipped in the first loop (211)."""
+        wf = Workflow("wf")
+
+        @wf.job()
+        def cfg() -> list[str]:
+            return ["c"]
+
+        @wf.job()
+        def source() -> list[str]:
+            return ["a", "b"]
+
+        @wf.array_job()
+        def process(
+            item: Annotated[str, Result(step="source")],
+            extra: Annotated[list[str], Result(step="cfg", broadcast=True)],
+        ) -> str:
+            return item
+
+        wf.validate()
+        # The fan-out param is "item"; "extra" (broadcast) is skipped.
+        assert wf._find_fan_out_param(wf.tasks["process"]) == "item"
+
+    def test_find_fan_out_param_unknown_upstream_skipped(
+        self, tmp_path: Path
+    ) -> None:
+        """A dep whose upstream has no return type is skipped (218, 227-228)."""
+        from unittest.mock import patch
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source():  # no return annotation
+            return ["a", "b"]
+
+        @wf.array_job()
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item
+
+        wf.validate()
+        # upstream return_type is empty → first loop continues; falls back to
+        # the first non-broadcast dep, which is still "item".
+        assert wf._find_fan_out_param(wf.tasks["process"]) == "item"
+
+    def test_find_fan_out_param_infer_type_error_skipped(
+        self, tmp_path: Path
+    ) -> None:
+        """infer_wire_mode raising TypeError skips the dep, fallback returns it (234)."""
+        from unittest.mock import patch
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source() -> list[str]:
+            return ["a", "b"]
+
+        @wf.array_job()
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item
+
+        wf.validate()
+        with patch(
+            "reflow.workflow._dispatch.infer_wire_mode",
+            side_effect=TypeError("bad"),
+        ):
+            # First loop continues past the TypeError; fallback returns "item".
+            assert wf._find_fan_out_param(wf.tasks["process"]) == "item"
+
+    def test_try_cache_verify_stale(self, tmp_path: Path) -> None:
+        """_try_cache via dispatch: verify + stale callable → False (311-317)."""
+        from typing import Any
+        from reflow.executors.local import LocalExecutor
+        wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+        def stale(output: Any) -> bool:
+            return False
+
+        @wf.job(cache=True, verify=stale)
+        def step(x: Annotated[str, Param(help="x")]) -> str:
+            return x.upper()
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            # Seed a cached record by completing the task once via dispatch.
+            st.insert_run("r1", "wf", "u", {"x": "v"})
+            ex = LocalExecutor()
+            wf._dispatch_single("r1", tmp_path, wf.tasks["step"], st, ex)
+            row = st.get_task_instance("r1", "step", None)
+            st.update_task_success(int(row["id"]), "V", output_hash="abc")
+
+            # New run: cache exists but verify=stale → _try_cache returns False.
+            st.insert_run("r2", "wf", "u", {"x": "v"})
+            hit = wf._try_cache(
+                st, "r2", wf.tasks["step"], {}, None, [], verify=True
+            )
+            assert hit is False
+
+    def test_try_cache_hit_recomputes_output_hash(self, tmp_path: Path) -> None:
+        """_try_cache via dispatch: missing output_hash recomputed (324-326)."""
+        from reflow.executors.local import LocalExecutor
+        wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+        @wf.job(cache=True)
+        def step(x: Annotated[str, Param(help="x")]) -> str:
+            return x.upper()
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {"x": "v"})
+            ex = LocalExecutor()
+            wf._dispatch_single("r1", tmp_path, wf.tasks["step"], st, ex)
+            row = st.get_task_instance("r1", "step", None)
+            iid = int(row["id"])
+            st.update_task_success(iid, "V")
+            # Clear the output_hash so _try_cache must recompute it.
+            st.conn.execute(
+                "UPDATE task_instances SET output_hash = '' WHERE id = ?", (iid,)
+            )
+            st.conn.commit()
+
+            # _dispatch_single resolves payload via _resolve_result_inputs, which
+            # is {} for a Param-only task — so the cache identity is built from
+            # an empty payload. Match that here to hit the cached record.
+            st.insert_run("r2", "wf", "u", {"x": "v"})
+            hit = wf._try_cache(
+                st, "r2", wf.tasks["step"], {}, None, []
+            )
+            assert hit is True
+            assert st.get_task_instance("r2", "step", None)["state"] == "SUCCESS"
+
+    def test_try_cache_no_cache_config_returns_false(self, tmp_path: Path) -> None:
+        """_try_cache returns False immediately when caching is off (295)."""
+        wf = Workflow("wf")
+
+        @wf.job()  # cache defaults to False
+        def step(x: Annotated[str, Param(help="x")]) -> str:
+            return x
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {"x": "v"})
+            hit = wf._try_cache(
+                st, "r1", wf.tasks["step"], {"x": "v"}, None, []
+            )
+            assert hit is False
+
+    def test_try_cache_miss_returns_false(self, tmp_path: Path) -> None:
+        """_try_cache returns False when nothing is cached (307-308)."""
+        wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+        @wf.job(cache=True)
+        def step(x: Annotated[str, Param(help="x")]) -> str:
+            return x
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {"x": "v"})
+            hit = wf._try_cache(
+                st, "r1", wf.tasks["step"], {"x": "v"}, None, []
+            )
+            assert hit is False
+
+    def test_dispatch_single_creates_pending(self, tmp_path: Path) -> None:
+        """_dispatch_single inserts a PENDING instance then submits (387+)."""
+        wf = Workflow("wf")
+
+        @wf.job()
+        def step(x: Annotated[str, Param(help="x")]) -> str:
+            return x
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {"x": "v"})
+            from reflow.executors.local import LocalExecutor
+            wf._dispatch_single(
+                "r1", tmp_path, wf.tasks["step"], st, LocalExecutor()
+            )
+            inst = st.get_task_instance("r1", "step", None)
+            assert inst is not None
+
+    def test_dispatch_array_no_result_inputs(self, tmp_path: Path) -> None:
+        """_dispatch_array returns None when result_inputs empty (444)."""
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source() -> list[str]:
+            return ["a"]
+
+        @wf.array_job()
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {})
+            # source not done → no result inputs
+            from reflow.executors.local import LocalExecutor
+            result = wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
+            )
+            assert result is None
+
+    def test_dispatch_array_empty_fan_items(self, tmp_path: Path) -> None:
+        """_dispatch_array returns None when fan list empty (454)."""
+        wf = Workflow("wf")
+
+        @wf.job()
+        def source() -> list[str]:
+            return []
+
+        @wf.array_job()
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {})
+            iid = st.insert_task_instance(
+                "r1", "source", None, TaskState.SUCCESS, {}
+            )
+            st.update_task_success(iid, [])
+            from reflow.executors.local import LocalExecutor
+            result = wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
+            )
+            assert result is None
+
+    def test_dispatch_array_all_cached_returns_none(self, tmp_path: Path) -> None:
+        """All elements cached → 'all resolved from cache' log + None (508)."""
+        from reflow.executors.local import LocalExecutor
+        wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+        @wf.job()
+        def source() -> list[str]:
+            return ["a", "b"]
+
+        @wf.array_job(cache=True)
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item.upper()
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            # Run 1: dispatch the array and complete both elements.
+            st.insert_run("r1", "wf", "u", {})
+            iid = st.insert_task_instance(
+                "r1", "source", None, TaskState.SUCCESS, {}
+            )
+            st.update_task_success(iid, ["a", "b"])
+            ex = LocalExecutor()
+            wf._dispatch_array("r1", tmp_path, wf.tasks["process"], st, ex)
+            for inst in st.list_task_instances("r1", task_name="process"):
+                st.update_task_success(int(inst["id"]), inst["input"]["item"].upper())
+
+            # Run 2: both elements should resolve from cache → returns None.
+            st.insert_run("r2", "wf", "u", {})
+            iid2 = st.insert_task_instance(
+                "r2", "source", None, TaskState.SUCCESS, {}
+            )
+            st.update_task_success(iid2, ["a", "b"])
+            result = wf._dispatch_array(
+                "r2", tmp_path, wf.tasks["process"], st, ex
+            )
+            assert result is None
+
+    def test_dispatch_array_partial_cached(self, tmp_path: Path) -> None:
+        """Some cached, some pending → comma-joined arr_str (513)."""
+        from reflow.executors.local import LocalExecutor
+        wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+        @wf.job()
+        def source() -> list[str]:
+            return ["a", "b", "c"]
+
+        @wf.array_job(cache=True)
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item.upper()
+
+        wf.validate()
+        with _store(tmp_path) as st:
+            # Run 1: complete only the first element so its identity is cached.
+            st.insert_run("r1", "wf", "u", {})
+            iid = st.insert_task_instance(
+                "r1", "source", None, TaskState.SUCCESS, {}
+            )
+            st.update_task_success(iid, ["a", "b", "c"])
+            ex = LocalExecutor()
+            wf._dispatch_array("r1", tmp_path, wf.tasks["process"], st, ex)
+            insts = sorted(
+                st.list_task_instances("r1", task_name="process"),
+                key=lambda i: i["array_index"],
+            )
+            # Cache just element 0 ("a").
+            st.update_task_success(int(insts[0]["id"]), "A")
+
+            # Run 2: element 0 hits cache, elements 1,2 pending → partial arr_str.
+            st.insert_run("r2", "wf", "u", {})
+            iid2 = st.insert_task_instance(
+                "r2", "source", None, TaskState.SUCCESS, {}
+            )
+            st.update_task_success(iid2, ["a", "b", "c"])
+            job_id = wf._dispatch_array(
+                "r2", tmp_path, wf.tasks["process"], st, ex
+            )
+            assert job_id is not None
+            # All three instances exist (one cached SUCCESS, two newly created).
+            assert len(st.list_task_instances("r2", task_name="process")) == 3
+
+    def test_dispatch_array_parallelism_suffix(self, tmp_path: Path) -> None:
+        """array_parallelism appends %N to arr_str (518)."""
+        wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+        @wf.job()
+        def source() -> list[str]:
+            return ["a", "b", "c"]
+
+        @wf.array_job(array_parallelism=2)
+        def process(item: Annotated[str, Result(step="source")]) -> str:
+            return item
+
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {})
+            iid = st.insert_task_instance(
+                "r1", "source", None, TaskState.SUCCESS, {}
+            )
+            st.update_task_success(iid, ["a", "b", "c"])
+            from reflow.executors.local import LocalExecutor
+            job_id = wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
+            )
+            assert job_id is not None
+            instances = st.list_task_instances("r1", task_name="process")
+            assert len(instances) == 3
+
+    def test_maybe_finalise_returns_on_empty_summary(self, tmp_path: Path) -> None:
+        """_maybe_finalise_run returns early on empty summary (533 region)."""
+        wf = Workflow("wf")
+
+        @wf.job()
+        def step() -> str:
+            return "ok"
+
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {})
+            # No task instances → empty summary → early return
+            wf._maybe_finalise_run("r1", st)
+            assert st.get_run("r1")["status"] in ("RUNNING", "PENDING", "SUBMITTED")
