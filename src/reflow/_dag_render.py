@@ -19,10 +19,7 @@ phart.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .workflow import Workflow
+from .workflow import Workflow
 
 FORMATS = ("text", "mermaid", "dot", "phart")
 
@@ -91,7 +88,7 @@ def render_dot(wf: Workflow) -> str:
     return "\n".join(lines)
 
 
-def render_phart(wf: "Workflow", *, use_ascii: bool = False) -> str:
+def render_phart(wf: Workflow, *, use_ascii: bool = False) -> str:
     """Pretty ASCII/Unicode DAG via the optional phart + networkx extra.
 
     Array tasks are suffixed ``[array]`` in their label so they stand out
