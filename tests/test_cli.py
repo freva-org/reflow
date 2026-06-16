@@ -761,3 +761,209 @@ class TestCLIMethod:
         out = capsys.readouterr().out
         assert rc == 0
         assert "task" in out or "wf" in out
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# dag command: --format {text,mermaid,dot,phart}
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestCLIDagFormats:
+    @staticmethod
+    def _make_wf() -> Workflow:
+        """A workflow with an array task and a multi-parent node, mirroring
+        the shape of a real conversion pipeline."""
+        wf = Workflow("dagfmt")
+
+        @wf.job()
+        def gather_sources() -> list[str]:
+            return ["a", "b"]
+
+        @wf.job()
+        def prepare_shared(
+            s: Annotated[list[str], Result(step="gather_sources")],
+        ) -> str:
+            return "shared"
+
+        @wf.array_job()
+        def download_source(
+            item: Annotated[str, Result(step="gather_sources")],
+        ) -> str:
+            return item
+
+        @wf.array_job()
+        def convert_source(
+            d: Annotated[str, Result(step="download_source")],
+            p: Annotated[str, Result(step="prepare_shared", broadcast=True)],
+        ) -> str:
+            return d
+
+        return wf
+
+    def test_dag_default_is_text(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+        args = parse_args(wf, ["dag"])
+        assert args.format == "text"
+        rc = run_command(wf, args)
+        out = capsys.readouterr().out
+        assert rc == 0
+        # Array tasks carry the [array] suffix; multi-parent shows both deps
+        assert "download_source [array]" in out
+        assert "convert_source [array]  <- download_source, prepare_shared" in out
+
+    def test_dag_format_text_explicit(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+        rc = run_command(wf, parse_args(wf, ["dag", "--format", "text"]))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "gather_sources" in out
+
+    def test_dag_format_mermaid(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+        rc = run_command(wf, parse_args(wf, ["dag", "--format", "mermaid"]))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert out.startswith("flowchart TD")
+        # Array tasks use the subroutine shape [[...]]
+        assert "download_source[[download_source]]" in out
+        assert "convert_source[[convert_source]]" in out
+        # Singletons use the plain box
+        assert "gather_sources[gather_sources]" in out
+        # Edges render with arrows
+        assert "gather_sources --> download_source" in out
+        assert "prepare_shared --> convert_source" in out
+
+    def test_dag_format_dot(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+        rc = run_command(wf, parse_args(wf, ["dag", "--format", "dot"]))
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert out.startswith("digraph reflow {")
+        assert out.rstrip().endswith("}")
+        # Array tasks get doubled borders
+        assert '"download_source" [peripheries=2];' in out
+        assert '"convert_source" [peripheries=2];' in out
+        # Singletons have no peripheries attribute
+        assert '"gather_sources";' in out
+        # Edges are quoted
+        assert '"gather_sources" -> "download_source";' in out
+
+    def test_dag_invalid_format_rejected(self) -> None:
+        from reflow.cli import parse_args
+
+        wf = self._make_wf()
+        with pytest.raises(SystemExit):
+            parse_args(wf, ["dag", "--format", "nonsense"])
+
+    def test_dag_format_phart_when_available(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """If phart + networkx are importable, phart output is produced."""
+        pytest.importorskip("phart")
+        pytest.importorskip("networkx")
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+        rc = run_command(wf, parse_args(wf, ["dag", "--format", "phart"]))
+        out = capsys.readouterr().out
+        assert rc == 0
+        # All task names appear in the rendered diagram
+        for name in (
+            "gather_sources",
+            "prepare_shared",
+            "download_source",
+            "convert_source",
+        ):
+            assert name in out
+        # Array tasks are decorated with angle brackets, singletons with []
+        assert "<<download_source>>" in out
+        assert "[gather_sources]" in out
+
+    def test_dag_format_phart_ascii_flag(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--ascii forces 7-bit output (no Unicode arrows)."""
+        pytest.importorskip("phart")
+        pytest.importorskip("networkx")
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+        rc = run_command(
+            wf, parse_args(wf, ["dag", "--format", "phart", "--ascii"])
+        )
+        out = capsys.readouterr().out
+        assert rc == 0
+        # No Unicode downward arrow in ASCII mode
+        assert "\u2193" not in out
+        assert "gather_sources" in out
+
+    def test_dag_phart_missing_falls_back_to_text(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """When phart can't be imported, dag prints text to stdout and a hint
+        to stderr, still returning 0."""
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+
+        real_import = __builtins__["__import__"] if isinstance(
+            __builtins__, dict
+        ) else __builtins__.__import__
+
+        def blocked_import(name, *a, **k):
+            if name == "phart" or name.startswith("phart."):
+                raise ImportError("No module named 'phart'")
+            return real_import(name, *a, **k)
+
+        with patch("builtins.__import__", side_effect=blocked_import):
+            rc = run_command(wf, parse_args(wf, ["dag", "--format", "phart"]))
+
+        captured = capsys.readouterr()
+        assert rc == 0
+        # Text diagram on stdout
+        assert "download_source [array]" in captured.out
+        # Actionable hint on stderr, not stdout
+        assert "pip install" in captured.err
+        assert "pretty" in captured.err
+        assert "phart" not in captured.out
+
+    def test_dag_phart_hint_goes_to_stderr_only(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """The fallback hint must not pollute stdout (so redirects stay clean)."""
+        from reflow.cli import parse_args, run_command
+
+        wf = self._make_wf()
+
+        real_import = __builtins__["__import__"] if isinstance(
+            __builtins__, dict
+        ) else __builtins__.__import__
+
+        def blocked_import(name, *a, **k):
+            if name == "phart" or name.startswith("phart."):
+                raise ImportError("blocked")
+            return real_import(name, *a, **k)
+
+        with patch("builtins.__import__", side_effect=blocked_import):
+            run_command(wf, parse_args(wf, ["dag", "--format", "phart"]))
+
+        captured = capsys.readouterr()
+        # stdout is a valid text diagram with no warning text mixed in
+        assert "not installed" not in captured.out
+        assert "not installed" in captured.err
