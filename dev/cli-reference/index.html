@@ -842,6 +842,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-ascii" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --ascii
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-version" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1282,10 +1304,61 @@ includes the full <code>failed_instances</code> list:</p>
 <h3 id="dag"><code>dag</code><a class="headerlink" href="#dag" title="Permanent link">&para;</a></h3>
 <p>Print the task dependency graph:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">  gather_sources</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">  prepare_shared  &lt;- gather_sources</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">  download_source [array]  &lt;- gather_sources</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">  convert_source [array]  &lt;- download_source, prepare_shared</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">  gather_temp_levels  &lt;- convert_source</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">  finalize [array]  &lt;- gather_temp_levels</span>
 </code></pre></div>
+<p>Array tasks are marked <code>[array]</code>; the <code>&lt;-</code> arrow lists each task's
+dependencies.</p>
+<p>Use <code>--format</code> to choose a different rendering. The <code>text</code>, <code>mermaid</code>,
+and <code>dot</code> formats have no extra dependencies:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag<span class="w"> </span>--format<span class="w"> </span>mermaid
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">flowchart TD</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">    gather_sources[gather_sources]</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">    download_source[[download_source]]</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">    convert_source[[convert_source]]</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="go">    gather_sources --&gt; download_source</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="go">    download_source --&gt; convert_source</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">    prepare_shared --&gt; convert_source</span>
+</code></pre></div>
+<p><code>mermaid</code> output renders directly in GitHub and in mkdocs-material, so it
+is handy for embedding a workflow diagram in documentation. <code>dot</code> emits
+Graphviz source you can pipe to the <code>dot</code> binary:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag<span class="w"> </span>--format<span class="w"> </span>dot<span class="w"> </span><span class="p">|</span><span class="w"> </span>dot<span class="w"> </span>-Tpng<span class="w"> </span>-o<span class="w"> </span>dag.png
+</code></pre></div>
+<p>In both <code>mermaid</code> and <code>dot</code>, array tasks are drawn with a distinct shape
+(a subroutine box <code>[[...]]</code> in Mermaid, a doubled border in Graphviz) so
+they stand out from singleton tasks.</p>
+<p>The <code>phart</code> format draws a pretty Unicode diagram directly in the
+terminal, with the multi-parent fan-in rendered without duplicating
+shared nodes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>dag<span class="w"> </span>--format<span class="w"> </span>phart
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">                       [gather_sources]</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">                              ↓</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">    &lt;&lt;download_source&gt;&gt;───────+───────────→[prepare_shared]</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">            ↓                                     ↓</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="go">            +────────→&lt;&lt;convert_source&gt;&gt;──────────+</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">                              ↓</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="go">                    →[gather_temp_levels]</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="go">                              ↓</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="go">                         &lt;&lt;finalize&gt;&gt;</span>
+</code></pre></div>
+<p>Array tasks appear as <code>&lt;&lt;name&gt;&gt;</code> and singletons as <code>[name]</code>. This format
+needs an optional dependency:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;reflow-hpc[pretty]&#39;</span>
+</code></pre></div>
+<p>If the extra is not installed, <code>--format phart</code> prints the plain <code>text</code>
+diagram to stdout and a one-line install hint to stderr, then exits
+successfully — so redirecting the output (for example
+<code>dag --format phart &gt; graph.txt</code>) still produces a clean diagram. Pass
+<code>--ascii</code> to force 7-bit ASCII instead of Unicode box characters, which
+is useful for terminals or logs that do not handle Unicode well.</p>
 <h3 id="describe"><code>describe</code><a class="headerlink" href="#describe" title="Permanent link">&para;</a></h3>
 <p>Print the full workflow manifest as JSON:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>describe
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>describe
 </code></pre></div>
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
 <h3 id="-run-dir"><code>--run-dir</code><a class="headerlink" href="#-run-dir" title="Permanent link">&para;</a></h3>
@@ -1319,6 +1392,13 @@ to <code>runs</code>.</p>
 Only applies to <code>runs</code>.</p>
 <h3 id="-yes-y"><code>--yes</code>, <code>-y</code><a class="headerlink" href="#-yes-y" title="Permanent link">&para;</a></h3>
 <p>Skip the confirmation prompt when cancelling multiple runs.</p>
+<h3 id="-format"><code>--format</code><a class="headerlink" href="#-format" title="Permanent link">&para;</a></h3>
+<p>Output format for <code>dag</code>: <code>text</code> (default), <code>mermaid</code>, <code>dot</code>, or
+<code>phart</code>. Only applies to <code>dag</code>. See the <a href="#dag"><code>dag</code></a> command above for
+details and examples.</p>
+<h3 id="-ascii"><code>--ascii</code><a class="headerlink" href="#-ascii" title="Permanent link">&para;</a></h3>
+<p>For <code>dag --format phart</code>, force 7-bit ASCII output instead of Unicode
+box-drawing characters. Only applies to <code>dag</code>.</p>
 <h3 id="-version"><code>--version</code><a class="headerlink" href="#-version" title="Permanent link">&para;</a></h3>
 <p>Print the reflow version.</p>
 
