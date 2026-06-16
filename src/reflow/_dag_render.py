@@ -19,10 +19,7 @@ phart.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .workflow import Workflow
+from .workflow import Workflow
 
 FORMATS = ("text", "mermaid", "dot", "phart")
 
@@ -94,29 +91,30 @@ def render_dot(wf: Workflow) -> str:
 def render_phart(wf: Workflow, *, use_ascii: bool = False) -> str:
     """Pretty ASCII/Unicode DAG via the optional phart + networkx extra.
 
-    Array tasks are decorated with angle brackets ``<<name>>``; singletons
-    with square brackets ``[name]``.  Raises ImportError if the extra is
-    not installed; the caller should catch this and fall back to text.
+    Array tasks are suffixed ``[array]`` in their label so they stand out
+    from singleton tasks.  Raises ImportError if the extra is not installed;
+    the caller should catch this and fall back to text.
+
+    The marker is baked into the node label rather than using phart's
+    ``custom_decorators``/``NodeStyle.CUSTOM``, because those are only
+    available in newer phart releases and their behaviour varies across
+    versions.  A plain label suffix renders consistently everywhere.
     """
     import networkx as nx  # noqa: PLC0415 - optional dependency
-    from phart import ASCIIRenderer, NodeStyle  # noqa: PLC0415
+    from phart import ASCIIRenderer  # noqa: PLC0415
 
     array = _array_tasks(wf)
+
+    def label(name: str) -> str:
+        return f"{name} [array]" if name in array else name
+
     g = nx.DiGraph()
     # Add all nodes so isolated tasks still render.
     for tname in wf._topological_order():
-        g.add_node(tname)
-    g.add_edges_from(_edges(wf))
+        g.add_node(label(tname))
+    g.add_edges_from((label(dep), label(t)) for dep, t in _edges(wf))
 
-    decorators = {
-        name: (("<<", ">>") if name in array else ("[", "]")) for name in g.nodes
-    }
-    renderer = ASCIIRenderer(
-        g,
-        node_style=NodeStyle.CUSTOM,
-        custom_decorators=decorators,
-        use_ascii=use_ascii,
-    )
+    renderer = ASCIIRenderer(g, use_ascii=use_ascii)
     result: str = renderer.render()
     return result.rstrip("\n")
 

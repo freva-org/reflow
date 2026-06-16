@@ -891,9 +891,9 @@ class TestCLIDagFormats:
             "convert_source",
         ):
             assert name in out
-        # Array tasks are decorated with angle brackets, singletons with []
-        assert "<<download_source>>" in out
-        assert "[gather_sources]" in out
+        # Array tasks carry the [array] suffix; singletons do not.
+        assert "download_source [array]" in out
+        assert "gather_sources [array]" not in out
 
     def test_dag_format_phart_ascii_flag(
         self, capsys: pytest.CaptureFixture[str]

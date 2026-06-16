@@ -71,7 +71,7 @@ class TestRenderDispatcher:
         pytest.importorskip("networkx")
         out = _dag_render.render(_make_wf(), "phart")
         assert "gather_sources" in out
-        assert "<<download_source>>" in out
+        assert "download_source [array]" in out
 
     def test_render_phart_via_dispatcher_ascii(self) -> None:
         pytest.importorskip("phart")
@@ -169,12 +169,16 @@ class TestRenderPhart:
         ):
             assert name in out
 
-    def test_array_and_singleton_decorators(self) -> None:
+    def test_array_and_singleton_labels(self) -> None:
         pytest.importorskip("phart")
         pytest.importorskip("networkx")
         out = _dag_render.render_phart(_make_wf())
-        assert "<<download_source>>" in out
-        assert "[gather_sources]" in out
+        # Array tasks carry the [array] suffix; singletons do not.
+        assert "download_source [array]" in out
+        assert "convert_source [array]" in out
+        # A singleton name appears without the suffix
+        assert "gather_sources" in out
+        assert "gather_sources [array]" not in out
 
     def test_ascii_mode_no_unicode(self) -> None:
         pytest.importorskip("phart")
