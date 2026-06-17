@@ -35,6 +35,27 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _compress_indices(indices: list[int]) -> str:
+    """Compress a sorted index list into Slurm array syntax.
+
+    Contiguous runs become ``lo-hi`` and isolated indices stay single, e.g.
+    ``[0,1,2,5,7,8] -> "0-2,5,7-8"``. This keeps the ``--array`` string short
+    for large contiguous waves while still expressing sparse leftovers.
+    """
+    if not indices:
+        return ""
+    parts: list[str] = []
+    start = prev = indices[0]
+    for value in indices[1:]:
+        if value == prev + 1:
+            prev = value
+            continue
+        parts.append(f"{start}-{prev}" if start != prev else f"{start}")
+        start = prev = value
+    parts.append(f"{start}-{prev}" if start != prev else f"{start}")
+    return ",".join(parts)
+
+
 class DispatchMixin:
     """Methods that implement the dispatch cycle.
 
@@ -452,6 +473,58 @@ class DispatchMixin:
         store.update_task_submitted(run_id, spec.name, job_id)
         return job_id
 
+    def _submit_wave(
+        self,
+        run_id: str,
+        run_dir: Path,
+        spec: TaskSpec,
+        store: Store,
+        executor: Executor,
+        candidate_indices: list[int],
+    ) -> str | None:
+        """Submit up to the configured cap of *candidate_indices* as one array.
+
+        Honors ``Config.max_submit_jobs`` (the AssocMaxSubmitJobLimit-style
+        cap): only the first ``cap`` indices are submitted now; the rest stay
+        PENDING and are picked up by the dependency-triggered follow-up
+        dispatch once this wave drains, so queued jobs never exceed the cap.
+        Returns the job id, or ``None`` if nothing was submitted or the
+        submission was rejected (in which case the wave is marked FAILED by
+        :meth:`_submit_guarded`).
+        """
+        if not candidate_indices:
+            return None
+        indices = sorted(candidate_indices)
+        cap = self.config.max_submit_jobs  # type: ignore[attr-defined]
+        if cap is not None and len(indices) > cap:
+            wave = indices[:cap]
+            logger.info(
+                "Submitting %d of %d pending %s task(s) this wave (cap=%d); "
+                "the remainder follow as the wave drains.",
+                len(wave),
+                len(indices),
+                spec.name,
+                cap,
+            )
+        else:
+            wave = indices
+        arr_str = _compress_indices(wave)
+        if spec.config.array_parallelism is not None:
+            arr_str = f"{arr_str}%{spec.config.array_parallelism}"
+        job_id = self._submit_guarded(
+            executor,
+            self._array_resources(run_dir, spec, arr_str),  # type: ignore[attr-defined]
+            self._worker_command(run_id, run_dir, spec.name, store),  # type: ignore[attr-defined]
+            run_id,
+            spec,
+            store,
+            indices=wave,
+        )
+        if job_id is None:
+            return None
+        store.update_task_submitted(run_id, spec.name, job_id, indices=wave)
+        return job_id
+
     def _dispatch_array(
         self,
         run_id: str,
@@ -461,32 +534,43 @@ class DispatchMixin:
         executor: Executor,
         verify: bool = False,
     ) -> str | None:
-        """Dispatch an array task.  Returns the job ID or None."""
+        """Dispatch an array task.  Returns the job ID or None.
+
+        Large fan-outs are submitted in capped waves (see
+        :meth:`_submit_wave`): the first dispatch creates every instance and
+        submits the first wave; later dispatches (triggered by the follow-up
+        dependency) submit the next wave of still-PENDING indices until the
+        array is drained.
+        """
         if not self._all_deps_satisfied(store, run_id, spec):
             return None
 
         existing = store.list_task_instances(run_id, task_name=spec.name)
-        retrying = [
-            r for r in existing if TaskState(str(r["state"])) == TaskState.RETRYING
-        ]
-        if retrying:
-            retry_indices = [int(r["array_index"]) for r in retrying]
-            arr = ",".join(str(i) for i in retry_indices)
-            job_id = self._submit_guarded(
-                executor,
-                self._array_resources(run_dir, spec, arr),  # type: ignore[attr-defined]
-                self._worker_command(run_id, run_dir, spec.name, store),  # type: ignore[attr-defined]
-                run_id,
-                spec,
-                store,
-                indices=retry_indices,
-            )
-            if job_id is None:
-                return None
-            store.update_task_submitted(run_id, spec.name, job_id)
-            return job_id
 
-        if store.count_task_instances(run_id, spec.name) > 0:
+        # Resubmit any instances queued for retry first (also capped).
+        retry_indices = [
+            int(r["array_index"])
+            for r in existing
+            if TaskState(str(r["state"])) == TaskState.RETRYING
+        ]
+        if retry_indices:
+            return self._submit_wave(
+                run_id, run_dir, spec, store, executor, retry_indices
+            )
+
+        # Instances already exist (e.g. from a previous capped wave): submit
+        # the next wave of still-PENDING indices. The dependency-triggered
+        # follow-up dispatch keeps draining the remainder wave by wave.
+        if existing:
+            pending = [
+                int(r["array_index"])
+                for r in existing
+                if TaskState(str(r["state"])) == TaskState.PENDING
+            ]
+            if pending:
+                return self._submit_wave(
+                    run_id, run_dir, spec, store, executor, pending
+                )
             return None
 
         result_inputs = self._resolve_result_inputs(store, run_id, spec)
@@ -558,25 +642,9 @@ class DispatchMixin:
             )
             return None
 
-        if len(pending_indices) == len(fan_items):
-            arr_str = f"0-{len(fan_items) - 1}"
-        else:
-            arr_str = ",".join(str(i) for i in pending_indices)
-        if spec.config.array_parallelism is not None:
-            arr_str = f"{arr_str}%{spec.config.array_parallelism}"
-        job_id = self._submit_guarded(
-            executor,
-            self._array_resources(run_dir, spec, arr_str),  # type: ignore[attr-defined]
-            self._worker_command(run_id, run_dir, spec.name, store),  # type: ignore[attr-defined]
-            run_id,
-            spec,
-            store,
-            indices=pending_indices,
+        return self._submit_wave(
+            run_id, run_dir, spec, store, executor, pending_indices
         )
-        if job_id is None:
-            return None
-        store.update_task_submitted(run_id, spec.name, job_id)
-        return job_id
 
     # --- finalisation ------------------------------------------------------
 
