@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from reflow import (
     TaskState,
 )
-from reflow.cache import compute_input_hash, compute_identity, compute_output_hash, verify_cached_output
+from reflow.cache import (
+    compute_identity,
+    compute_input_hash,
+    compute_output_hash,
+    verify_cached_output,
+)
 from reflow.stores.sqlite import SqliteStore
 
 # ═══════════════════════════════════════════════════════════════════════════

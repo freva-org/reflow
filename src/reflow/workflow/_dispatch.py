@@ -358,6 +358,38 @@ class DispatchMixin:
 
     # --- single / array dispatch -------------------------------------------
 
+    def _submit_guarded(
+        self,
+        executor: Executor,
+        resources: Any,
+        command: list[str],
+        run_id: str,
+        spec: TaskSpec,
+        store: Store,
+        *,
+        indices: list[int] | None = None,
+    ) -> str | None:
+        """Submit work, converting a submission failure into FAILED tasks.
+
+        If the batch system rejects the submission (e.g. the array exceeds
+        the cluster's job/array limit), the affected instances are marked
+        FAILED with the error text instead of being left stuck in PENDING,
+        so the run finalises as FAILED rather than hanging. Returns the job
+        id on success, or ``None`` on failure.
+        """
+        try:
+            return executor.submit(resources, command)
+        except Exception as exc:  # noqa: BLE001 - any rejection must not hang the run
+            error_text = f"Submission rejected for task {spec.name!r}: {exc}"
+            store.fail_pending_tasks(run_id, spec.name, error_text, indices=indices)
+            logger.error(
+                "Submission of task %s failed; marked affected instance(s) "
+                "FAILED so the run does not hang: %s",
+                spec.name,
+                exc,
+            )
+            return None
+
     def _dispatch_single(
         self,
         run_id: str,
@@ -407,10 +439,16 @@ class DispatchMixin:
         state = TaskState(str(row["state"]))
         if state not in (TaskState.PENDING, TaskState.RETRYING):
             return None
-        job_id = executor.submit(
+        job_id = self._submit_guarded(
+            executor,
             self._single_resources(run_dir, spec),  # type: ignore[attr-defined]
             self._worker_command(run_id, run_dir, spec.name, store),  # type: ignore[attr-defined]
+            run_id,
+            spec,
+            store,
         )
+        if job_id is None:
+            return None
         store.update_task_submitted(run_id, spec.name, job_id)
         return job_id
 
@@ -432,11 +470,19 @@ class DispatchMixin:
             r for r in existing if TaskState(str(r["state"])) == TaskState.RETRYING
         ]
         if retrying:
-            arr = ",".join(str(int(r["array_index"])) for r in retrying)
-            job_id = executor.submit(
+            retry_indices = [int(r["array_index"]) for r in retrying]
+            arr = ",".join(str(i) for i in retry_indices)
+            job_id = self._submit_guarded(
+                executor,
                 self._array_resources(run_dir, spec, arr),  # type: ignore[attr-defined]
                 self._worker_command(run_id, run_dir, spec.name, store),  # type: ignore[attr-defined]
+                run_id,
+                spec,
+                store,
+                indices=retry_indices,
             )
+            if job_id is None:
+                return None
             store.update_task_submitted(run_id, spec.name, job_id)
             return job_id
 
@@ -518,10 +564,17 @@ class DispatchMixin:
             arr_str = ",".join(str(i) for i in pending_indices)
         if spec.config.array_parallelism is not None:
             arr_str = f"{arr_str}%{spec.config.array_parallelism}"
-        job_id = executor.submit(
+        job_id = self._submit_guarded(
+            executor,
             self._array_resources(run_dir, spec, arr_str),  # type: ignore[attr-defined]
             self._worker_command(run_id, run_dir, spec.name, store),  # type: ignore[attr-defined]
+            run_id,
+            spec,
+            store,
+            indices=pending_indices,
         )
+        if job_id is None:
+            return None
         store.update_task_submitted(run_id, spec.name, job_id)
         return job_id
 

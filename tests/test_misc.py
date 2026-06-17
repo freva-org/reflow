@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import signal as sig
-from pathlib import Path
 
 import pytest
 
 from reflow import (
-    Run,
     RunDir,
     Workflow,
 )
@@ -69,7 +67,6 @@ class TestVersion:
         assert hasattr(reflow, "__version__")
 
     def test_cli_version(self) -> None:
-        from reflow.cli import build_parser
 
         wf = Workflow("test")
 

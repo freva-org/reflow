@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
 from reflow import (
     Config,
-    Run,
     RunDir,
     Workflow,
     ensure_config_exists,
 )
-from reflow.config import write_example_config, config_path
-from reflow.config import load_config
+from reflow.config import config_path, load_config, write_example_config
 
 # ═══════════════════════════════════════════════════════════════════════════
 # _types.py
@@ -24,13 +21,11 @@ from reflow.config import load_config
 
 class TestConfig:
     def test_load_missing(self, tmp_path: Path) -> None:
-        from reflow.config import load_config
 
         cfg = load_config(tmp_path / "nonexistent.toml")
         assert cfg.executor_partition is None
 
     def test_env_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from reflow.config import load_config
 
         monkeypatch.setenv("REFLOW_PARTITION", "gpu")
         cfg = load_config(Path("/nonexistent"))
@@ -208,7 +203,9 @@ class TestConfigExtended:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """When tomllib is unavailable and tomli import fails, load returns {}."""
-        import sys, importlib
+        import importlib
+        import sys
+
         import reflow.config as cfg_mod
 
         cfg_file = tmp_path / "config.toml"
@@ -287,7 +284,8 @@ class TestConfigRemainingGaps:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """When tomllib unavailable and tomli raises ImportError, returns {}."""
-        import sys, importlib
+        import importlib
+        import sys
 
         cfg_file = tmp_path / "config.toml"
         cfg_file.write_text("[executor]\nmode = \"dry-run\"\n")

@@ -8,9 +8,7 @@ command-building and dry-run behaviour.
 
 from __future__ import annotations
 
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 
 from reflow.executors import JobResources
 from reflow.executors.flux import FluxExecutor
@@ -439,7 +437,7 @@ class TestFluxLive:
         assert jid == "f123abc456"
 
     def test_submit_live_multiline_takes_last(self) -> None:
-        """flux submit may print info before the job ID."""
+        """Flux submit may print info before the job ID."""
         exc = FluxExecutor(mode="flux")
         res = JobResources(job_name="test")
         with patch(

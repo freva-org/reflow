@@ -12,12 +12,11 @@ import pytest
 from reflow import (
     Param,
     Result,
-    Run,
     RunDir,
     Workflow,
 )
-from reflow.stores.sqlite import SqliteStore
 from reflow.cli import build_parser, parse_args, run_command
+from reflow.stores.sqlite import SqliteStore
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Coverage: _dispatch.py  (dispatch loop, resolve, fan-out, finalize)
@@ -48,7 +47,6 @@ class TestCLICommands:
         capsys: pytest.CaptureFixture[str],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from reflow.cli import parse_args, run_command
 
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = self._make_wf()
@@ -65,7 +63,6 @@ class TestCLICommands:
         capsys: pytest.CaptureFixture[str],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from reflow.cli import parse_args, run_command
 
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = self._make_wf()
@@ -83,7 +80,6 @@ class TestCLICommands:
         capsys: pytest.CaptureFixture[str],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from reflow.cli import parse_args, run_command
 
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = self._make_wf()
@@ -99,7 +95,6 @@ class TestCLICommands:
         capsys: pytest.CaptureFixture[str],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from reflow.cli import parse_args, run_command
 
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = self._make_wf()
@@ -129,7 +124,6 @@ class TestCLIForceFlags:
         return wf
 
     def test_force_flag_parses(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(
@@ -139,7 +133,6 @@ class TestCLIForceFlags:
         assert args.force is True
 
     def test_force_tasks_flag_parses(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(
@@ -150,7 +143,6 @@ class TestCLIForceFlags:
         assert args.force_tasks == ["task_a"]
 
     def test_force_tasks_multiple(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(
@@ -161,7 +153,6 @@ class TestCLIForceFlags:
         assert args.force_tasks == ["task_a", "task_b"]
 
     def test_defaults_without_flags(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(
@@ -176,7 +167,6 @@ class TestCLIForceFlags:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from reflow.cli import parse_args, run_command
 
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = self._make_wf()
@@ -202,7 +192,6 @@ class TestCLIForceFlags:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from reflow.cli import parse_args, run_command
 
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = self._make_wf()
@@ -223,7 +212,6 @@ class TestCLIForceFlags:
         assert "__force__" not in params
 
     def test_force_flag_in_help(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         # parse_args with ["submit", "--help"] would SystemExit,
@@ -246,8 +234,6 @@ class TestCLIForceFlags:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """--force and --force-tasks should not appear as task parameters."""
-        from reflow.cli import parse_args, run_command
-
         monkeypatch.setenv("REFLOW_MODE", "dry-run")
         wf = self._make_wf()
         store_path = str(tmp_path / "db.sqlite")
@@ -292,12 +278,10 @@ class TestCLI:
         return wf
 
     def test_parser_builds(self) -> None:
-        from reflow.cli import build_parser
 
         assert build_parser(self._make_wf()).prog == "cli_test"
 
     def test_submit_parses(self) -> None:
-        from reflow.cli import build_parser
 
         args = build_parser(self._make_wf()).parse_args(
             [
@@ -316,7 +300,6 @@ class TestCLI:
         assert args.model == "icon"
 
     def test_literal_choices_enforced(self) -> None:
-        from reflow.cli import build_parser
 
         with pytest.raises(SystemExit):
             build_parser(self._make_wf()).parse_args(
@@ -334,7 +317,6 @@ class TestCLI:
             )
 
     def test_hidden_commands(self) -> None:
-        from reflow.cli import build_parser, parse_args
 
         wf = self._make_wf()
         assert "dispatch" not in build_parser(wf).format_help()
@@ -342,7 +324,6 @@ class TestCLI:
         assert args._command == "dispatch"
 
     def test_describe_command(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(wf, ["describe"])
@@ -364,7 +345,6 @@ class TestCLIExtended:
         return wf
 
     def test_dag_command(self, capsys: pytest.CaptureFixture[str]) -> None:
-        from reflow.cli import parse_args, run_command
 
         wf = self._make_wf()
         args = parse_args(wf, ["dag"])
@@ -374,7 +354,6 @@ class TestCLIExtended:
         assert "task_a" in out
 
     def test_describe_command(self, capsys: pytest.CaptureFixture[str]) -> None:
-        from reflow.cli import parse_args, run_command
 
         wf = self._make_wf()
         args = parse_args(wf, ["describe"])
@@ -385,7 +364,6 @@ class TestCLIExtended:
         assert manifest["name"] == "cli_ext"
 
     def test_worker_parser_builds(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(
@@ -404,7 +382,6 @@ class TestCLIExtended:
         assert args.task == "task_a"
 
     def test_worker_parser_with_index(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(
@@ -424,7 +401,6 @@ class TestCLIExtended:
         assert args.index == 3
 
     def test_dispatch_parser_with_verify(self) -> None:
-        from reflow.cli import parse_args
 
         wf = self._make_wf()
         args = parse_args(
@@ -447,9 +423,9 @@ class TestCLIExtended:
 
 
 class TestResolveRunDir:
-    def _make_wf(self) -> "Workflow":
-        from reflow import Workflow, Param
-        from typing import Annotated
+    def _make_wf(self) -> Workflow:
+
+        from reflow import Workflow
 
         wf = Workflow("wf")
 
@@ -460,8 +436,9 @@ class TestResolveRunDir:
         return wf
 
     def test_resolve_from_args_run_dir(self, tmp_path: Path) -> None:
-        from reflow.cli import _resolve_run_dir
         from unittest.mock import MagicMock
+
+        from reflow.cli import _resolve_run_dir
 
         args = MagicMock()
         args.run_dir = str(tmp_path)
@@ -469,9 +446,10 @@ class TestResolveRunDir:
         assert result == tmp_path
 
     def test_resolve_from_store_params(self, tmp_path: Path) -> None:
+        from unittest.mock import MagicMock
+
         from reflow.cli import _resolve_run_dir
         from reflow.stores.sqlite import SqliteStore
-        from unittest.mock import MagicMock
 
         st = SqliteStore(str(tmp_path / "db.sqlite"))
         st.init()
@@ -485,8 +463,9 @@ class TestResolveRunDir:
         st.close()
 
     def test_resolve_no_run_id_raises(self, tmp_path: Path) -> None:
-        from reflow.cli import _resolve_run_dir
         from unittest.mock import MagicMock
+
+        from reflow.cli import _resolve_run_dir
 
         args = MagicMock()
         args.run_dir = None
@@ -495,9 +474,10 @@ class TestResolveRunDir:
             _resolve_run_dir(args, None)
 
     def test_resolve_missing_run_dir_in_store_raises(self, tmp_path: Path) -> None:
+        from unittest.mock import MagicMock
+
         from reflow.cli import _resolve_run_dir
         from reflow.stores.sqlite import SqliteStore
-        from unittest.mock import MagicMock
 
         st = SqliteStore(str(tmp_path / "db.sqlite"))
         st.init()
@@ -512,9 +492,9 @@ class TestResolveRunDir:
 
 
 class TestCLIRunCommands:
-    def _wf(self) -> "Workflow":
-        from reflow import Workflow, Param
-        from typing import Annotated
+    def _wf(self) -> Workflow:
+
+        from reflow import Workflow
 
         wf = Workflow("wf")
 
@@ -525,10 +505,9 @@ class TestCLIRunCommands:
         return wf
 
     def test_retry_command(self, tmp_path: Path) -> None:
-        from unittest.mock import patch
-        from reflow.cli import run_command, parse_args
-        from reflow.stores.sqlite import SqliteStore
+        from reflow.cli import parse_args, run_command
         from reflow.executors.util import CommandResult
+        from reflow.stores.sqlite import SqliteStore
 
         wf = self._wf()
         store_path = str(tmp_path / "db.sqlite")
@@ -546,7 +525,6 @@ class TestCLIRunCommands:
         assert rc == 0
 
     def test_dispatch_command(self, tmp_path: Path) -> None:
-        from reflow.cli import run_command, parse_args
         from reflow.stores.sqlite import SqliteStore
 
         wf = self._wf()
@@ -565,7 +543,6 @@ class TestCLIRunCommands:
         assert rc == 0
 
     def test_worker_command(self, tmp_path: Path) -> None:
-        from reflow.cli import run_command, parse_args
         from reflow.stores.sqlite import SqliteStore
 
         wf = self._wf()
@@ -587,7 +564,6 @@ class TestCLIRunCommands:
     def test_runs_command_empty(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        from reflow.cli import run_command, parse_args
 
         wf = self._wf()
         store_path = str(tmp_path / "db.sqlite")
@@ -601,10 +577,8 @@ class TestCLIRunCommands:
 class TestCLITaskLocalParams:
     def test_task_local_params_stored(self, tmp_path: Path) -> None:
         """Task-local params (--task.param) are stored under __task_params__."""
-        from reflow import Workflow, Param, Config
-        from reflow.cli import parse_args, run_command
+        from reflow import Config, Workflow
         from reflow.stores.sqlite import SqliteStore
-        from typing import Annotated
 
         # dry-run so submit_run does not call sbatch
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
@@ -634,9 +608,8 @@ class TestCLITaskLocalParams:
 class TestCLIRichImportFallback:
     def test_arg_formatter_fallback(self) -> None:
         """When rich_argparse is unavailable the plain HelpFormatter is used."""
-        import sys
         import importlib
-        from unittest.mock import patch
+        import sys
 
         with patch.dict(sys.modules, {"rich_argparse": None}):
             import reflow.cli as cli_mod
@@ -649,10 +622,9 @@ class TestCLIStatusTaskFilter:
     def test_status_with_task_filter_shows_instances(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        from reflow import Workflow, Param, Config
-        from reflow.cli import parse_args, run_command
+
+        from reflow import Workflow
         from reflow.stores.sqlite import SqliteStore
-        from typing import Annotated
 
         wf = Workflow("wf")
 
@@ -681,10 +653,9 @@ class TestCLICancelAbort:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str]
     ) -> None:
-        from reflow import Workflow, Param
-        from reflow.cli import parse_args, run_command
+
+        from reflow import Workflow
         from reflow.stores.sqlite import SqliteStore
-        from typing import Annotated
 
         wf = Workflow("wf")
 
@@ -731,9 +702,8 @@ class TestCLIMain:
     def test_parse_args_defaults_to_sys_argv(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from reflow import Workflow, Param
-        from reflow.cli import parse_args
-        from typing import Annotated
+
+        from reflow import Workflow
         wf = Workflow("wf")
 
         @wf.job()
@@ -749,8 +719,8 @@ class TestCLIMethod:
     def test_workflow_cli_method(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        from reflow import Workflow, Param
-        from typing import Annotated
+
+        from reflow import Workflow
         wf = Workflow("wf")
 
         @wf.job()

@@ -106,7 +106,8 @@ class TestParallelExecution:
     def test_parallel_closure_fails_elements(self, tmp_path: Path) -> None:
         """Closures defined in test methods can't be resolved by _run_task_func
         (qualname contains '<locals>' which has no getattr match). Each element
-        fails individually and the run is marked FAILED."""
+        fails individually and the run is marked FAILED.
+        """
         wf = Workflow("wf")
 
         @wf.job()
@@ -173,7 +174,6 @@ class TestArrayWarningBranches:
                 on_error="continue",
             )
         # process should have been skipped / marked failed at the run level
-        from reflow._types import RunState
 
         with _store(tmp_path) as st2:
             row = st2.get_run(run.run_id)
@@ -231,7 +231,6 @@ class TestOnErrorContinueExtended:
                 store=st,
                 on_error="continue",
             )
-        from reflow._types import TaskState
 
         with _store(tmp_path) as st2:
             a = st2.get_task_instance(run.run_id, "fail_a", None)
@@ -475,7 +474,6 @@ class TestParallelSequentialFallback:
         self, tmp_path: Path
     ) -> None:
         from unittest.mock import patch
-        from concurrent.futures import ProcessPoolExecutor
 
         wf = Workflow("wf")
 
@@ -599,6 +597,7 @@ class TestLocalRemainingGaps:
     ) -> None:
         """_local_resolve_inputs handles get_type_hints exception gracefully."""
         from unittest.mock import patch
+
         from reflow._types import TaskState
 
         wf = Workflow("wf")
@@ -669,7 +668,8 @@ class TestLocalRemainingGaps:
     ) -> None:
         """_local_find_fan_out_param skips a dep when infer_wire_mode raises
         TypeError in the first loop, then falls back to the first
-        non-broadcast param in the second loop."""
+        non-broadcast param in the second loop.
+        """
         from unittest.mock import patch
         wf = Workflow("wf")
 

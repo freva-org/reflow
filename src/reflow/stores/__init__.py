@@ -191,6 +191,7 @@ class Store(abc.ABC):
         run_id: str,
         task_name: str,
         job_id: str,
+        indices: list[int] | None = None,
     ) -> None:
         """Mark pending/retrying instances as submitted."""
 
@@ -218,6 +219,22 @@ class Store(abc.ABC):
         output_hash: str
             hash of the output
 
+        """
+
+    @abc.abstractmethod
+    def fail_pending_tasks(
+        self,
+        run_id: str,
+        task_name: str,
+        error_text: str,
+        indices: list[int] | None = None,
+    ) -> int:
+        """Mark not-yet-running instances of *task_name* as FAILED.
+
+        Used when the scheduler cannot place work (e.g. the batch system
+        rejected the submission), so the run finalises as FAILED instead
+        of hanging with tasks stuck in PENDING/SUBMITTED. Only states that
+        have not started executing are affected. Returns the row count.
         """
 
     @abc.abstractmethod

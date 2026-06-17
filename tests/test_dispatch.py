@@ -11,8 +11,9 @@ from typing import Annotated
 
 import pytest
 
-from reflow import Config, Param, Result, RunDir, Workflow
+from reflow import Config, Param, Result, Workflow
 from reflow._types import TaskState
+from reflow.executors.local import LocalExecutor
 from reflow.stores.sqlite import SqliteStore
 
 
@@ -20,6 +21,39 @@ def _store(tmp_path: Path) -> SqliteStore:
     st = SqliteStore(str(tmp_path / "db.sqlite"))
     st.init()
     return st
+
+
+class _RejectingExecutor(LocalExecutor):
+    """Executor whose submit always fails, mimicking sbatch hitting a QOS cap."""
+
+    def submit(self, resources, command):  # type: ignore[override]
+        raise RuntimeError(
+            "AssocMaxSubmitJobLimit: Batch job submission failed: "
+            "Job violates accounting/QOS policy (job submit limit)"
+        )
+
+
+def _states(st: SqliteStore, run_id: str, task: str) -> dict:
+    out = {}
+    for r in st.list_task_instances(run_id, task_name=task):
+        idx = r["array_index"]
+        out[int(idx) if idx is not None else None] = r["state"]
+    return out
+
+
+def _array_wf() -> Workflow:
+    wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+    @wf.job()
+    def source() -> list[str]:
+        return ["a", "b", "c"]
+
+    @wf.array_job()
+    def process(item: Annotated[str, Result(step="source")]) -> str:
+        return item
+
+    wf.validate()
+    return wf
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -123,9 +157,7 @@ class TestDispatchSingleton:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "upstream", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "upstream", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, "ok")
             assert wf._all_deps_satisfied(st, "r1", wf.tasks["downstream"])
 
@@ -212,9 +244,7 @@ class TestDispatchCache:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "upstream", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "upstream", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, "ok")
             hashes = wf._collect_upstream_output_hashes(
                 st, "r1", wf.tasks["downstream"]
@@ -242,9 +272,7 @@ class TestResolveResultInputs:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "source", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, "value")
             resolved = wf._resolve_result_inputs(st, "r1", wf.tasks["sink"])
             assert resolved["x"] == "value"
@@ -263,9 +291,7 @@ class TestResolveResultInputs:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "source", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, ["a", "b", "c"])
             resolved = wf._resolve_result_inputs(st, "r1", wf.tasks["sink"])
             assert resolved["item"] == ["a", "b", "c"]
@@ -289,9 +315,7 @@ class TestResolveResultInputs:
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
             for i, val in enumerate(["A", "B"]):
-                iid = st.insert_task_instance(
-                    "r1", "source", i, TaskState.SUCCESS, {}
-                )
+                iid = st.insert_task_instance("r1", "source", i, TaskState.SUCCESS, {})
                 st.update_task_success(iid, val)
             resolved = wf._resolve_result_inputs(st, "r1", wf.tasks["sink"])
             assert sorted(resolved["items"]) == ["A", "B"]
@@ -390,9 +414,7 @@ class TestDispatchArray:
             instances = st.list_task_instances(run_id2)
             assert len(instances) >= 1
 
-    def test_array_dispatch_no_result_inputs_returns_none(
-        self, tmp_path: Path
-    ) -> None:
+    def test_array_dispatch_no_result_inputs_returns_none(self, tmp_path: Path) -> None:
         """Array task with no upstream results should not be dispatched."""
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
 
@@ -418,9 +440,7 @@ class TestDispatchArray:
             )
             assert jid is None  # source not done yet
 
-    def test_array_dispatch_retrying_instances(
-        self, tmp_path: Path
-    ) -> None:
+    def test_array_dispatch_retrying_instances(self, tmp_path: Path) -> None:
         """RETRYING instances should be re-submitted as a partial array."""
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
 
@@ -461,9 +481,7 @@ class TestDispatchArray:
             # Local executor always succeeds; just check a job id was returned
             assert jid is not None
 
-    def test_maybe_finalise_cancels_on_pending_active(
-        self, tmp_path: Path
-    ) -> None:
+    def test_maybe_finalise_cancels_on_pending_active(self, tmp_path: Path) -> None:
         wf = Workflow("wf")
 
         @wf.job()
@@ -486,9 +504,7 @@ class TestDispatchArray:
 
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "step", None, TaskState.CANCELLED, {}
-            )
+            iid = st.insert_task_instance("r1", "step", None, TaskState.CANCELLED, {})
             wf._maybe_finalise_run("r1", st)
             # Cancelled is not "all ok" and not FAILED, status stays unchanged
             status = st.get_run("r1")["status"]
@@ -521,9 +537,7 @@ class TestChainWireMode:
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
             for i, val in enumerate(["A", "B"]):
-                iid = st.insert_task_instance(
-                    "r1", "stage1", i, TaskState.SUCCESS, {}
-                )
+                iid = st.insert_task_instance("r1", "stage1", i, TaskState.SUCCESS, {})
                 st.update_task_success(iid, val)
             resolved = wf._resolve_result_inputs(st, "r1", wf.tasks["stage2"])
             # CHAIN: list of upstream array outputs
@@ -590,6 +604,7 @@ class TestDispatchVerify:
     ) -> None:
         """dispatch() logs an INFO message when worker results are ingested."""
         import logging
+
         from reflow.results import write_result
 
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
@@ -599,9 +614,7 @@ class TestDispatchVerify:
             return "ok"
 
         with _store(tmp_path) as st:
-            run_id = wf.submit_run(
-                run_dir=tmp_path / "r", store=st, parameters={}
-            )
+            run_id = wf.submit_run(run_dir=tmp_path / "r", store=st, parameters={})
             row = st.get_task_instance(run_id, "step", None)
             iid = int(row["id"])
             write_result(
@@ -640,14 +653,13 @@ class TestDispatchSinglePaths:
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
             from reflow.executors.local import LocalExecutor
+
             jid = wf._dispatch_single(
                 "r1", tmp_path, wf.tasks["downstream"], st, LocalExecutor()
             )
             assert jid is None
 
-    def test_dispatch_single_cache_hit_returns_none(
-        self, tmp_path: Path
-    ) -> None:
+    def test_dispatch_single_cache_hit_returns_none(self, tmp_path: Path) -> None:
         """Cache hit skips submission and returns None."""
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
         call_count = {"n": 0}
@@ -670,9 +682,7 @@ class TestDispatchSinglePaths:
 
 
 class TestDispatchArrayEdgeCases:
-    def test_array_parallelism_appended_to_arr_str(
-        self, tmp_path: Path
-    ) -> None:
+    def test_array_parallelism_appended_to_arr_str(self, tmp_path: Path) -> None:
         """array_parallelism config appends %N to the array string."""
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
 
@@ -685,9 +695,7 @@ class TestDispatchArrayEdgeCases:
             return item
 
         with _store(tmp_path) as st:
-            run_id = wf.submit_run(
-                run_dir=tmp_path / "r", store=st, parameters={}
-            )
+            run_id = wf.submit_run(run_dir=tmp_path / "r", store=st, parameters={})
             row = st.get_task_instance(run_id, "source", None)
             st.update_task_success(int(row["id"]), ["a", "b", "c"])
             wf.dispatch(run_id, st, tmp_path / "r")
@@ -746,9 +754,8 @@ class TestDispatchArrayEdgeCases:
             )
             st.update_task_success(iid_src, ["a", "b"])
             from reflow.executors.local import LocalExecutor
-            wf._dispatch_array(
-                "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
-            )
+
+            wf._dispatch_array("r1", tmp_path, wf.tasks["process"], st, LocalExecutor())
             instances = st.list_task_instances("r1", task_name="process")
             assert len(instances) == 2
             # Each element should have broadcast cfg
@@ -759,6 +766,7 @@ class TestDispatchArrayEdgeCases:
 class TestDispatchTryCache:
     def test_try_cache_verify_stale_reruns(self, tmp_path: Path) -> None:
         from typing import Any
+
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
         call_count = {"n": 0}
         verify_count = {"n": 0}
@@ -797,9 +805,7 @@ class TestDispatchTryCache:
             row = st.get_task_instance(run2.run_id, "step", None)
             assert row["state"] == "SUCCESS"
 
-    def test_try_cache_output_hash_computed_when_missing(
-        self, tmp_path: Path
-    ) -> None:
+    def test_try_cache_output_hash_computed_when_missing(self, tmp_path: Path) -> None:
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
 
         @wf.job(cache=True)
@@ -832,9 +838,7 @@ class TestDispatchSingleResultDep:
 
         wf.validate()
         with _store(tmp_path) as st:
-            run_id = wf.submit_run(
-                run_dir=tmp_path / "r", store=st, parameters={}
-            )
+            run_id = wf.submit_run(run_dir=tmp_path / "r", store=st, parameters={})
             row = st.get_task_instance(run_id, "upstream", None)
             st.update_task_success(int(row["id"]), "value")
             wf.dispatch(run_id, st, tmp_path / "r")
@@ -843,9 +847,7 @@ class TestDispatchSingleResultDep:
 
 
 class TestDispatchArrayFanItems:
-    def test_array_element_value_list_match_per_element(
-        self, tmp_path: Path
-    ) -> None:
+    def test_array_element_value_list_match_per_element(self, tmp_path: Path) -> None:
         wf = Workflow("wf")
 
         @wf.job()
@@ -866,15 +868,12 @@ class TestDispatchArrayFanItems:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid_l = st.insert_task_instance(
-                "r1", "labels", None, TaskState.SUCCESS, {}
-            )
+            iid_l = st.insert_task_instance("r1", "labels", None, TaskState.SUCCESS, {})
             st.update_task_success(iid_l, ["x", "y"])
-            iid_i = st.insert_task_instance(
-                "r1", "items", None, TaskState.SUCCESS, {}
-            )
+            iid_i = st.insert_task_instance("r1", "items", None, TaskState.SUCCESS, {})
             st.update_task_success(iid_i, ["a", "b"])
             from reflow.executors.local import LocalExecutor
+
             wf._dispatch_array("r1", tmp_path, wf.tasks["process"], st, LocalExecutor())
             instances = st.list_task_instances("r1", task_name="process")
             assert len(instances) == 2
@@ -888,7 +887,6 @@ class TestDispatchArrayFanItems:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         """All-from-cache: call_count stays at 2 on second run."""
-        import logging
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
         call_count = {"n": 0}
 
@@ -920,9 +918,7 @@ class TestDispatchArrayFanItems:
             return item
 
         with _store(tmp_path) as st:
-            run_id = wf.submit_run(
-                run_dir=tmp_path / "r", store=st, parameters={}
-            )
+            run_id = wf.submit_run(run_dir=tmp_path / "r", store=st, parameters={})
             row = st.get_task_instance(run_id, "source", None)
             st.update_task_success(int(row["id"]), ["a", "b", "c"])
             wf.dispatch(run_id, st, tmp_path / "r")
@@ -959,11 +955,12 @@ class TestDispatchRemainingGaps:
 
         wf.validate()
         import copy
+
         spec = copy.copy(wf.tasks["process"])
         from reflow.params import Result as R
+
         spec.result_deps = {
-            k: R(step=v.steps[0], broadcast=True)
-            for k, v in spec.result_deps.items()
+            k: R(step=v.steps[0], broadcast=True) for k, v in spec.result_deps.items()
         }
         result = wf._find_fan_out_param(spec)
         assert result is None
@@ -987,12 +984,12 @@ class TestDispatchRemainingGaps:
             assert row["state"] == "SUCCESS"
             assert row["output"] == "HI"
 
-    def test_dispatch_single_cache_miss_creates_pending(
-        self, tmp_path: Path
-    ) -> None:
+    def test_dispatch_single_cache_miss_creates_pending(self, tmp_path: Path) -> None:
         """When no cache hit, _dispatch_single creates a PENDING instance."""
         from unittest.mock import patch
+
         from reflow.executors.util import CommandResult
+
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
 
         @wf.job()
@@ -1012,6 +1009,7 @@ class TestDispatchRemainingGaps:
     def test_dispatch_single_row_none_raises(self, tmp_path: Path) -> None:
         """If get_task_instance returns None after insert, RuntimeError is raised."""
         from unittest.mock import patch
+
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
 
         @wf.job()
@@ -1019,22 +1017,23 @@ class TestDispatchRemainingGaps:
             return "ok"
 
         with _store(tmp_path) as st:
-            run_id = wf.submit_run(
-                run_dir=tmp_path / "r", store=st, parameters={}
-            )
+            run_id = wf.submit_run(run_dir=tmp_path / "r", store=st, parameters={})
             with patch.object(st, "get_task_instance", return_value=None):
                 with pytest.raises(RuntimeError, match="Could not create instance"):
                     from reflow.executors.local import LocalExecutor
+
                     wf._dispatch_single(
-                        run_id, tmp_path, wf.tasks["step"], st,
+                        run_id,
+                        tmp_path,
+                        wf.tasks["step"],
+                        st,
                         LocalExecutor(),
                     )
 
-    def test_array_dispatch_no_fan_param_returns_none(
-        self, tmp_path: Path
-    ) -> None:
+    def test_array_dispatch_no_fan_param_returns_none(self, tmp_path: Path) -> None:
         """_dispatch_array returns None when _find_fan_out_param is None."""
         from unittest.mock import patch
+
         wf = Workflow("wf")
 
         @wf.job()
@@ -1048,20 +1047,17 @@ class TestDispatchRemainingGaps:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "source", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, ["a"])
             from reflow.executors.local import LocalExecutor
+
             with patch.object(wf, "_find_fan_out_param", return_value=None):
                 result = wf._dispatch_array(
                     "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
                 )
             assert result is None
 
-    def test_array_dispatch_empty_fan_items_returns_none(
-        self, tmp_path: Path
-    ) -> None:
+    def test_array_dispatch_empty_fan_items_returns_none(self, tmp_path: Path) -> None:
         """_dispatch_array returns None when fan_items is empty list."""
         wf = Workflow("wf")
 
@@ -1076,19 +1072,16 @@ class TestDispatchRemainingGaps:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "source", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, [])
             from reflow.executors.local import LocalExecutor
+
             result = wf._dispatch_array(
                 "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
             )
             assert result is None
 
-    def test_array_dispatch_fan_items_not_list_wraps(
-        self, tmp_path: Path
-    ) -> None:
+    def test_array_dispatch_fan_items_not_list_wraps(self, tmp_path: Path) -> None:
         """A scalar fan_items value is wrapped to a list before dispatch."""
         wf = Workflow("wf")
 
@@ -1103,14 +1096,11 @@ class TestDispatchRemainingGaps:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "source", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, "single_scalar")
             from reflow.executors.local import LocalExecutor
-            wf._dispatch_array(
-                "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
-            )
+
+            wf._dispatch_array("r1", tmp_path, wf.tasks["process"], st, LocalExecutor())
             instances = st.list_task_instances("r1", task_name="process")
             assert len(instances) == 1
 
@@ -1126,11 +1116,10 @@ class TestDispatchRemainingGaps:
             run = wf.run_local(run_dir=tmp_path / "r", store=st)
             assert st.get_run(run.run_id)["status"] == "SUCCESS"
 
-    def test_resolve_result_inputs_hints_exception(
-        self, tmp_path: Path
-    ) -> None:
+    def test_resolve_result_inputs_hints_exception(self, tmp_path: Path) -> None:
         """_resolve_result_inputs returns {} when get_type_hints raises."""
         from unittest.mock import patch
+
         wf = Workflow("wf")
 
         @wf.job()
@@ -1144,11 +1133,114 @@ class TestDispatchRemainingGaps:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance(
-                "r1", "source", None, TaskState.SUCCESS, {}
-            )
+            iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
             st.update_task_success(iid, "v")
             # get_type_hints is imported locally in _local; patch at typing module level
             with patch("typing.get_type_hints", side_effect=Exception("bad")):
                 result = wf._resolve_result_inputs(st, "r1", wf.tasks["sink"])
             assert isinstance(result, dict)
+
+
+class TestArraySubmitFailure:
+    def _seed_source_done(self, st: SqliteStore) -> None:
+        st.insert_run("r1", "wf", "u", {})
+        iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
+        st.update_task_success(iid, ["a", "b", "c"])
+
+    def test_rejection_marks_created_instances_failed(self, tmp_path: Path) -> None:
+        wf = _array_wf()
+        with _store(tmp_path) as st:
+            self._seed_source_done(st)
+            jid = wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, _RejectingExecutor()
+            )
+            assert jid is None
+            states = _states(st, "r1", "process")
+            assert states  # instances were created
+            assert all(s == "FAILED" for s in states.values())
+
+    def test_rejection_records_error_text(self, tmp_path: Path) -> None:
+        wf = _array_wf()
+        with _store(tmp_path) as st:
+            self._seed_source_done(st)
+            wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, _RejectingExecutor()
+            )
+            rows = st.list_task_instances("r1", task_name="process")
+            assert any("submit limit" in (r.get("error_text") or "") for r in rows)
+
+    def test_rejection_finalises_run_failed(self, tmp_path: Path) -> None:
+        wf = _array_wf()
+        with _store(tmp_path) as st:
+            self._seed_source_done(st)
+            wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, _RejectingExecutor()
+            )
+            wf._maybe_finalise_run("r1", st)
+            assert st.get_run("r1")["status"] == "FAILED"
+
+    def test_success_path_returns_job_id(self, tmp_path: Path) -> None:
+        wf = _array_wf()
+        with _store(tmp_path) as st:
+            self._seed_source_done(st)
+            jid = wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, LocalExecutor()
+            )
+            assert jid is not None
+            # nothing left FAILED on the happy path
+            assert "FAILED" not in set(_states(st, "r1", "process").values())
+
+    def test_retrying_array_rejection_marks_failed(self, tmp_path: Path) -> None:
+        wf = _array_wf()
+        with _store(tmp_path) as st:
+            self._seed_source_done(st)
+            # one already-done index and one queued for retry
+            iid0 = st.insert_task_instance(
+                "r1", "process", 0, TaskState.SUCCESS, {"item": "a"}
+            )
+            st.update_task_success(iid0, "a")
+            st.insert_task_instance(
+                "r1", "process", 1, TaskState.RETRYING, {"item": "b"}
+            )
+            jid = wf._dispatch_array(
+                "r1", tmp_path, wf.tasks["process"], st, _RejectingExecutor()
+            )
+            assert jid is None
+            states = _states(st, "r1", "process")
+            assert states[1] == "FAILED"  # the retrying one failed to submit
+            assert states[0] == "SUCCESS"  # the done one is untouched
+
+
+class TestSingletonSubmitFailure:
+    def _singleton_wf(self) -> Workflow:
+        wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
+
+        @wf.job()
+        def step(x: Annotated[str, Param(help="X")]) -> str:
+            return x
+
+        wf.validate()
+        return wf
+
+    def test_singleton_rejection_marks_failed(self, tmp_path: Path) -> None:
+        wf = self._singleton_wf()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {})
+            st.insert_task_instance("r1", "step", None, TaskState.PENDING, {"x": "v"})
+            jid = wf._dispatch_single(
+                "r1", tmp_path, wf.tasks["step"], st, _RejectingExecutor()
+            )
+            assert jid is None
+            row = st.get_task_instance("r1", "step", None)
+            assert row is not None and row["state"] == "FAILED"
+
+    def test_singleton_rejection_finalises_run_failed(self, tmp_path: Path) -> None:
+        wf = self._singleton_wf()
+        with _store(tmp_path) as st:
+            st.insert_run("r1", "wf", "u", {})
+            st.insert_task_instance("r1", "step", None, TaskState.PENDING, {"x": "v"})
+            wf._dispatch_single(
+                "r1", tmp_path, wf.tasks["step"], st, _RejectingExecutor()
+            )
+            wf._maybe_finalise_run("r1", st)
+            assert st.get_run("r1")["status"] == "FAILED"
