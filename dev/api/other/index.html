@@ -900,6 +900,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#reflow.config.Config.max_submit_jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;max_submit_jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#reflow.config.Config.executor_submit_options" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1448,17 +1459,17 @@ to the backend's native vocabulary.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>src/reflow/config.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-258">258</a></span>
-<span class="normal"><a href="#__codelineno-0-259">259</a></span>
-<span class="normal"><a href="#__codelineno-0-260">260</a></span>
-<span class="normal"><a href="#__codelineno-0-261">261</a></span>
-<span class="normal"><a href="#__codelineno-0-262">262</a></span>
-<span class="normal"><a href="#__codelineno-0-263">263</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">or</span> <span class="p">{}</span>
-<a id="__codelineno-0-260" name="__codelineno-0-260"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">submit_options</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a>        <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;executor&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;submit_options&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a>    <span class="p">}</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-270">270</a></span>
+<span class="normal"><a href="#__codelineno-0-271">271</a></span>
+<span class="normal"><a href="#__codelineno-0-272">272</a></span>
+<span class="normal"><a href="#__codelineno-0-273">273</a></span>
+<span class="normal"><a href="#__codelineno-0-274">274</a></span>
+<span class="normal"><a href="#__codelineno-0-275">275</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-270" name="__codelineno-0-270"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-271" name="__codelineno-0-271"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">or</span> <span class="p">{}</span>
+<a id="__codelineno-0-272" name="__codelineno-0-272"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">submit_options</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-273" name="__codelineno-0-273"></a>        <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
+<a id="__codelineno-0-274" name="__codelineno-0-274"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;executor&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;submit_options&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="__codelineno-0-275" name="__codelineno-0-275"></a>    <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -1471,6 +1482,41 @@ to the backend's native vocabulary.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="reflow.config.Config.max_submit_jobs" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">max_submit_jobs</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#reflow.config.Config.max_submit_jobs" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Cap on array tasks submitted per wave.</p>
+<p>Set this to your scheduler's per-user job-submit limit (e.g. Slurm
+<code>AssocMaxSubmitJobLimit</code>). When set, a large array task is
+submitted in waves of at most this many indices; the remainder stay
+PENDING and are submitted by the dependency-triggered follow-up
+dispatch as each wave drains, so the number of queued jobs never
+exceeds the cap. <code>None</code> (the default) disables capping and submits
+the whole array at once. Leave a little headroom below the true
+limit for the follow-up dispatch job itself and any concurrent
+singleton tasks.</p>
+<p>This is a reflow-internal scheduling cap, <em>not</em> a scheduler flag, so
+it is a plain <code>[executor]</code> key rather than a <code>submit_options</code>
+entry (those are rendered onto the sbatch command line).</p>
+<p>Config: <code>[executor] max_submit_jobs</code>; env: <code>REFLOW_MAX_SUBMIT_JOBS</code>.</p>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-attribute">
 

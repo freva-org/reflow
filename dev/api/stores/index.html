@@ -1070,6 +1070,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#reflow.stores.Store.fail_pending_tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;fail_pending_tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#reflow.stores.Store.update_task_cancelled" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1190,6 +1201,28 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_all_output_hashes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.stores.sqlite.SqliteStore.update_task_submitted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;update_task_submitted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.stores.sqlite.SqliteStore.fail_pending_tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;fail_pending_tasks
       
     </span>
   </a>
@@ -2522,7 +2555,7 @@
 
 
 <h3 id="reflow.stores.Store.update_task_submitted" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">update_task_submitted</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">job_id</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">update_task_submitted</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
@@ -2534,6 +2567,11 @@
     <div class="doc doc-contents ">
 
         <p>Mark pending/retrying instances as submitted.</p>
+<p>When <code>indices</code> is <code>None</code> all pending/retrying instances of the
+task are marked (singleton tasks and full-array submits). When a
+list of array indices is given, only those instances are marked,
+so a large array can be submitted in capped waves, each wave with
+its own job id.</p>
 
 
             <details class="mkdocstrings-source">
@@ -2545,14 +2583,30 @@
 <span class="normal"><a href="#__codelineno-0-192">192</a></span>
 <span class="normal"><a href="#__codelineno-0-193">193</a></span>
 <span class="normal"><a href="#__codelineno-0-194">194</a></span>
-<span class="normal"><a href="#__codelineno-0-195">195</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-188" name="__codelineno-0-188"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<span class="normal"><a href="#__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#__codelineno-0-203">203</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-188" name="__codelineno-0-188"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <a id="__codelineno-0-189" name="__codelineno-0-189"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_submitted</span><span class="p">(</span>
 <a id="__codelineno-0-190" name="__codelineno-0-190"></a>    <span class="bp">self</span><span class="p">,</span>
 <a id="__codelineno-0-191" name="__codelineno-0-191"></a>    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <a id="__codelineno-0-192" name="__codelineno-0-192"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <a id="__codelineno-0-193" name="__codelineno-0-193"></a>    <span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark pending/retrying instances as submitted.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-194" name="__codelineno-0-194"></a>    <span class="n">indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark pending/retrying instances as submitted.</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">    When ``indices`` is ``None`` all pending/retrying instances of the</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="sd">    task are marked (singleton tasks and full-array submits). When a</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a><span class="sd">    list of array indices is given, only those instances are marked,</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="sd">    so a large array can be submitted in capped waves, each wave with</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="sd">    its own job id.</span>
+<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2579,11 +2633,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-197">197</a></span>
-<span class="normal"><a href="#__codelineno-0-198">198</a></span>
-<span class="normal"><a href="#__codelineno-0-199">199</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-197" name="__codelineno-0-197"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_running</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as running.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#__codelineno-0-207">207</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_running</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as running.&quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2689,15 +2743,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-201">201</a></span>
-<span class="normal"><a href="#__codelineno-0-202">202</a></span>
-<span class="normal"><a href="#__codelineno-0-203">203</a></span>
-<span class="normal"><a href="#__codelineno-0-204">204</a></span>
-<span class="normal"><a href="#__codelineno-0-205">205</a></span>
-<span class="normal"><a href="#__codelineno-0-206">206</a></span>
-<span class="normal"><a href="#__codelineno-0-207">207</a></span>
-<span class="normal"><a href="#__codelineno-0-208">208</a></span>
-<span class="normal"><a href="#__codelineno-0-209">209</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-209">209</a></span>
 <span class="normal"><a href="#__codelineno-0-210">210</a></span>
 <span class="normal"><a href="#__codelineno-0-211">211</a></span>
 <span class="normal"><a href="#__codelineno-0-212">212</a></span>
@@ -2709,27 +2755,35 @@
 <span class="normal"><a href="#__codelineno-0-218">218</a></span>
 <span class="normal"><a href="#__codelineno-0-219">219</a></span>
 <span class="normal"><a href="#__codelineno-0-220">220</a></span>
-<span class="normal"><a href="#__codelineno-0-221">221</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_success</span><span class="p">(</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a>    <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a>    <span class="n">output</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a>    <span class="n">output_hash</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as successful.</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">    Parameters</span>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="sd">    ----------</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a><span class="sd">    output_hash : str</span>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a><span class="sd">        Hash of the output value for downstream Merkle propagation.</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a><span class="sd">    instance_id: int</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a><span class="sd">        Database id</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a><span class="sd">    output: Any</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a><span class="sd">        Output for the job</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">    output_hash: str</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">        hash of the output</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">    &quot;&quot;&quot;</span>
+<span class="normal"><a href="#__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#__codelineno-0-229">229</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_success</span><span class="p">(</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a>    <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a>    <span class="n">output</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a>    <span class="n">output_hash</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-215" name="__codelineno-0-215"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as successful.</span>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a>
+<a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">    Parameters</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">    ----------</span>
+<a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">    output_hash : str</span>
+<a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">        Hash of the output value for downstream Merkle propagation.</span>
+<a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">    instance_id: int</span>
+<a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">        Database id</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="sd">    output: Any</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a><span class="sd">        Output for the job</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a><span class="sd">    output_hash: str</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="sd">        hash of the output</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a>
+<a id="__codelineno-0-229" name="__codelineno-0-229"></a><span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2756,11 +2810,79 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span>
-<span class="normal"><a href="#__codelineno-0-225">225</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">error_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as failed.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-231">231</a></span>
+<span class="normal"><a href="#__codelineno-0-232">232</a></span>
+<span class="normal"><a href="#__codelineno-0-233">233</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-231" name="__codelineno-0-231"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">error_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as failed.&quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="reflow.stores.Store.fail_pending_tasks" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">fail_pending_tasks</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">error_text</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#reflow.stores.Store.fail_pending_tasks" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Mark not-yet-running instances of a task as FAILED.</p>
+<p>Mirrors :meth:<code>update_task_submitted</code>: with <code>indices=None</code> every
+not-yet-running instance of the task is failed; with a list of
+array indices, only those are. Used when the scheduler cannot
+place work (e.g. the batch system rejected the submission) so the
+run finalises as FAILED instead of hanging with instances stuck in
+PENDING/SUBMITTED. Only states that have not started executing are
+affected. Returns the number of instances updated.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-235">235</a></span>
+<span class="normal"><a href="#__codelineno-0-236">236</a></span>
+<span class="normal"><a href="#__codelineno-0-237">237</a></span>
+<span class="normal"><a href="#__codelineno-0-238">238</a></span>
+<span class="normal"><a href="#__codelineno-0-239">239</a></span>
+<span class="normal"><a href="#__codelineno-0-240">240</a></span>
+<span class="normal"><a href="#__codelineno-0-241">241</a></span>
+<span class="normal"><a href="#__codelineno-0-242">242</a></span>
+<span class="normal"><a href="#__codelineno-0-243">243</a></span>
+<span class="normal"><a href="#__codelineno-0-244">244</a></span>
+<span class="normal"><a href="#__codelineno-0-245">245</a></span>
+<span class="normal"><a href="#__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#__codelineno-0-247">247</a></span>
+<span class="normal"><a href="#__codelineno-0-248">248</a></span>
+<span class="normal"><a href="#__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#__codelineno-0-252">252</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-235" name="__codelineno-0-235"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a><span class="k">def</span><span class="w"> </span><span class="nf">fail_pending_tasks</span><span class="p">(</span>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238"></a>    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-239" name="__codelineno-0-239"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-240" name="__codelineno-0-240"></a>    <span class="n">error_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-241" name="__codelineno-0-241"></a>    <span class="n">indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark not-yet-running instances of a task as FAILED.</span>
+<a id="__codelineno-0-244" name="__codelineno-0-244"></a>
+<a id="__codelineno-0-245" name="__codelineno-0-245"></a><span class="sd">    Mirrors :meth:`update_task_submitted`: with ``indices=None`` every</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a><span class="sd">    not-yet-running instance of the task is failed; with a list of</span>
+<a id="__codelineno-0-247" name="__codelineno-0-247"></a><span class="sd">    array indices, only those are. Used when the scheduler cannot</span>
+<a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="sd">    place work (e.g. the batch system rejected the submission) so the</span>
+<a id="__codelineno-0-249" name="__codelineno-0-249"></a><span class="sd">    run finalises as FAILED instead of hanging with instances stuck in</span>
+<a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="sd">    PENDING/SUBMITTED. Only states that have not started executing are</span>
+<a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">    affected. Returns the number of instances updated.</span>
+<a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2787,11 +2909,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span>
-<span class="normal"><a href="#__codelineno-0-229">229</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as cancelled.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-254" name="__codelineno-0-254"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark one instance as cancelled.&quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2818,11 +2940,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-231">231</a></span>
-<span class="normal"><a href="#__codelineno-0-232">232</a></span>
-<span class="normal"><a href="#__codelineno-0-233">233</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-231" name="__codelineno-0-231"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="k">def</span><span class="w"> </span><span class="nf">mark_for_retry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Reset a failed/cancelled instance for retry.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-258">258</a></span>
+<span class="normal"><a href="#__codelineno-0-259">259</a></span>
+<span class="normal"><a href="#__codelineno-0-260">260</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="k">def</span><span class="w"> </span><span class="nf">mark_for_retry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Reset a failed/cancelled instance for retry.&quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2920,51 +3042,51 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-237">237</a></span>
-<span class="normal"><a href="#__codelineno-0-238">238</a></span>
-<span class="normal"><a href="#__codelineno-0-239">239</a></span>
-<span class="normal"><a href="#__codelineno-0-240">240</a></span>
-<span class="normal"><a href="#__codelineno-0-241">241</a></span>
-<span class="normal"><a href="#__codelineno-0-242">242</a></span>
-<span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span>
-<span class="normal"><a href="#__codelineno-0-246">246</a></span>
-<span class="normal"><a href="#__codelineno-0-247">247</a></span>
-<span class="normal"><a href="#__codelineno-0-248">248</a></span>
-<span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span>
-<span class="normal"><a href="#__codelineno-0-251">251</a></span>
-<span class="normal"><a href="#__codelineno-0-252">252</a></span>
-<span class="normal"><a href="#__codelineno-0-253">253</a></span>
-<span class="normal"><a href="#__codelineno-0-254">254</a></span>
-<span class="normal"><a href="#__codelineno-0-255">255</a></span>
-<span class="normal"><a href="#__codelineno-0-256">256</a></span>
-<span class="normal"><a href="#__codelineno-0-257">257</a></span>
-<span class="normal"><a href="#__codelineno-0-258">258</a></span>
-<span class="normal"><a href="#__codelineno-0-259">259</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-237" name="__codelineno-0-237"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_cached</span><span class="p">(</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a>    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a successful task instance with a matching Merkle identity.</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a><span class="sd">    Searches across *all* runs.  Returns the most recent match.</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a><span class="sd">    Parameters</span>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="sd">    ----------</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a><span class="sd">    task_name : str</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="sd">        Task name.</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">    identity : str</span>
-<a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">        Full Merkle identity hash.</span>
-<a id="__codelineno-0-253" name="__codelineno-0-253"></a>
-<a id="__codelineno-0-254" name="__codelineno-0-254"></a><span class="sd">    Returns</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="sd">    -------</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="sd">    dict[str, Any] or None</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="sd">        The cached instance row, or ``None`` if no match.</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">    &quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#__codelineno-0-265">265</a></span>
+<span class="normal"><a href="#__codelineno-0-266">266</a></span>
+<span class="normal"><a href="#__codelineno-0-267">267</a></span>
+<span class="normal"><a href="#__codelineno-0-268">268</a></span>
+<span class="normal"><a href="#__codelineno-0-269">269</a></span>
+<span class="normal"><a href="#__codelineno-0-270">270</a></span>
+<span class="normal"><a href="#__codelineno-0-271">271</a></span>
+<span class="normal"><a href="#__codelineno-0-272">272</a></span>
+<span class="normal"><a href="#__codelineno-0-273">273</a></span>
+<span class="normal"><a href="#__codelineno-0-274">274</a></span>
+<span class="normal"><a href="#__codelineno-0-275">275</a></span>
+<span class="normal"><a href="#__codelineno-0-276">276</a></span>
+<span class="normal"><a href="#__codelineno-0-277">277</a></span>
+<span class="normal"><a href="#__codelineno-0-278">278</a></span>
+<span class="normal"><a href="#__codelineno-0-279">279</a></span>
+<span class="normal"><a href="#__codelineno-0-280">280</a></span>
+<span class="normal"><a href="#__codelineno-0-281">281</a></span>
+<span class="normal"><a href="#__codelineno-0-282">282</a></span>
+<span class="normal"><a href="#__codelineno-0-283">283</a></span>
+<span class="normal"><a href="#__codelineno-0-284">284</a></span>
+<span class="normal"><a href="#__codelineno-0-285">285</a></span>
+<span class="normal"><a href="#__codelineno-0-286">286</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_cached</span><span class="p">(</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-268" name="__codelineno-0-268"></a>    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-269" name="__codelineno-0-269"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-270" name="__codelineno-0-270"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a successful task instance with a matching Merkle identity.</span>
+<a id="__codelineno-0-271" name="__codelineno-0-271"></a>
+<a id="__codelineno-0-272" name="__codelineno-0-272"></a><span class="sd">    Searches across *all* runs.  Returns the most recent match.</span>
+<a id="__codelineno-0-273" name="__codelineno-0-273"></a>
+<a id="__codelineno-0-274" name="__codelineno-0-274"></a><span class="sd">    Parameters</span>
+<a id="__codelineno-0-275" name="__codelineno-0-275"></a><span class="sd">    ----------</span>
+<a id="__codelineno-0-276" name="__codelineno-0-276"></a><span class="sd">    task_name : str</span>
+<a id="__codelineno-0-277" name="__codelineno-0-277"></a><span class="sd">        Task name.</span>
+<a id="__codelineno-0-278" name="__codelineno-0-278"></a><span class="sd">    identity : str</span>
+<a id="__codelineno-0-279" name="__codelineno-0-279"></a><span class="sd">        Full Merkle identity hash.</span>
+<a id="__codelineno-0-280" name="__codelineno-0-280"></a>
+<a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="sd">    Returns</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="sd">    dict[str, Any] or None</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="sd">        The cached instance row, or ``None`` if no match.</span>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a><span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2991,11 +3113,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-263">263</a></span>
-<span class="normal"><a href="#__codelineno-0-264">264</a></span>
-<span class="normal"><a href="#__codelineno-0-265">265</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-263" name="__codelineno-0-263"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="k">def</span><span class="w"> </span><span class="nf">task_state_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-task state counts: ``{task: {state: count}}``.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-290">290</a></span>
+<span class="normal"><a href="#__codelineno-0-291">291</a></span>
+<span class="normal"><a href="#__codelineno-0-292">292</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="k">def</span><span class="w"> </span><span class="nf">task_state_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Per-task state counts: ``{task: {state: count}}``.&quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3454,6 +3576,207 @@ config or <code>REFLOW_STORE_PATH</code>.</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="reflow.stores.sqlite.SqliteStore.update_task_submitted" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">update_task_submitted</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#reflow.stores.sqlite.SqliteStore.update_task_submitted" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Mark pending/retrying instances of a task as SUBMITTED.</p>
+<p>With <code>indices=None</code> every pending/retrying instance of the task
+is marked (singleton tasks and full-array submits). With a list of
+array indices, only those instances are marked, so a large array
+can be submitted in capped waves, each wave carrying its own
+<code>job_id</code>.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/stores/sqlite.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-617">617</a></span>
+<span class="normal"><a href="#__codelineno-0-618">618</a></span>
+<span class="normal"><a href="#__codelineno-0-619">619</a></span>
+<span class="normal"><a href="#__codelineno-0-620">620</a></span>
+<span class="normal"><a href="#__codelineno-0-621">621</a></span>
+<span class="normal"><a href="#__codelineno-0-622">622</a></span>
+<span class="normal"><a href="#__codelineno-0-623">623</a></span>
+<span class="normal"><a href="#__codelineno-0-624">624</a></span>
+<span class="normal"><a href="#__codelineno-0-625">625</a></span>
+<span class="normal"><a href="#__codelineno-0-626">626</a></span>
+<span class="normal"><a href="#__codelineno-0-627">627</a></span>
+<span class="normal"><a href="#__codelineno-0-628">628</a></span>
+<span class="normal"><a href="#__codelineno-0-629">629</a></span>
+<span class="normal"><a href="#__codelineno-0-630">630</a></span>
+<span class="normal"><a href="#__codelineno-0-631">631</a></span>
+<span class="normal"><a href="#__codelineno-0-632">632</a></span>
+<span class="normal"><a href="#__codelineno-0-633">633</a></span>
+<span class="normal"><a href="#__codelineno-0-634">634</a></span>
+<span class="normal"><a href="#__codelineno-0-635">635</a></span>
+<span class="normal"><a href="#__codelineno-0-636">636</a></span>
+<span class="normal"><a href="#__codelineno-0-637">637</a></span>
+<span class="normal"><a href="#__codelineno-0-638">638</a></span>
+<span class="normal"><a href="#__codelineno-0-639">639</a></span>
+<span class="normal"><a href="#__codelineno-0-640">640</a></span>
+<span class="normal"><a href="#__codelineno-0-641">641</a></span>
+<span class="normal"><a href="#__codelineno-0-642">642</a></span>
+<span class="normal"><a href="#__codelineno-0-643">643</a></span>
+<span class="normal"><a href="#__codelineno-0-644">644</a></span>
+<span class="normal"><a href="#__codelineno-0-645">645</a></span>
+<span class="normal"><a href="#__codelineno-0-646">646</a></span>
+<span class="normal"><a href="#__codelineno-0-647">647</a></span>
+<span class="normal"><a href="#__codelineno-0-648">648</a></span>
+<span class="normal"><a href="#__codelineno-0-649">649</a></span>
+<span class="normal"><a href="#__codelineno-0-650">650</a></span>
+<span class="normal"><a href="#__codelineno-0-651">651</a></span>
+<span class="normal"><a href="#__codelineno-0-652">652</a></span>
+<span class="normal"><a href="#__codelineno-0-653">653</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-617" name="__codelineno-0-617"></a><span class="nd">@_retry_on_locked</span>
+<a id="__codelineno-0-618" name="__codelineno-0-618"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_task_submitted</span><span class="p">(</span>
+<a id="__codelineno-0-619" name="__codelineno-0-619"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-620" name="__codelineno-0-620"></a>    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-621" name="__codelineno-0-621"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-622" name="__codelineno-0-622"></a>    <span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-623" name="__codelineno-0-623"></a>    <span class="n">indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-624" name="__codelineno-0-624"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-625" name="__codelineno-0-625"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark pending/retrying instances of a task as SUBMITTED.</span>
+<a id="__codelineno-0-626" name="__codelineno-0-626"></a>
+<a id="__codelineno-0-627" name="__codelineno-0-627"></a><span class="sd">    With ``indices=None`` every pending/retrying instance of the task</span>
+<a id="__codelineno-0-628" name="__codelineno-0-628"></a><span class="sd">    is marked (singleton tasks and full-array submits). With a list of</span>
+<a id="__codelineno-0-629" name="__codelineno-0-629"></a><span class="sd">    array indices, only those instances are marked, so a large array</span>
+<a id="__codelineno-0-630" name="__codelineno-0-630"></a><span class="sd">    can be submitted in capped waves, each wave carrying its own</span>
+<a id="__codelineno-0-631" name="__codelineno-0-631"></a><span class="sd">    ``job_id``.</span>
+<a id="__codelineno-0-632" name="__codelineno-0-632"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-633" name="__codelineno-0-633"></a>    <span class="n">params</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-634" name="__codelineno-0-634"></a>        <span class="n">TaskState</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-0-635" name="__codelineno-0-635"></a>        <span class="n">job_id</span><span class="p">,</span>
+<a id="__codelineno-0-636" name="__codelineno-0-636"></a>        <span class="n">_utcnow</span><span class="p">(),</span>
+<a id="__codelineno-0-637" name="__codelineno-0-637"></a>        <span class="n">run_id</span><span class="p">,</span>
+<a id="__codelineno-0-638" name="__codelineno-0-638"></a>        <span class="n">task_name</span><span class="p">,</span>
+<a id="__codelineno-0-639" name="__codelineno-0-639"></a>        <span class="n">TaskState</span><span class="o">.</span><span class="n">PENDING</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-0-640" name="__codelineno-0-640"></a>        <span class="n">TaskState</span><span class="o">.</span><span class="n">RETRYING</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-0-641" name="__codelineno-0-641"></a>    <span class="p">]</span>
+<a id="__codelineno-0-642" name="__codelineno-0-642"></a>    <span class="n">sql</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-643" name="__codelineno-0-643"></a>        <span class="s2">&quot;UPDATE task_instances SET state = ?, job_id = ?, updated_at = ? &quot;</span>
+<a id="__codelineno-0-644" name="__codelineno-0-644"></a>        <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND state IN (?, ?)&quot;</span>
+<a id="__codelineno-0-645" name="__codelineno-0-645"></a>    <span class="p">)</span>
+<a id="__codelineno-0-646" name="__codelineno-0-646"></a>    <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-647" name="__codelineno-0-647"></a>        <span class="n">idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+<a id="__codelineno-0-648" name="__codelineno-0-648"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">idx</span><span class="p">:</span>
+<a id="__codelineno-0-649" name="__codelineno-0-649"></a>            <span class="k">return</span>
+<a id="__codelineno-0-650" name="__codelineno-0-650"></a>        <span class="n">sql</span> <span class="o">+=</span> <span class="s2">&quot; AND array_index IN (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;?&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)))</span>
+<a id="__codelineno-0-651" name="__codelineno-0-651"></a>        <span class="n">params</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+<a id="__codelineno-0-652" name="__codelineno-0-652"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+<a id="__codelineno-0-653" name="__codelineno-0-653"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="reflow.stores.sqlite.SqliteStore.fail_pending_tasks" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">fail_pending_tasks</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">error_text</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#reflow.stores.sqlite.SqliteStore.fail_pending_tasks" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Mark not-yet-running instances of <em>task_name</em> as FAILED.</p>
+<p>Used when the scheduler cannot place work (e.g. the batch system
+rejected the submission), so the run finalises as FAILED instead
+of hanging with tasks stuck in PENDING/SUBMITTED. Only states that
+have not started executing are affected. Returns the row count.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/stores/sqlite.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-655">655</a></span>
+<span class="normal"><a href="#__codelineno-0-656">656</a></span>
+<span class="normal"><a href="#__codelineno-0-657">657</a></span>
+<span class="normal"><a href="#__codelineno-0-658">658</a></span>
+<span class="normal"><a href="#__codelineno-0-659">659</a></span>
+<span class="normal"><a href="#__codelineno-0-660">660</a></span>
+<span class="normal"><a href="#__codelineno-0-661">661</a></span>
+<span class="normal"><a href="#__codelineno-0-662">662</a></span>
+<span class="normal"><a href="#__codelineno-0-663">663</a></span>
+<span class="normal"><a href="#__codelineno-0-664">664</a></span>
+<span class="normal"><a href="#__codelineno-0-665">665</a></span>
+<span class="normal"><a href="#__codelineno-0-666">666</a></span>
+<span class="normal"><a href="#__codelineno-0-667">667</a></span>
+<span class="normal"><a href="#__codelineno-0-668">668</a></span>
+<span class="normal"><a href="#__codelineno-0-669">669</a></span>
+<span class="normal"><a href="#__codelineno-0-670">670</a></span>
+<span class="normal"><a href="#__codelineno-0-671">671</a></span>
+<span class="normal"><a href="#__codelineno-0-672">672</a></span>
+<span class="normal"><a href="#__codelineno-0-673">673</a></span>
+<span class="normal"><a href="#__codelineno-0-674">674</a></span>
+<span class="normal"><a href="#__codelineno-0-675">675</a></span>
+<span class="normal"><a href="#__codelineno-0-676">676</a></span>
+<span class="normal"><a href="#__codelineno-0-677">677</a></span>
+<span class="normal"><a href="#__codelineno-0-678">678</a></span>
+<span class="normal"><a href="#__codelineno-0-679">679</a></span>
+<span class="normal"><a href="#__codelineno-0-680">680</a></span>
+<span class="normal"><a href="#__codelineno-0-681">681</a></span>
+<span class="normal"><a href="#__codelineno-0-682">682</a></span>
+<span class="normal"><a href="#__codelineno-0-683">683</a></span>
+<span class="normal"><a href="#__codelineno-0-684">684</a></span>
+<span class="normal"><a href="#__codelineno-0-685">685</a></span>
+<span class="normal"><a href="#__codelineno-0-686">686</a></span>
+<span class="normal"><a href="#__codelineno-0-687">687</a></span>
+<span class="normal"><a href="#__codelineno-0-688">688</a></span>
+<span class="normal"><a href="#__codelineno-0-689">689</a></span>
+<span class="normal"><a href="#__codelineno-0-690">690</a></span>
+<span class="normal"><a href="#__codelineno-0-691">691</a></span>
+<span class="normal"><a href="#__codelineno-0-692">692</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-655" name="__codelineno-0-655"></a><span class="nd">@_retry_on_locked</span>
+<a id="__codelineno-0-656" name="__codelineno-0-656"></a><span class="k">def</span><span class="w"> </span><span class="nf">fail_pending_tasks</span><span class="p">(</span>
+<a id="__codelineno-0-657" name="__codelineno-0-657"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-658" name="__codelineno-0-658"></a>    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-659" name="__codelineno-0-659"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-660" name="__codelineno-0-660"></a>    <span class="n">error_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-661" name="__codelineno-0-661"></a>    <span class="n">indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-662" name="__codelineno-0-662"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-663" name="__codelineno-0-663"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark not-yet-running instances of *task_name* as FAILED.</span>
+<a id="__codelineno-0-664" name="__codelineno-0-664"></a>
+<a id="__codelineno-0-665" name="__codelineno-0-665"></a><span class="sd">    Used when the scheduler cannot place work (e.g. the batch system</span>
+<a id="__codelineno-0-666" name="__codelineno-0-666"></a><span class="sd">    rejected the submission), so the run finalises as FAILED instead</span>
+<a id="__codelineno-0-667" name="__codelineno-0-667"></a><span class="sd">    of hanging with tasks stuck in PENDING/SUBMITTED. Only states that</span>
+<a id="__codelineno-0-668" name="__codelineno-0-668"></a><span class="sd">    have not started executing are affected. Returns the row count.</span>
+<a id="__codelineno-0-669" name="__codelineno-0-669"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-670" name="__codelineno-0-670"></a>    <span class="n">params</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-671" name="__codelineno-0-671"></a>        <span class="n">TaskState</span><span class="o">.</span><span class="n">FAILED</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-0-672" name="__codelineno-0-672"></a>        <span class="n">error_text</span><span class="p">,</span>
+<a id="__codelineno-0-673" name="__codelineno-0-673"></a>        <span class="n">_utcnow</span><span class="p">(),</span>
+<a id="__codelineno-0-674" name="__codelineno-0-674"></a>        <span class="n">run_id</span><span class="p">,</span>
+<a id="__codelineno-0-675" name="__codelineno-0-675"></a>        <span class="n">task_name</span><span class="p">,</span>
+<a id="__codelineno-0-676" name="__codelineno-0-676"></a>        <span class="n">TaskState</span><span class="o">.</span><span class="n">PENDING</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-0-677" name="__codelineno-0-677"></a>        <span class="n">TaskState</span><span class="o">.</span><span class="n">RETRYING</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-0-678" name="__codelineno-0-678"></a>        <span class="n">TaskState</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+<a id="__codelineno-0-679" name="__codelineno-0-679"></a>    <span class="p">]</span>
+<a id="__codelineno-0-680" name="__codelineno-0-680"></a>    <span class="n">sql</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-681" name="__codelineno-0-681"></a>        <span class="s2">&quot;UPDATE task_instances SET state = ?, error_text = ?, updated_at = ? &quot;</span>
+<a id="__codelineno-0-682" name="__codelineno-0-682"></a>        <span class="s2">&quot;WHERE run_id = ? AND task_name = ? AND state IN (?, ?, ?)&quot;</span>
+<a id="__codelineno-0-683" name="__codelineno-0-683"></a>    <span class="p">)</span>
+<a id="__codelineno-0-684" name="__codelineno-0-684"></a>    <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-685" name="__codelineno-0-685"></a>        <span class="n">idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+<a id="__codelineno-0-686" name="__codelineno-0-686"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">idx</span><span class="p">:</span>
+<a id="__codelineno-0-687" name="__codelineno-0-687"></a>            <span class="k">return</span> <span class="mi">0</span>
+<a id="__codelineno-0-688" name="__codelineno-0-688"></a>        <span class="n">sql</span> <span class="o">+=</span> <span class="s2">&quot; AND array_index IN (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;?&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)))</span>
+<a id="__codelineno-0-689" name="__codelineno-0-689"></a>        <span class="n">params</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+<a id="__codelineno-0-690" name="__codelineno-0-690"></a>    <span class="n">cur</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+<a id="__codelineno-0-691" name="__codelineno-0-691"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<a id="__codelineno-0-692" name="__codelineno-0-692"></a>    <span class="k">return</span> <span class="n">cur</span><span class="o">.</span><span class="n">rowcount</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="reflow.stores.sqlite.SqliteStore.find_cached_record" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">find_cached_record</span><span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span></code>
 
@@ -3468,41 +3791,41 @@ config or <code>REFLOW_STORE_PATH</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/stores/sqlite.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-699">699</a></span>
-<span class="normal"><a href="#__codelineno-0-700">700</a></span>
-<span class="normal"><a href="#__codelineno-0-701">701</a></span>
-<span class="normal"><a href="#__codelineno-0-702">702</a></span>
-<span class="normal"><a href="#__codelineno-0-703">703</a></span>
-<span class="normal"><a href="#__codelineno-0-704">704</a></span>
-<span class="normal"><a href="#__codelineno-0-705">705</a></span>
-<span class="normal"><a href="#__codelineno-0-706">706</a></span>
-<span class="normal"><a href="#__codelineno-0-707">707</a></span>
-<span class="normal"><a href="#__codelineno-0-708">708</a></span>
-<span class="normal"><a href="#__codelineno-0-709">709</a></span>
-<span class="normal"><a href="#__codelineno-0-710">710</a></span>
-<span class="normal"><a href="#__codelineno-0-711">711</a></span>
-<span class="normal"><a href="#__codelineno-0-712">712</a></span>
-<span class="normal"><a href="#__codelineno-0-713">713</a></span>
-<span class="normal"><a href="#__codelineno-0-714">714</a></span>
-<span class="normal"><a href="#__codelineno-0-715">715</a></span>
-<span class="normal"><a href="#__codelineno-0-716">716</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-699" name="__codelineno-0-699"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_cached_record</span><span class="p">(</span>
-<a id="__codelineno-0-700" name="__codelineno-0-700"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-701" name="__codelineno-0-701"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-702" name="__codelineno-0-702"></a>    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-703" name="__codelineno-0-703"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TaskInstanceRecord</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-704" name="__codelineno-0-704"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the most recent successful instance matching the identity.</span>
-<a id="__codelineno-0-705" name="__codelineno-0-705"></a>
-<a id="__codelineno-0-706" name="__codelineno-0-706"></a><span class="sd">    Searches across all runs.</span>
-<a id="__codelineno-0-707" name="__codelineno-0-707"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-708" name="__codelineno-0-708"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">identity</span><span class="p">:</span>
-<a id="__codelineno-0-709" name="__codelineno-0-709"></a>        <span class="k">return</span> <span class="kc">None</span>
-<a id="__codelineno-0-710" name="__codelineno-0-710"></a>    <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<a id="__codelineno-0-711" name="__codelineno-0-711"></a>        <span class="s2">&quot;SELECT * FROM task_instances &quot;</span>
-<a id="__codelineno-0-712" name="__codelineno-0-712"></a>        <span class="s2">&quot;WHERE task_name = ? AND identity = ? AND state = ? &quot;</span>
-<a id="__codelineno-0-713" name="__codelineno-0-713"></a>        <span class="s2">&quot;ORDER BY created_at DESC LIMIT 1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-714" name="__codelineno-0-714"></a>        <span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-<a id="__codelineno-0-715" name="__codelineno-0-715"></a>    <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-<a id="__codelineno-0-716" name="__codelineno-0-716"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_task_instance_record</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-754">754</a></span>
+<span class="normal"><a href="#__codelineno-0-755">755</a></span>
+<span class="normal"><a href="#__codelineno-0-756">756</a></span>
+<span class="normal"><a href="#__codelineno-0-757">757</a></span>
+<span class="normal"><a href="#__codelineno-0-758">758</a></span>
+<span class="normal"><a href="#__codelineno-0-759">759</a></span>
+<span class="normal"><a href="#__codelineno-0-760">760</a></span>
+<span class="normal"><a href="#__codelineno-0-761">761</a></span>
+<span class="normal"><a href="#__codelineno-0-762">762</a></span>
+<span class="normal"><a href="#__codelineno-0-763">763</a></span>
+<span class="normal"><a href="#__codelineno-0-764">764</a></span>
+<span class="normal"><a href="#__codelineno-0-765">765</a></span>
+<span class="normal"><a href="#__codelineno-0-766">766</a></span>
+<span class="normal"><a href="#__codelineno-0-767">767</a></span>
+<span class="normal"><a href="#__codelineno-0-768">768</a></span>
+<span class="normal"><a href="#__codelineno-0-769">769</a></span>
+<span class="normal"><a href="#__codelineno-0-770">770</a></span>
+<span class="normal"><a href="#__codelineno-0-771">771</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-754" name="__codelineno-0-754"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_cached_record</span><span class="p">(</span>
+<a id="__codelineno-0-755" name="__codelineno-0-755"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-756" name="__codelineno-0-756"></a>    <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-757" name="__codelineno-0-757"></a>    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-758" name="__codelineno-0-758"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TaskInstanceRecord</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-759" name="__codelineno-0-759"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the most recent successful instance matching the identity.</span>
+<a id="__codelineno-0-760" name="__codelineno-0-760"></a>
+<a id="__codelineno-0-761" name="__codelineno-0-761"></a><span class="sd">    Searches across all runs.</span>
+<a id="__codelineno-0-762" name="__codelineno-0-762"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-763" name="__codelineno-0-763"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">identity</span><span class="p">:</span>
+<a id="__codelineno-0-764" name="__codelineno-0-764"></a>        <span class="k">return</span> <span class="kc">None</span>
+<a id="__codelineno-0-765" name="__codelineno-0-765"></a>    <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="__codelineno-0-766" name="__codelineno-0-766"></a>        <span class="s2">&quot;SELECT * FROM task_instances &quot;</span>
+<a id="__codelineno-0-767" name="__codelineno-0-767"></a>        <span class="s2">&quot;WHERE task_name = ? AND identity = ? AND state = ? &quot;</span>
+<a id="__codelineno-0-768" name="__codelineno-0-768"></a>        <span class="s2">&quot;ORDER BY created_at DESC LIMIT 1&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-769" name="__codelineno-0-769"></a>        <span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">SUCCESS</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+<a id="__codelineno-0-770" name="__codelineno-0-770"></a>    <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+<a id="__codelineno-0-771" name="__codelineno-0-771"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_task_instance_record</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
