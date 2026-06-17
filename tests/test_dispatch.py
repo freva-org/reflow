@@ -11,7 +11,7 @@ from typing import Annotated
 
 import pytest
 
-from reflow import Config, Param, Result, Workflow
+from reflow import Config, Param, Result, RunDir, Workflow
 from reflow._types import TaskState
 from reflow.executors.local import LocalExecutor
 from reflow.stores.sqlite import SqliteStore
@@ -440,7 +440,9 @@ class TestDispatchArray:
             )
             assert jid is None  # source not done yet
 
-    def test_array_dispatch_retrying_instances(self, tmp_path: Path) -> None:
+    def test_array_dispatch_retrying_instances(
+        self, tmp_path: Path
+    ) -> None:
         """RETRYING instances should be re-submitted as a partial array."""
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
 
@@ -481,7 +483,9 @@ class TestDispatchArray:
             # Local executor always succeeds; just check a job id was returned
             assert jid is not None
 
-    def test_maybe_finalise_cancels_on_pending_active(self, tmp_path: Path) -> None:
+    def test_maybe_finalise_cancels_on_pending_active(
+        self, tmp_path: Path
+    ) -> None:
         wf = Workflow("wf")
 
         @wf.job()
@@ -695,7 +699,9 @@ class TestDispatchArrayEdgeCases:
             return item
 
         with _store(tmp_path) as st:
-            run_id = wf.submit_run(run_dir=tmp_path / "r", store=st, parameters={})
+            run_id = wf.submit_run(
+                run_dir=tmp_path / "r", store=st, parameters={}
+            )
             row = st.get_task_instance(run_id, "source", None)
             st.update_task_success(int(row["id"]), ["a", "b", "c"])
             wf.dispatch(run_id, st, tmp_path / "r")
@@ -887,6 +893,7 @@ class TestDispatchArrayFanItems:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         """All-from-cache: call_count stays at 2 on second run."""
+        import logging
         wf = Workflow("wf", config=Config({"executor": {"mode": "dry-run"}}))
         call_count = {"n": 0}
 
@@ -1133,7 +1140,9 @@ class TestDispatchRemainingGaps:
         wf.validate()
         with _store(tmp_path) as st:
             st.insert_run("r1", "wf", "u", {})
-            iid = st.insert_task_instance("r1", "source", None, TaskState.SUCCESS, {})
+            iid = st.insert_task_instance(
+                "r1", "source", None, TaskState.SUCCESS, {}
+            )
             st.update_task_success(iid, "v")
             # get_type_hints is imported locally in _local; patch at typing module level
             with patch("typing.get_type_hints", side_effect=Exception("bad")):

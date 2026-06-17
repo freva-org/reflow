@@ -217,9 +217,26 @@ def _add_runs_parser(sp: Any) -> None:
 
 
 def _add_dag_parser(sp: Any) -> None:
+    from ._dag_render import FORMATS
+
     p = sp.add_parser(
         "dag",
         help="Print the task DAG.",
+    )
+    p.add_argument(
+        "--format",
+        choices=FORMATS,
+        default="text",
+        help=(
+            "Output format. 'text' is the default adjacency list; 'mermaid' "
+            "and 'dot' emit graph source for external renderers; 'phart' "
+            "draws a pretty terminal diagram (needs the 'pretty' extra)."
+        ),
+    )
+    p.add_argument(
+        "--ascii",
+        action="store_true",
+        help="For --format phart, force 7-bit ASCII instead of Unicode.",
     )
     p.set_defaults(_command="dag")
 
@@ -552,13 +569,21 @@ def _cmd_runs(wf: Any, args: argparse.Namespace) -> int:
 
 
 def _cmd_dag(wf: Any, args: argparse.Namespace) -> int:
-    order = wf._topological_order()
-    for tname in order:
-        spec = wf.tasks[tname]
-        deps = wf._effective_dependencies(spec)
-        dep_str = f"  <- {', '.join(deps)}" if deps else ""
-        tag = " [array]" if spec.config.array else ""
-        print(f"  {tname}{tag}{dep_str}")
+    from . import _dag_render
+
+    fmt = getattr(args, "format", "text")
+    if fmt == "phart":
+        try:
+            print(_dag_render.render_phart(wf, use_ascii=getattr(args, "ascii", False)))
+            return 0
+        except ImportError:
+            print(
+                "phart not installed; showing plain text. "
+                "For a prettier diagram: pip install 'reflow[pretty]'",
+                file=sys.stderr,
+            )
+            fmt = "text"
+    print(_dag_render.render(wf, fmt, use_ascii=getattr(args, "ascii", False)))
     return 0
 
 

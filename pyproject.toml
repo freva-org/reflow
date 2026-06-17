@@ -53,7 +53,7 @@ dev = [
     "ruff",
     "mypy",
 ]
-pretty = ["rich-argparse"]
+pretty = ["rich-argparse", "phart", "networkx"]
 docs = [
     "mkdocs>=1.5",
     "mkdocs-material>=9.5",
@@ -134,6 +134,7 @@ commands =
     codespell {posargs: --quiet-level=2} src/
     python3 -m bandit -r src/reflow --severity-level medium --confidence-level high
 [testenv:test]
+extras = pretty
 setenv =
     VIRTUALENV_SYSTEM_SITE_PACKAGES=true
 description = "Run the unit tests."
