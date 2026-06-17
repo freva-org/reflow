@@ -9,11 +9,9 @@ from typing import Annotated, Any, Literal
 import pytest
 
 from reflow import (
-    Config,
     Flow,
     Param,
     Result,
-    Run,
     RunDir,
     Workflow,
 )
@@ -383,9 +381,10 @@ class TestParamsExtended:
 class TestParamCliBuildExtended:
     def test_short_flag_included_in_names(self) -> None:
         """short_flag on a ResolvedParam adds a short flag to add_to_parser."""
-        import argparse, inspect
-        from typing import Annotated
-        from reflow import Workflow, Param
+        import argparse
+        import inspect
+
+        from reflow import Workflow
         from reflow.params import collect_cli_params
 
         wf = Workflow("wf")
@@ -406,9 +405,10 @@ class TestParamCliBuildExtended:
 
     def test_list_type_gets_nargs_plus(self) -> None:
         """A list[str] param produces a ResolvedParam with is_list=True."""
-        import argparse, inspect
-        from typing import Annotated
-        from reflow import Workflow, Param
+        import argparse
+        import inspect
+
+        from reflow import Workflow
         from reflow.params import collect_cli_params
 
         wf = Workflow("wf")
@@ -440,29 +440,32 @@ class TestParamCliBuildExtended:
 
     def test_bool_argparse_type_invalid(self) -> None:
         import argparse
+
         from reflow.params import _parse_bool
         with pytest.raises(argparse.ArgumentTypeError, match="Invalid boolean"):
             _parse_bool("maybe")
 
     def test_datetime_argparse_type_valid(self) -> None:
-        from reflow.params import _parse_datetime
         from datetime import datetime
+
+        from reflow.params import _parse_datetime
         result = _parse_datetime("2024-01-15T12:00:00")
         assert isinstance(result, datetime)
         assert result.year == 2024
 
     def test_datetime_argparse_type_invalid(self) -> None:
         import argparse
+
         from reflow.params import _parse_datetime
         with pytest.raises(argparse.ArgumentTypeError, match="Invalid datetime"):
             _parse_datetime("not-a-date")
 
     def test_collect_cli_params_dedup_required(self) -> None:
         """merge_resolved_params deduplicates global params across tasks."""
-        from typing import Annotated
-        from reflow import Workflow, Param
-        from reflow.params import collect_cli_params, merge_resolved_params
         import inspect
+
+        from reflow import Workflow
+        from reflow.params import collect_cli_params, merge_resolved_params
 
         wf = Workflow("wf")
 
@@ -484,11 +487,11 @@ class TestParamCliBuildExtended:
 
     def test_hints_exception_falls_back_gracefully(self) -> None:
         """collect_cli_params handles functions where get_type_hints raises."""
-        from reflow.params import collect_cli_params
-        from unittest.mock import patch
         import inspect
-        from typing import Annotated
-        from reflow import Workflow, Param
+        from unittest.mock import patch
+
+        from reflow import Workflow
+        from reflow.params import collect_cli_params
 
         wf = Workflow("wf")
 
@@ -519,9 +522,9 @@ class TestParamsRemainingGaps:
 
     def test_collect_cli_params_skips_result_deps(self) -> None:
         import inspect
-        from reflow import Workflow, Result
+
+        from reflow import Workflow
         from reflow.params import collect_cli_params
-        from typing import Annotated
 
         wf = Workflow("wf")
 
@@ -541,9 +544,9 @@ class TestParamsRemainingGaps:
     def test_collect_cli_params_hints_exception(self) -> None:
         import inspect
         from unittest.mock import patch
-        from reflow import Workflow, Param
+
+        from reflow import Workflow
         from reflow.params import collect_cli_params
-        from typing import Annotated
 
         wf = Workflow("wf")
 

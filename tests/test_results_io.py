@@ -8,12 +8,11 @@ from pathlib import Path
 import pytest
 
 from reflow import (
-    Result,
     TaskState,
 )
 from reflow.manifest import DEFAULT_CODEC
-from reflow.stores.sqlite import SqliteStore
 from reflow.results import _result_filename, _results_dir, ingest_results, write_result
+from reflow.stores.sqlite import SqliteStore
 
 # --- helpers ---------------------------------------------------------------
 

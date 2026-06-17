@@ -55,6 +55,18 @@ DEFAULT_CONFIG_TOML = dedent(
     # Python interpreter used for worker and dispatch jobs.
     # python = "/path/to/python"
 
+    # Cap on how many array tasks reflow submits at once (per wave).
+    # Set this to your scheduler's per-user job-submit limit
+    # (e.g. Slurm AssocMaxSubmitJobLimit).  A large array task is then
+    # submitted in waves of at most this many indices; the remainder stay
+    # PENDING and are submitted as each wave drains, so the number of
+    # queued jobs never exceeds the cap.  Leave a little headroom below
+    # the true limit for the dispatch job and any singleton tasks.
+    # Unset = no cap (submit the whole array at once).
+    # This is a reflow-internal scheduling cap, not a scheduler flag, so it
+    # is a plain [executor] key (not under [executor.submit_options]).
+    # max_submit_jobs = 900
+
     # Override scheduler command paths if they are not on $PATH.
     # Slurm:
     #   sbatch  = "/usr/bin/sbatch"
@@ -312,6 +324,35 @@ class Config:
     @property
     def executor_mode(self) -> str | None:
         return self._get("executor", "mode", "REFLOW_MODE")
+
+    @property
+    def max_submit_jobs(self) -> int | None:
+        """Cap on array tasks submitted per wave.
+
+        Set this to your scheduler's per-user job-submit limit (e.g. Slurm
+        ``AssocMaxSubmitJobLimit``). When set, a large array task is
+        submitted in waves of at most this many indices; the remainder stay
+        PENDING and are submitted by the dependency-triggered follow-up
+        dispatch as each wave drains, so the number of queued jobs never
+        exceeds the cap. ``None`` (the default) disables capping and submits
+        the whole array at once. Leave a little headroom below the true
+        limit for the follow-up dispatch job itself and any concurrent
+        singleton tasks.
+
+        This is a reflow-internal scheduling cap, *not* a scheduler flag, so
+        it is a plain ``[executor]`` key rather than a ``submit_options``
+        entry (those are rendered onto the sbatch command line).
+
+        Config: ``[executor] max_submit_jobs``; env: ``REFLOW_MAX_SUBMIT_JOBS``.
+        """
+        raw = self._get("executor", "max_submit_jobs", "REFLOW_MAX_SUBMIT_JOBS")
+        if raw is None:
+            return None
+        try:
+            value = int(raw)
+        except ValueError:
+            return None
+        return value if value > 0 else None
 
     @property
     def executor_sbatch(self) -> str | None:

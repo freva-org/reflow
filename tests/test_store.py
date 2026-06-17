@@ -8,13 +8,35 @@ from pathlib import Path
 import pytest
 
 from reflow import (
-    Run,
     RunState,
     TaskState,
 )
-from reflow.flow import TaskSpec
-from reflow.stores.sqlite import SqliteStore
 from reflow.stores.records import RunRecord, TaskInstanceRecord, TaskSpecRecord
+from reflow.stores.sqlite import SqliteStore
+
+
+def _seed(tmp_path: Path, n: int, task: str = "conv") -> SqliteStore:
+    store = SqliteStore.for_run_dir(tmp_path)
+    store.init()
+    store.insert_run("r1", "g", "u", {})
+    for idx in range(n):
+        store.insert_task_instance("r1", task, idx, TaskState.PENDING, {})
+    return store
+
+
+def _states(store: SqliteStore, task: str = "conv") -> dict:
+    return {
+        int(r["array_index"]): r["state"]
+        for r in store.list_task_instances("r1", task_name=task)
+    }
+
+
+def _job_ids(store: SqliteStore, task: str = "conv") -> dict:
+    return {
+        int(r["array_index"]): r.get("job_id")
+        for r in store.list_task_instances("r1", task_name=task)
+    }
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # _types.py
@@ -324,6 +346,7 @@ class TestRetryOnLocked:
     def test_non_lock_error_raises_immediately(self, tmp_path: Path) -> None:
         """OperationalError not about locking propagates without retry."""
         import sqlite3
+
         from reflow.stores.sqlite import SqliteStore
 
         st = SqliteStore(str(tmp_path / "db.sqlite"))
@@ -335,8 +358,9 @@ class TestRetryOnLocked:
         """_retry_on_locked retries on lock errors and ultimately succeeds."""
         import sqlite3
         from unittest.mock import patch
-        from reflow.stores.sqlite import SqliteStore
+
         from reflow._types import RunState
+        from reflow.stores.sqlite import SqliteStore
 
         st = SqliteStore(str(tmp_path / "db.sqlite"))
         st.init()
@@ -414,8 +438,9 @@ class TestRetryOnLockedWarningPath:
         import logging
         import sqlite3
         from unittest.mock import patch
-        from reflow.stores.sqlite import SqliteStore
+
         from reflow._types import RunState
+        from reflow.stores.sqlite import SqliteStore
 
         st = SqliteStore(str(tmp_path / "db.sqlite"))
         st.init()
@@ -445,13 +470,15 @@ class TestRetryOnLockedWarningPath:
     def test_wal_fallback_on_wal_pragma_error(self, tmp_path: Path) -> None:
         """Lines 137-141: WAL pragma fails, DELETE fallback is attempted."""
         import sqlite3
-        from unittest.mock import patch, MagicMock, call
+        from unittest.mock import MagicMock, patch
+
         from reflow.stores.sqlite import SqliteStore
 
         # sqlite3.Connection.execute is a read-only C slot in Python 3.13.
         # Instead, return a MagicMock whose execute raises on the WAL pragma.
-        real_conn = sqlite3.connect(str(tmp_path / "real.sqlite"),
-                                    check_same_thread=False)
+        real_conn = sqlite3.connect(
+            str(tmp_path / "real.sqlite"), check_same_thread=False
+        )
         real_conn.row_factory = sqlite3.Row
         executed_sqls: list[str] = []
 
@@ -487,11 +514,13 @@ class TestRetryOnLockedWarningPath:
 class TestSqliteRemainingGaps:
     def test_retry_raises_on_max_retries(self, tmp_path: Path) -> None:
         """_retry_on_locked re-raises after exhausting all retries and sleeps
-        (_MAX_RETRIES - 1) times in between."""
+        (_MAX_RETRIES - 1) times in between.
+        """
         import sqlite3
         from unittest.mock import patch
-        from reflow.stores.sqlite import SqliteStore, _MAX_RETRIES
+
         from reflow._types import RunState
+        from reflow.stores.sqlite import _MAX_RETRIES, SqliteStore
 
         # A Connection subclass whose execute can be overridden (the base
         # sqlite3.Connection.execute is a read-only C slot).
@@ -516,10 +545,11 @@ class TestSqliteRemainingGaps:
         # Re-open the connection through the patched connect so that the
         # locked-execute subclass is used for update_run_status.
         st.close()
-        with patch("reflow.stores.sqlite.sqlite3.connect",
-                   side_effect=patched_connect):
-            with patch("reflow.stores.sqlite.time.sleep",
-                       side_effect=lambda d: sleep_calls.append(d)):
+        with patch("reflow.stores.sqlite.sqlite3.connect", side_effect=patched_connect):
+            with patch(
+                "reflow.stores.sqlite.time.sleep",
+                side_effect=lambda d: sleep_calls.append(d),
+            ):
                 with pytest.raises(sqlite3.OperationalError, match="locked"):
                     st.update_run_status("r1", RunState.SUCCESS)
 
@@ -527,10 +557,7 @@ class TestSqliteRemainingGaps:
         assert len(sleep_calls) == _MAX_RETRIES - 1
         st.close()
 
-
-    def test_get_task_instance_missing_returns_none(
-        self, tmp_path: Path
-    ) -> None:
+    def test_get_task_instance_missing_returns_none(self, tmp_path: Path) -> None:
         """get_task_instance returns None for a non-existent task."""
         from reflow.stores.sqlite import SqliteStore
 
@@ -541,9 +568,7 @@ class TestSqliteRemainingGaps:
         assert result is None
         st.close()
 
-    def test_get_singleton_output_missing_returns_none(
-        self, tmp_path: Path
-    ) -> None:
+    def test_get_singleton_output_missing_returns_none(self, tmp_path: Path) -> None:
         """get_singleton_output returns None when task has no record."""
         from reflow.stores.sqlite import SqliteStore
 
@@ -558,8 +583,8 @@ class TestSqliteRemainingGaps:
         self, tmp_path: Path
     ) -> None:
         """dependency_is_satisfied returns False when task has FAILED instances."""
-        from reflow.stores.sqlite import SqliteStore
         from reflow._types import TaskState
+        from reflow.stores.sqlite import SqliteStore
 
         st = SqliteStore(str(tmp_path / "db.sqlite"))
         st.init()
@@ -567,3 +592,98 @@ class TestSqliteRemainingGaps:
         st.insert_task_instance("r1", "task", None, TaskState.FAILED, {})
         assert st.dependency_is_satisfied("r1", "task") is False
         st.close()
+
+
+class TestUpdateTaskSubmittedIndices:
+    def test_none_marks_all_instances(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 3)
+        store.update_task_submitted("r1", "conv", "jobAll")
+        assert set(_states(store).values()) == {"SUBMITTED"}
+        assert set(_job_ids(store).values()) == {"jobAll"}
+
+    def test_subset_marks_only_that_wave(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 4)
+        store.update_task_submitted("r1", "conv", "jobW1", indices=[0, 1])
+        states = _states(store)
+        assert states[0] == states[1] == "SUBMITTED"
+        assert states[2] == states[3] == "PENDING"
+        job_ids = _job_ids(store)
+        assert job_ids[0] == "jobW1" and job_ids[2] is None
+
+    def test_successive_waves_keep_their_own_job_ids(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 4)
+        store.update_task_submitted("r1", "conv", "jobW1", indices=[0, 1])
+        store.update_task_submitted("r1", "conv", "jobW2", indices=[2, 3])
+        job_ids = _job_ids(store)
+        assert job_ids[0] == "jobW1" and job_ids[1] == "jobW1"
+        assert job_ids[2] == "jobW2" and job_ids[3] == "jobW2"
+
+    def test_empty_indices_is_noop(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 2)
+        store.update_task_submitted("r1", "conv", "x", indices=[])
+        assert set(_states(store).values()) == {"PENDING"}
+
+    def test_singleton_none_index(self, tmp_path: Path) -> None:
+        store = SqliteStore.for_run_dir(tmp_path)
+        store.init()
+        store.insert_run("r1", "g", "u", {})
+        store.insert_task_instance("r1", "prep", None, TaskState.PENDING, {})
+        store.update_task_submitted("r1", "prep", "jobS")
+        row = store.get_task_instance("r1", "prep", None)
+        assert row is not None and row["state"] == "SUBMITTED"
+        assert row.get("job_id") == "jobS"
+
+    def test_retrying_is_also_submittable(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 2)
+        # flip index 1 to RETRYING; update_task_submitted should include it
+        store.mark_for_retry(int(store.get_task_instance("r1", "conv", 1)["id"]))
+        store.update_task_submitted("r1", "conv", "jobR")
+        assert set(_states(store).values()) == {"SUBMITTED"}
+
+
+class TestFailPendingTasks:
+    def test_fail_all_pending(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 3)
+        n = store.fail_pending_tasks("r1", "conv", "rejected")
+        assert n == 3
+        assert set(_states(store).values()) == {"FAILED"}
+
+    def test_fail_only_subset(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 4)
+        n = store.fail_pending_tasks("r1", "conv", "rejected", indices=[0, 2])
+        assert n == 2
+        states = _states(store)
+        assert states[0] == states[2] == "FAILED"
+        assert states[1] == states[3] == "PENDING"
+
+    def test_error_text_recorded(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 1)
+        store.fail_pending_tasks("r1", "conv", "sbatch: job submit limit")
+        row = store.list_task_instances("r1", task_name="conv")[0]
+        assert "submit limit" in (row.get("error_text") or "")
+
+    def test_running_instance_is_protected(self, tmp_path: Path) -> None:
+        store = SqliteStore.for_run_dir(tmp_path)
+        store.init()
+        store.insert_run("r1", "g", "u", {})
+        iid = store.insert_task_instance("r1", "conv", 0, TaskState.PENDING, {})
+        store.update_task_running(iid)
+        store.insert_task_instance("r1", "conv", 1, TaskState.PENDING, {})
+        n = store.fail_pending_tasks("r1", "conv", "rejected")
+        states = _states(store)
+        assert states[0] == "RUNNING"  # not touched
+        assert states[1] == "FAILED"
+        assert n == 1
+
+    def test_submitted_instances_can_be_failed(self, tmp_path: Path) -> None:
+        # whole-submission rejection after instances were marked SUBMITTED
+        store = _seed(tmp_path, 2)
+        store.update_task_submitted("r1", "conv", "job1")
+        n = store.fail_pending_tasks("r1", "conv", "whole submission rejected")
+        assert n == 2
+        assert set(_states(store).values()) == {"FAILED"}
+
+    def test_empty_indices_returns_zero(self, tmp_path: Path) -> None:
+        store = _seed(tmp_path, 2)
+        assert store.fail_pending_tasks("r1", "conv", "x", indices=[]) == 0
+        assert set(_states(store).values()) == {"PENDING"}

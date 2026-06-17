@@ -31,9 +31,13 @@ from reflow.params import (
     is_run_dir,
     unwrap_optional,
 )
-from reflow.stores.sqlite import SqliteStore
-from reflow.workflow._helpers import default_executor, make_run_id, resolve_executor, resolve_index
 from reflow.results import ingest_results
+from reflow.stores.sqlite import SqliteStore
+from reflow.workflow._helpers import (
+    make_run_id,
+    resolve_executor,
+    resolve_index,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Coverage: _dispatch.py  (dispatch loop, resolve, fan-out, finalize)
@@ -629,7 +633,6 @@ class TestWorkerMixin:
         wf.worker(run_id, st, tmp_path, "task_ok")
 
         # Result file should have been written and can be ingested
-        from reflow.results import ingest_results
 
         n = ingest_results(run_id, st)
         assert n == 1
@@ -650,7 +653,6 @@ class TestWorkerMixin:
         with pytest.raises(RuntimeError, match="worker boom"):
             wf.worker(run_id, st, tmp_path, "task_fail")
 
-        from reflow.results import ingest_results
 
         n = ingest_results(run_id, st)
         assert n == 1
@@ -817,8 +819,6 @@ class TestRunStatusErrors:
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """ValueError from _topological_order is caught; tasks sorted alphabetically."""
-        from unittest.mock import patch
-
         wf = Workflow("w")
 
         @wf.job()
@@ -845,8 +845,6 @@ class TestWorkerUpdateRunningFailure:
         self, tmp_path: Path
     ) -> None:
         """update_task_running exception is swallowed; task still executes."""
-        from unittest.mock import patch
-
         wf = Workflow("w")
 
         @wf.job()
@@ -873,9 +871,8 @@ class TestWorkerUpdateRunningFailure:
 
 class TestValidateEdgeCases:
     def test_validate_skips_task_when_hints_raises(self) -> None:
-        from unittest.mock import patch
-        from reflow import Workflow, Result
-        from typing import Annotated
+
+        from reflow import Workflow
 
         wf = Workflow("wf")
 
@@ -903,8 +900,8 @@ class TestValidateEdgeCases:
             wf.validate()
 
     def test_validate_upstream_no_return_type_skipped(self) -> None:
-        from reflow import Workflow, Result
-        from typing import Annotated
+
+        from reflow import Workflow
 
         wf = Workflow("wf")
 
@@ -923,10 +920,9 @@ class TestCancelRunsJobId:
     def test_cancel_run_calls_executor_cancel(self, tmp_path: Path) -> None:
         """cancel_run calls executor.cancel for instances with a job_id."""
         from unittest.mock import MagicMock
-        from reflow import Workflow, Param
+
+        from reflow import Workflow
         from reflow.stores.sqlite import SqliteStore
-        from reflow._types import TaskState
-        from typing import Annotated
 
         wf = Workflow("wf")
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 from unittest.mock import patch
 
 import pytest
@@ -19,7 +19,6 @@ from reflow import (
     Workflow,
 )
 from reflow.stores.sqlite import SqliteStore
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -237,7 +236,7 @@ class TestCLIRunsFiltering:
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         wf, store = self._setup(tmp_path)
-        from reflow.cli import build_parser, run_command, parse_args
+        from reflow.cli import parse_args, run_command
 
         args = parse_args(wf, ["runs", "--store-path", str(store.path)])
         with patch(

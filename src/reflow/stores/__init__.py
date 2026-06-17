@@ -191,8 +191,16 @@ class Store(abc.ABC):
         run_id: str,
         task_name: str,
         job_id: str,
+        indices: list[int] | None = None,
     ) -> None:
-        """Mark pending/retrying instances as submitted."""
+        """Mark pending/retrying instances as submitted.
+
+        When ``indices`` is ``None`` all pending/retrying instances of the
+        task are marked (singleton tasks and full-array submits). When a
+        list of array indices is given, only those instances are marked,
+        so a large array can be submitted in capped waves, each wave with
+        its own job id.
+        """
 
     @abc.abstractmethod
     def update_task_running(self, instance_id: int) -> None:
@@ -223,6 +231,25 @@ class Store(abc.ABC):
     @abc.abstractmethod
     def update_task_failed(self, instance_id: int, error_text: str) -> None:
         """Mark one instance as failed."""
+
+    @abc.abstractmethod
+    def fail_pending_tasks(
+        self,
+        run_id: str,
+        task_name: str,
+        error_text: str,
+        indices: list[int] | None = None,
+    ) -> int:
+        """Mark not-yet-running instances of a task as FAILED.
+
+        Mirrors :meth:`update_task_submitted`: with ``indices=None`` every
+        not-yet-running instance of the task is failed; with a list of
+        array indices, only those are. Used when the scheduler cannot
+        place work (e.g. the batch system rejected the submission) so the
+        run finalises as FAILED instead of hanging with instances stuck in
+        PENDING/SUBMITTED. Only states that have not started executing are
+        affected. Returns the number of instances updated.
+        """
 
     @abc.abstractmethod
     def update_task_cancelled(self, instance_id: int) -> None:

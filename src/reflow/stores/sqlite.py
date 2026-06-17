@@ -620,21 +620,76 @@ class SqliteStore(Store):
         run_id: str,
         task_name: str,
         job_id: str,
+        indices: list[int] | None = None,
     ) -> None:
-        self.conn.execute(
+        """Mark pending/retrying instances of a task as SUBMITTED.
+
+        With ``indices=None`` every pending/retrying instance of the task
+        is marked (singleton tasks and full-array submits). With a list of
+        array indices, only those instances are marked, so a large array
+        can be submitted in capped waves, each wave carrying its own
+        ``job_id``.
+        """
+        params: list[Any] = [
+            TaskState.SUBMITTED.value,
+            job_id,
+            _utcnow(),
+            run_id,
+            task_name,
+            TaskState.PENDING.value,
+            TaskState.RETRYING.value,
+        ]
+        sql = (
             "UPDATE task_instances SET state = ?, job_id = ?, updated_at = ? "
-            "WHERE run_id = ? AND task_name = ? AND state IN (?, ?)",
-            (
-                TaskState.SUBMITTED.value,
-                job_id,
-                _utcnow(),
-                run_id,
-                task_name,
-                TaskState.PENDING.value,
-                TaskState.RETRYING.value,
-            ),
+            "WHERE run_id = ? AND task_name = ? AND state IN (?, ?)"
         )
+        if indices is not None:
+            idx = list(indices)
+            if not idx:
+                return
+            sql += " AND array_index IN ({})".format(",".join("?" * len(idx)))
+            params.extend(idx)
+        self.conn.execute(sql, params)
         self.conn.commit()
+
+    @_retry_on_locked
+    def fail_pending_tasks(
+        self,
+        run_id: str,
+        task_name: str,
+        error_text: str,
+        indices: list[int] | None = None,
+    ) -> int:
+        """Mark not-yet-running instances of *task_name* as FAILED.
+
+        Used when the scheduler cannot place work (e.g. the batch system
+        rejected the submission), so the run finalises as FAILED instead
+        of hanging with tasks stuck in PENDING/SUBMITTED. Only states that
+        have not started executing are affected. Returns the row count.
+        """
+        params: list[Any] = [
+            TaskState.FAILED.value,
+            error_text,
+            _utcnow(),
+            run_id,
+            task_name,
+            TaskState.PENDING.value,
+            TaskState.RETRYING.value,
+            TaskState.SUBMITTED.value,
+        ]
+        sql = (
+            "UPDATE task_instances SET state = ?, error_text = ?, updated_at = ? "
+            "WHERE run_id = ? AND task_name = ? AND state IN (?, ?, ?)"
+        )
+        if indices is not None:
+            idx = list(indices)
+            if not idx:
+                return 0
+            sql += " AND array_index IN ({})".format(",".join("?" * len(idx)))
+            params.extend(idx)
+        cur = self.conn.execute(sql, params)
+        self.conn.commit()
+        return cur.rowcount
 
     @_retry_on_locked
     def update_task_running(self, instance_id: int) -> None:
