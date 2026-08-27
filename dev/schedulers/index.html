@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1201,7 +1201,7 @@ for testing on a laptop).</p>
 <h3 id="via-config-file">Via config file<a class="headerlink" href="#via-config-file" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># ~/.config/reflow/config.toml</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">[executor]</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qsub-pbs&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"qsub-pbs"</span>
 </code></pre></div>
 <h3 id="via-environment-variable">Via environment variable<a class="headerlink" href="#via-environment-variable" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">REFLOW_MODE</span><span class="o">=</span>bsub
@@ -1209,12 +1209,12 @@ for testing on a laptop).</p>
 </code></pre></div>
 <h3 id="via-python">Via Python<a class="headerlink" href="#via-python" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Shorthand string</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/scratch/run1&quot;</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="s2">&quot;pbs&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">&quot;2025-01-01&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/scratch/run1"</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="s2">"pbs"</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"2025-01-01"</span><span class="p">)</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Explicit instance</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">PBSExecutor</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">exc</span> <span class="o">=</span> <span class="n">PBSExecutor</span><span class="p">(</span><span class="n">qsub</span><span class="o">=</span><span class="s2">&quot;/opt/pbs/bin/qsub&quot;</span><span class="p">,</span> <span class="n">array_flag</span><span class="o">=</span><span class="s2">&quot;-t&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/scratch/run1&quot;</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">&quot;2025-01-01&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">exc</span> <span class="o">=</span> <span class="n">PBSExecutor</span><span class="p">(</span><span class="n">qsub</span><span class="o">=</span><span class="s2">"/opt/pbs/bin/qsub"</span><span class="p">,</span> <span class="n">array_flag</span><span class="o">=</span><span class="s2">"-t"</span><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/scratch/run1"</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"2025-01-01"</span><span class="p">)</span>
 </code></pre></div>
 <p>Supported shorthand strings: <code>"local"</code>, <code>"pbs"</code>, <code>"lsf"</code>, <code>"sge"</code>,
 <code>"flux"</code>.</p>
@@ -1226,9 +1226,9 @@ normalises keys automatically:</p>
 <li><code>account</code> works on every backend.</li>
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[executor.submit_options]</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">partition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;compute&quot;</span><span class="w">    </span><span class="c1"># → --partition on Slurm, -q on PBS/LSF/SGE, --queue on Flux</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">account</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_project&quot;</span><span class="w">  </span><span class="c1"># → --account on Slurm, -A on PBS/SGE, -G on LSF</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">signal</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;B:INT@60&quot;</span><span class="w">    </span><span class="c1"># pre-termination signal</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">partition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"compute"</span><span class="w">    </span><span class="c1"># → --partition on Slurm, -q on PBS/LSF/SGE, --queue on Flux</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">account</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"my_project"</span><span class="w">  </span><span class="c1"># → --account on Slurm, -A on PBS/SGE, -G on LSF</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">signal</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"B:INT@60"</span><span class="w">    </span><span class="c1"># pre-termination signal</span>
 </code></pre></div>
 <p>A PBS user can write <code>queue = "batch"</code> and switch to Slurm later
 without changing their config — reflow maps <code>queue</code> to <code>--partition</code>
@@ -1278,12 +1278,12 @@ wins.</p>
 <h2 id="custom-command-paths">Custom command paths<a class="headerlink" href="#custom-command-paths" title="Permanent link">&para;</a></h2>
 <p>Override scheduler binary paths when they are not on <code>$PATH</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[executor]</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;qsub-pbs&quot;</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"qsub-pbs"</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># PBS-specific</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">qsub</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/pbs/bin/qsub&quot;</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">qdel</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/pbs/bin/qdel&quot;</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">qstat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/pbs/bin/qstat&quot;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">qsub</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"/opt/pbs/bin/qsub"</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">qdel</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"/opt/pbs/bin/qdel"</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">qstat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/opt/pbs/bin/qstat"</span>
 </code></pre></div>
 <p>Or via environment variables:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">REFLOW_QSUB</span><span class="o">=</span>/opt/pbs/bin/qsub
@@ -1392,17 +1392,17 @@ output:</p>
 the executor manually.</p>
 <h2 id="the-localexecutor">The <code>LocalExecutor</code><a class="headerlink" href="#the-localexecutor" title="Permanent link">&para;</a></h2>
 <p>For testing without a scheduler, use the local executor:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/test&quot;</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="s2">&quot;local&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">&quot;2025-01-01&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/test"</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="s2">"local"</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"2025-01-01"</span><span class="p">)</span>
 </code></pre></div>
 <p>It runs tasks as local subprocesses.  Array jobs execute sequentially.</p>
 <h2 id="dispatch-job-resources">Dispatch job resources<a class="headerlink" href="#dispatch-job-resources" title="Permanent link">&para;</a></h2>
 <p>The internal dispatch/coordinator job has its own resource defaults:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">[dispatch]</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">cpus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;00:10:00&quot;</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">mem</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1G&quot;</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">partition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_partition&quot;</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">account</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_account&quot;</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"00:10:00"</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">mem</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"1G"</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">partition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"my_partition"</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">account</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"my_account"</span>
 </code></pre></div>
 
 
@@ -1504,7 +1504,7 @@ the executor manually.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -904,7 +904,7 @@ default store lives in the user's cache directory:</p>
 <h2 id="overriding-the-store-path">Overriding the store path<a class="headerlink" href="#overriding-the-store-path" title="Permanent link">&para;</a></h2>
 <p>For project-specific manifests or shared team databases:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[defaults]</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">store_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/scratch/shared/reflow/manifest.db&quot;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">store_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/scratch/shared/reflow/manifest.db"</span>
 </code></pre></div>
 <p>From the CLI:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>flow.py<span class="w"> </span>submit<span class="w"> </span><span class="se">\</span>
@@ -914,8 +914,8 @@ default store lives in the user's cache directory:</p>
 <p>From Python:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow.stores.sqlite</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteStore</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">store</span> <span class="o">=</span> <span class="n">SqliteStore</span><span class="p">(</span><span class="s2">&quot;/scratch/shared/reflow.db&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/scratch/run-001&quot;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">&quot;2026-01-01&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">store</span> <span class="o">=</span> <span class="n">SqliteStore</span><span class="p">(</span><span class="s2">"/scratch/shared/reflow.db"</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/scratch/run-001"</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"2026-01-01"</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="what-the-store-contains">What the store contains<a class="headerlink" href="#what-the-store-contains" title="Permanent link">&para;</a></h2>
 <p>The <code>SqliteStore</code> manages:</p>
@@ -1004,7 +1004,7 @@ store API.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

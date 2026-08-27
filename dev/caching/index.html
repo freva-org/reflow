@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1061,9 +1061,9 @@ haven't changed.</p>
 reflow reuses it instead of submitting a new job.</p>
 <h2 id="cache-invalidation">Cache invalidation<a class="headerlink" href="#cache-invalidation" title="Permanent link">&para;</a></h2>
 <p>Bump the <code>version</code> field when your task logic changes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">)</span>  <span class="c1"># was &quot;1&quot; before the code change</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"2"</span><span class="p">)</span>  <span class="c1"># was "1" before the code change</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="k">return</span> <span class="s2">&quot;new logic&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="k">return</span> <span class="s2">"new logic"</span>
 </code></pre></div>
 <p>Everything downstream is also recomputed because the upstream output
 hash changes.</p>
@@ -1074,35 +1074,35 @@ hash changes.</p>
 </code></pre></div>
 <p>From Python:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Force everything</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s2">&quot;data.csv&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/r"</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s2">"data.csv"</span><span class="p">)</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Force only specific tasks</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span> <span class="n">force_tasks</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;process&quot;</span><span class="p">],</span> <span class="n">source</span><span class="o">=</span><span class="s2">&quot;data.csv&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/r"</span><span class="p">,</span> <span class="n">force_tasks</span><span class="o">=</span><span class="p">[</span><span class="s2">"process"</span><span class="p">],</span> <span class="n">source</span><span class="o">=</span><span class="s2">"data.csv"</span><span class="p">)</span>
 </code></pre></div>
 <p>The same works with <code>run_local</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">run_local</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s2">&quot;data.csv&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">run_local</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/r"</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s2">"data.csv"</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="disabling-the-cache-per-task">Disabling the cache per task<a class="headerlink" href="#disabling-the-cache-per-task" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">always_run</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="k">return</span> <span class="s2">&quot;fresh every time&quot;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="k">return</span> <span class="s2">"fresh every time"</span>
 </code></pre></div>
 <h2 id="output-verification">Output verification<a class="headerlink" href="#output-verification" title="Permanent link">&para;</a></h2>
 <p>For tasks that return file paths, reflow can verify that cached files
 still exist on disk before reusing them:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s2">&quot;data.csv&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/r"</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s2">"data.csv"</span><span class="p">)</span>
 </code></pre></div>
 <p>This checks <code>Path.exists()</code> for <code>Path</code> and <code>list[Path]</code> return types.
 You can also supply a custom verification function:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">(</span><span class="n">verify</span><span class="o">=</span><span class="k">lambda</span> <span class="n">output</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="n">output</span><span class="p">)</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">create_file</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="k">return</span> <span class="s2">&quot;/tmp/output.csv&quot;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="k">return</span> <span class="s2">"/tmp/output.csv"</span>
 </code></pre></div>
 <h2 id="retries">Retries<a class="headerlink" href="#retries" title="Permanent link">&para;</a></h2>
 <p>Failed or cancelled tasks can be retried without rerunning
 the whole pipeline:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">()</span>                 <span class="c1"># retry all failed tasks</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;process&quot;</span><span class="p">)</span>   <span class="c1"># retry only &quot;process&quot;</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">"process"</span><span class="p">)</span>   <span class="c1"># retry only "process"</span>
 </code></pre></div>
 <p>Or from the CLI:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>python<span class="w"> </span>pipeline.py<span class="w"> </span>retry<span class="w"> </span>RUN_ID
@@ -1120,7 +1120,7 @@ cross-run cache reuse and a single place to inspect workflow history.</p>
 <p>Or in the config file:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># ~/.config/reflow/config.toml</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">[defaults]</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">store_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/shared/team/manifest.db&quot;</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">store_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/shared/team/manifest.db"</span>
 </code></pre></div>
 
 
@@ -1222,7 +1222,7 @@ cross-run cache reuse and a single place to inspect workflow history.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

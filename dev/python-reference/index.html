@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1161,35 +1161,35 @@
 </code></pre></div>
 <h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
 <h3 id="creating-a-workflow">Creating a workflow<a class="headerlink" href="#creating-a-workflow" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;my_pipeline&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">"my_pipeline"</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="registering-tasks">Registering tasks<a class="headerlink" href="#registering-tasks" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">(</span><span class="n">cpus</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="s2">&quot;01:00:00&quot;</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="s2">&quot;8G&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">step_a</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Param</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input&quot;</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="s2">&quot;_copy&quot;</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">(</span><span class="n">cpus</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="s2">"01:00:00"</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="s2">"8G"</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">step_a</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Param</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Input"</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="s2">"_copy"</span><span class="p">]</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">(</span><span class="n">array</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">step_b</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Result</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="s2">&quot;step_a&quot;</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">step_b</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Result</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="s2">"step_a"</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="submitting-to-a-scheduler">Submitting to a scheduler<a class="headerlink" href="#submitting-to-a-scheduler" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/scratch/run1&quot;</span><span class="p">,</span>       <span class="c1"># working directory</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>                     <span class="c1"># task parameters</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">executor</span><span class="o">=</span><span class="s2">&quot;pbs&quot;</span><span class="p">,</span>                <span class="c1"># scheduler (or &quot;slurm&quot;, &quot;lsf&quot;, &quot;sge&quot;, &quot;flux&quot;)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">"/scratch/run1"</span><span class="p">,</span>       <span class="c1"># working directory</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">"hello"</span><span class="p">,</span>                     <span class="c1"># task parameters</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">executor</span><span class="o">=</span><span class="s2">"pbs"</span><span class="p">,</span>                <span class="c1"># scheduler (or "slurm", "lsf", "sge", "flux")</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>                   <span class="c1"># skip cache if True</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">force_tasks</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;step_a&quot;</span><span class="p">],</span>        <span class="c1"># force specific tasks only</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">force_tasks</span><span class="o">=</span><span class="p">[</span><span class="s2">"step_a"</span><span class="p">],</span>        <span class="c1"># force specific tasks only</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">verify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>                   <span class="c1"># check cached files still exist</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">)</span>
 </code></pre></div>
 <p>Returns a <a href="#run"><code>Run</code></a> handle.</p>
 <h3 id="running-locally-no-scheduler">Running locally (no scheduler)<a class="headerlink" href="#running-locally-no-scheduler" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">run_local</span><span class="p">(</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/test&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>                     <span class="c1"># same parameters as submit</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/test"</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">"hello"</span><span class="p">,</span>                     <span class="c1"># same parameters as submit</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">max_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>                 <span class="c1"># parallelize array jobs (default: 1)</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">on_error</span><span class="o">=</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span>               <span class="c1"># &quot;stop&quot; or &quot;continue&quot;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">on_error</span><span class="o">=</span><span class="s2">"stop"</span><span class="p">,</span>               <span class="c1"># "stop" or "continue"</span>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">)</span>
 </code></pre></div>
 <p>Executes the full DAG in-process, in topological order. Array tasks
@@ -1205,16 +1205,16 @@ downstream dependants are skipped, but the run continues.</p>
 <h3 id="including-flows">Including flows<a class="headerlink" href="#including-flows" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flow</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">preprocessing</span> <span class="o">=</span> <span class="n">Flow</span><span class="p">(</span><span class="s2">&quot;preprocess&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">preprocessing</span> <span class="o">=</span> <span class="n">Flow</span><span class="p">(</span><span class="s2">"preprocess"</span><span class="p">)</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="nd">@preprocessing</span><span class="o">.</span><span class="n">job</span><span class="p">()</span>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span> <span class="o">...</span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">wf</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="n">preprocessing</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;pre&quot;</span><span class="p">)</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1"># Task becomes &quot;pre_download&quot;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">wf</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="n">preprocessing</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">"pre"</span><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1"># Task becomes "pre_download"</span>
 </code></pre></div>
 <h3 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">wf</span><span class="o">.</span><span class="n">cli</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="describe">Describe<a class="headerlink" href="#describe" title="Permanent link">&para;</a></h3>
@@ -1223,33 +1223,33 @@ downstream dependants are skipped, but the run continues.</p>
 </code></pre></div>
 <h2 id="run">Run<a class="headerlink" href="#run" title="Permanent link">&para;</a></h2>
 <p>A <code>Run</code> is the handle returned by <code>submit</code> and <code>run_local</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/r"</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">"hello"</span><span class="p">)</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">run</span><span class="o">.</span><span class="n">run_id</span>       <span class="c1"># &quot;my_pipeline-20260401-a1b2&quot;</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">run</span><span class="o">.</span><span class="n">run_dir</span>      <span class="c1"># Path(&quot;/tmp/r&quot;)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">run</span><span class="o">.</span><span class="n">run_id</span>       <span class="c1"># "my_pipeline-20260401-a1b2"</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">run</span><span class="o">.</span><span class="n">run_dir</span>      <span class="c1"># Path("/tmp/r")</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
 <a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>     <span class="c1"># print status to stdout</span>
 <a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    <span class="c1"># also print error tracebacks for failed instances</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">as_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># return as dict (includes &quot;failed_instances&quot; key)</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">as_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># return as dict (includes "failed_instances" key)</span>
 <a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
 <a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="n">run</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>               <span class="c1"># cancel active jobs</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="n">run</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;step_a&quot;</span><span class="p">)</span>  <span class="c1"># cancel one task</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="n">run</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">"step_a"</span><span class="p">)</span>  <span class="c1"># cancel one task</span>
 <a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
 <a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">()</span>                <span class="c1"># retry failed tasks</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">&quot;step_b&quot;</span><span class="p">)</span>   <span class="c1"># retry one task</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="n">run</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s2">"step_b"</span><span class="p">)</span>   <span class="c1"># retry one task</span>
 </code></pre></div>
 <h3 id="bulk-cancel">Bulk cancel<a class="headerlink" href="#bulk-cancel" title="Permanent link">&para;</a></h3>
 <p>Cancel multiple runs at once from the workflow level:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">wf</span><span class="o">.</span><span class="n">cancel_runs</span><span class="p">([</span><span class="s2">&quot;run-001&quot;</span><span class="p">,</span> <span class="s2">&quot;run-002&quot;</span><span class="p">,</span> <span class="s2">&quot;run-003&quot;</span><span class="p">],</span> <span class="n">store</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">wf</span><span class="o">.</span><span class="n">cancel_runs</span><span class="p">([</span><span class="s2">"run-001"</span><span class="p">,</span> <span class="s2">"run-002"</span><span class="p">,</span> <span class="s2">"run-003"</span><span class="p">],</span> <span class="n">store</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="listing-runs">Listing runs<a class="headerlink" href="#listing-runs" title="Permanent link">&para;</a></h3>
 <p>The store supports filtering when listing runs:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">store</span><span class="o">.</span><span class="n">list_runs</span><span class="p">(</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">graph_name</span><span class="o">=</span><span class="s2">&quot;my_pipeline&quot;</span><span class="p">,</span>   <span class="c1"># filter by workflow name</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">graph_name</span><span class="o">=</span><span class="s2">"my_pipeline"</span><span class="p">,</span>   <span class="c1"># filter by workflow name</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">limit</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>                   <span class="c1"># most recent N</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">since</span><span class="o">=</span><span class="s2">&quot;2025-03-01&quot;</span><span class="p">,</span>         <span class="c1"># created at or after (ISO-8601)</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">until</span><span class="o">=</span><span class="s2">&quot;2025-04-01&quot;</span><span class="p">,</span>         <span class="c1"># created before</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">status</span><span class="o">=</span><span class="s2">&quot;FAILED&quot;</span><span class="p">,</span>            <span class="c1"># filter by run status</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">since</span><span class="o">=</span><span class="s2">"2025-03-01"</span><span class="p">,</span>         <span class="c1"># created at or after (ISO-8601)</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">until</span><span class="o">=</span><span class="s2">"2025-04-01"</span><span class="p">,</span>         <span class="c1"># created before</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">status</span><span class="o">=</span><span class="s2">"FAILED"</span><span class="p">,</span>            <span class="c1"># filter by run status</span>
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="executors">Executors<a class="headerlink" href="#executors" title="Permanent link">&para;</a></h2>
@@ -1260,9 +1260,9 @@ downstream dependants are skipped, but the run continues.</p>
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># Pass to submit for explicit control:</span>
 <a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/r&quot;</span><span class="p">,</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    <span class="n">executor</span><span class="o">=</span><span class="n">PBSExecutor</span><span class="p">(</span><span class="n">qsub</span><span class="o">=</span><span class="s2">&quot;/opt/pbs/bin/qsub&quot;</span><span class="p">),</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/r"</span><span class="p">,</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    <span class="n">executor</span><span class="o">=</span><span class="n">PBSExecutor</span><span class="p">(</span><span class="n">qsub</span><span class="o">=</span><span class="s2">"/opt/pbs/bin/qsub"</span><span class="p">),</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    <span class="n">x</span><span class="o">=</span><span class="s2">"hello"</span><span class="p">,</span>
 <a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="p">)</span>
 </code></pre></div>
 <p>Or use the string shorthand: <code>executor="pbs"</code>, <code>executor="slurm"</code>, etc.</p>
@@ -1270,7 +1270,7 @@ downstream dependants are skipped, but the run continues.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">load_config</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">()</span>    <span class="c1"># reads ~/.config/reflow/config.toml</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
 </code></pre></div>
 <p>Generate a fully commented config file:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_config_exists</span>
@@ -1376,7 +1376,7 @@ downstream dependants are skipped, but the run continues.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
