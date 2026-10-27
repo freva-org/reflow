@@ -21,14 +21,13 @@ from typing import TYPE_CHECKING, Any
 from .._types import RunState, TaskState
 from ..cache import (
     compute_identity,
-    compute_input_hash,
     compute_output_hash,
     verify_cached_output,
 )
 from ..params import WireMode, extract_base_type, infer_wire_mode
 from ..stores import Store
 from ..stores.sqlite import SqliteStore
-from ._helpers import build_kwargs, make_run_id
+from ._helpers import build_kwargs, make_run_id, task_input_hash
 
 if TYPE_CHECKING:
     from ..flow import TaskSpec
@@ -295,6 +294,7 @@ class LocalRunMixin:
         force: bool,
         force_tasks: list[str],
         verify: bool,
+        run_params: dict[str, Any],
     ) -> bool:
         """Attempt cache resolution (mirrors DispatchMixin._try_cache)."""
         if not spec.config.cache:
@@ -302,11 +302,7 @@ class LocalRunMixin:
         if self._local_should_force(spec.name, force, force_tasks):
             return False
 
-        input_hash = compute_input_hash(
-            spec.name,
-            spec.config.version,
-            direct_inputs,
-        )
+        input_hash = task_input_hash(spec, direct_inputs, run_params)
         identity = compute_identity(input_hash, upstream_output_hashes)
         cached = store.find_cached(spec.name, identity)
         if cached is None:
@@ -380,14 +376,11 @@ class LocalRunMixin:
             force,
             force_tasks,
             verify,
+            run_params,
         ):
             return True
 
-        input_hash = compute_input_hash(
-            spec.name,
-            spec.config.version,
-            result_inputs,
-        )
+        input_hash = task_input_hash(spec, result_inputs, run_params)
         identity = compute_identity(input_hash, up_hashes)
         iid = store.insert_task_instance(
             run_id,
@@ -514,6 +507,7 @@ class LocalRunMixin:
                 force,
                 force_tasks,
                 verify,
+                run_params,
             ):
                 continue
             pending.append((idx, payload))
@@ -567,11 +561,7 @@ class LocalRunMixin:
         up_hashes: list[str],
     ) -> bool:
         """Execute a single array element in-process."""
-        input_hash = compute_input_hash(
-            spec.name,
-            spec.config.version,
-            payload,
-        )
+        input_hash = task_input_hash(spec, payload, run_params)
         identity = compute_identity(input_hash, up_hashes)
         iid = store.insert_task_instance(
             run_id,
@@ -618,11 +608,7 @@ class LocalRunMixin:
         # Pre-register instances as PENDING so we can track them.
         instance_ids: dict[int, int] = {}
         for idx, payload in pending:
-            input_hash = compute_input_hash(
-                spec.name,
-                spec.config.version,
-                payload,
-            )
+            input_hash = task_input_hash(spec, payload, run_params)
             identity = compute_identity(input_hash, up_hashes)
             iid = store.insert_task_instance(
                 run_id,

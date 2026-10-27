@@ -8,7 +8,11 @@ haven't changed.
 Each task instance gets an **identity hash** built from:
 
 - the task name and version string
-- the input parameters
+- its direct inputs: the `Result` values this instance receives
+- the `Param` values the task function takes (CLI parameters and
+  task-local overrides); parameters the function does not take, and the
+  `RunDir`, are left out, so changing an unrelated parameter or starting
+  a new run directory keeps the cache
 - the output hashes of all upstream tasks
 
 If a previous run produced a successful result with the same identity,

@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, get_type_hints
 from .._types import RunState, TaskState
 from ..cache import (
     compute_identity,
-    compute_input_hash,
     compute_output_hash,
     verify_cached_output,
 )
@@ -27,7 +26,7 @@ from ..params import (
     infer_wire_mode,
 )
 from ..stores import Store
-from ._helpers import default_executor
+from ._helpers import default_executor, task_input_hash
 
 if TYPE_CHECKING:
     from ..config import Config
@@ -279,6 +278,7 @@ class DispatchMixin:
         array_index: int | None,
         upstream_output_hashes: list[str],
         verify: bool = False,
+        run_parameters: dict[str, Any] | None = None,
     ) -> bool:
         """Attempt to resolve a task from cache.
 
@@ -306,6 +306,9 @@ class DispatchMixin:
         verify : bool
             If True, run output verification before accepting
             the cached result.
+        run_parameters : dict[str, Any] or None
+            The run's parameters; read from *store* when omitted.  The
+            ones the task takes are part of its identity.
 
         Returns
         -------
@@ -318,11 +321,9 @@ class DispatchMixin:
         if self._should_force(store, run_id, spec.name):
             return False
 
-        input_hash = compute_input_hash(
-            spec.name,
-            spec.config.version,
-            direct_inputs,
-        )
+        if run_parameters is None:
+            run_parameters = store.get_run_parameters(run_id)
+        input_hash = task_input_hash(spec, direct_inputs, run_parameters)
         identity = compute_identity(input_hash, upstream_output_hashes)
 
         cached = store.find_cached(spec.name, identity)
@@ -427,6 +428,7 @@ class DispatchMixin:
         if row is None:
             payload = self._resolve_result_inputs(store, run_id, spec)
             up_hashes = self._collect_upstream_output_hashes(store, run_id, spec)
+            run_params = store.get_run_parameters(run_id)
 
             if self._try_cache(
                 store,
@@ -436,14 +438,11 @@ class DispatchMixin:
                 None,
                 up_hashes,
                 verify=verify,
+                run_parameters=run_params,
             ):
                 return None
 
-            input_hash = compute_input_hash(
-                spec.name,
-                spec.config.version,
-                payload,
-            )
+            input_hash = task_input_hash(spec, payload, run_params)
             identity = compute_identity(input_hash, up_hashes)
             store.insert_task_instance(
                 run_id,
@@ -591,6 +590,7 @@ class DispatchMixin:
         }
 
         up_hashes = self._collect_upstream_output_hashes(store, run_id, spec)
+        run_params = store.get_run_parameters(run_id)
         pending_indices: list[int] = []
 
         for idx, element in enumerate(fan_items):
@@ -614,14 +614,11 @@ class DispatchMixin:
                 idx,
                 up_hashes,
                 verify=verify,
+                run_parameters=run_params,
             ):
                 continue
 
-            input_hash = compute_input_hash(
-                spec.name,
-                spec.config.version,
-                payload,
-            )
+            input_hash = task_input_hash(spec, payload, run_params)
             identity = compute_identity(input_hash, up_hashes)
             store.insert_task_instance(
                 run_id,

@@ -8,11 +8,19 @@ from pathlib import Path
 from typing import Any, get_type_hints
 
 from .._types import TaskState  # noqa: F401 — re-exported for _worker
+from ..cache import compute_input_hash
 from ..executors.helpers import default_executor, resolve_executor
 from ..flow import TaskSpec
 from ..params import is_run_dir
 
-__all__ = ["build_kwargs", "default_executor", "make_run_id", "resolve_executor"]
+__all__ = [
+    "build_kwargs",
+    "default_executor",
+    "make_run_id",
+    "parameter_inputs",
+    "resolve_executor",
+    "task_input_hash",
+]
 
 
 def make_run_id(workflow_name: str) -> str:
@@ -52,6 +60,47 @@ def resolve_index(explicit: int | None) -> int | None:
             except ValueError:
                 continue
     return None
+
+
+def parameter_inputs(
+    spec: TaskSpec,
+    run_parameters: dict[str, Any],
+    task_input: dict[str, Any],
+) -> dict[str, Any]:
+    """Return the run parameters that *spec*'s function will receive.
+
+    Mirrors [`build_kwargs`][reflow.workflow._helpers.build_kwargs]
+    without the ``Result`` inputs (hashed separately) and without
+    ``RunDir`` (a new run directory must not invalidate the cache).
+    These values belong in the task's cache identity: a task called with
+    other parameters is different work.
+    """
+    kwargs = build_kwargs(spec, run_parameters, task_input)
+    try:
+        hints = get_type_hints(spec.func, include_extras=True)
+    except Exception:
+        hints = {}
+    return {
+        name: value
+        for name, value in kwargs.items()
+        if not (name in spec.result_deps and name in task_input)
+        and name != "run_dir"
+        and not (hints.get(name) is not None and is_run_dir(hints[name]))
+    }
+
+
+def task_input_hash(
+    spec: TaskSpec,
+    task_input: dict[str, Any],
+    run_parameters: dict[str, Any],
+) -> str:
+    """Input hash of one task instance: version, inputs and parameters."""
+    return compute_input_hash(
+        spec.name,
+        spec.config.version,
+        task_input,
+        parameter_inputs(spec, run_parameters, task_input),
+    )
 
 
 def build_kwargs(

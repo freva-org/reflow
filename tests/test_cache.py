@@ -62,8 +62,9 @@ class TestCacheVerify:
         f.touch()
         assert verify_cached_output(str(f), Path, None) is True
 
-    def test_path_missing(self) -> None:
-        assert verify_cached_output("/nonexistent_abc123", Path, None) is False
+    def test_path_missing(self, tmp_path: Path) -> None:
+        missing = tmp_path / "missing.nc"
+        assert verify_cached_output(str(missing), Path, None) is False
 
     def test_list_path(self, tmp_path: Path) -> None:
         f1 = tmp_path / "a.nc"
@@ -76,7 +77,8 @@ class TestCacheVerify:
         f1 = tmp_path / "a.nc"
         f1.touch()
         assert (
-            verify_cached_output([str(f1), "/nonexistent"], list[Path], None) is False
+            verify_cached_output([str(f1), str(tmp_path / "missing.nc")], list[Path], None)
+            is False
         )
 
     def test_non_path_trusts_cache(self) -> None:

@@ -25,10 +25,14 @@ class TestConfig:
         cfg = load_config(tmp_path / "nonexistent.toml")
         assert cfg.executor_partition is None
 
-    def test_env_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
-
+    def test_env_fallback(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Not "/nonexistent": load_config writes an example config to a
+        # missing path, which succeeds when the suite runs as root and
+        # breaks tests that rely on that path being absent.
         monkeypatch.setenv("REFLOW_PARTITION", "gpu")
-        cfg = load_config(Path("/nonexistent"))
+        cfg = load_config(tmp_path / "missing.toml")
         assert cfg.executor_partition == "gpu"
 
 

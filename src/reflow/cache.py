@@ -4,7 +4,10 @@ Each task instance gets an *identity* hash computed from:
 
 - task name
 - task version (user-controllable)
-- direct input parameters (JSON-serialised)
+- direct inputs: the upstream values this instance receives
+- CLI / run parameters the task function actually takes (``Param``
+  values, task-local overrides); ``RunDir`` is excluded so identical
+  work in different run directories still hits the cache
 - upstream output hashes (propagated through the DAG)
 
 If a previous successful instance with the same identity exists in
@@ -27,8 +30,9 @@ def compute_input_hash(
     task_name: str,
     version: str,
     direct_inputs: dict[str, Any],
+    parameters: dict[str, Any] | None = None,
 ) -> str:
-    """Hash a task's name, version, and direct input parameters.
+    """Hash a task's name, version, direct inputs and parameters.
 
     Parameters
     ----------
@@ -37,7 +41,12 @@ def compute_input_hash(
     version : str
         User-controllable version string.
     direct_inputs : dict[str, Any]
-        CLI parameters and upstream values for this instance.
+        Upstream (``Result``) values for this instance.
+    parameters : dict[str, Any] or None
+        Run parameters the task function receives (see
+        `reflow.workflow._helpers.parameter_inputs`).  Omitted from the
+        hash when empty, so tasks without parameters keep the identity
+        they had before parameters were hashed.
 
     Returns
     -------
@@ -45,11 +54,14 @@ def compute_input_hash(
         Hex digest (sha256, truncated to 16 chars).
 
     """
-    blob = json.dumps(
-        {"task": task_name, "version": version, "inputs": direct_inputs},
-        sort_keys=True,
-        default=str,
-    ).encode()
+    payload: dict[str, Any] = {
+        "task": task_name,
+        "version": version,
+        "inputs": direct_inputs,
+    }
+    if parameters:
+        payload["params"] = parameters
+    blob = json.dumps(payload, sort_keys=True, default=str).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
 
 
