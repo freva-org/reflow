@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -893,6 +893,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v261000" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2610.0.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v260440" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -985,6 +996,18 @@
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
 <p>All notable changes to this project will be documented in this file.</p>
+<h2 id="v261000">v2610.0.0<a class="headerlink" href="#v261000" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Fix: parameters are part of the cache identity.</strong> A task's cache
+  identity now includes the <code>Param</code> values its function takes (CLI
+  parameters and task-local overrides). Before, a task was reused from
+  the cache even when called with different parameter values, e.g. a
+  changed <code>--target</code> returned the previous result. Parameters a task
+  does not take, and <code>RunDir</code>, are still ignored, so unrelated flags or
+  a new run directory keep the cache.</li>
+<li>Local runner and scheduler dispatch now compute the identity through
+  one shared helper, so both paths always agree.</li>
+</ul>
 <h2 id="v260440">v2604.4.0<a class="headerlink" href="#v260440" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Improved <code>runs</code> command</strong>: shows the last 20 runs by default instead
@@ -1099,10 +1122,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

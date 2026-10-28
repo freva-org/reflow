@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1319,17 +1319,17 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>src/reflow/signals.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">signal_number</span> <span class="o">=</span> <span class="n">signal_number</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">signal_name</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">Signals</span><span class="p">(</span><span class="n">signal_number</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="sa">f</span><span class="s2">"Task interrupted by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">signal_name</span><span class="si">}</span><span class="s2"> (signal </span><span class="si">{</span><span class="n">signal_number</span><span class="si">}</span><span class="s2">)"</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="p">)</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.signals.TaskInterrupted--source--__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#reflow.signals.TaskInterrupted--source--__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#reflow.signals.TaskInterrupted--source--__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#reflow.signals.TaskInterrupted--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#reflow.signals.TaskInterrupted--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#reflow.signals.TaskInterrupted--source--__codelineno-0-43">43</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.signals.TaskInterrupted--source--__codelineno-0-38" name="reflow.signals.TaskInterrupted--source--__codelineno-0-38"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="reflow.signals.TaskInterrupted--source--__codelineno-0-39" name="reflow.signals.TaskInterrupted--source--__codelineno-0-39"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">signal_number</span> <span class="o">=</span> <span class="n">signal_number</span>
+<a id="reflow.signals.TaskInterrupted--source--__codelineno-0-40" name="reflow.signals.TaskInterrupted--source--__codelineno-0-40"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">signal_name</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">Signals</span><span class="p">(</span><span class="n">signal_number</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+<a id="reflow.signals.TaskInterrupted--source--__codelineno-0-41" name="reflow.signals.TaskInterrupted--source--__codelineno-0-41"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+<a id="reflow.signals.TaskInterrupted--source--__codelineno-0-42" name="reflow.signals.TaskInterrupted--source--__codelineno-0-42"></a>        <span class="sa">f</span><span class="s2">"Task interrupted by </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">signal_name</span><span class="si">}</span><span class="s2"> (signal </span><span class="si">{</span><span class="n">signal_number</span><span class="si">}</span><span class="s2">)"</span>
+<a id="reflow.signals.TaskInterrupted--source--__codelineno-0-43" name="reflow.signals.TaskInterrupted--source--__codelineno-0-43"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -1378,51 +1378,51 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/signals.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
-<span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span>
-<span class="normal"><a href="#__codelineno-0-67">67</a></span>
-<span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="nd">@contextmanager</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="k">def</span><span class="w"> </span><span class="nf">graceful_shutdown</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="w">    </span><span class="sd">"""Context manager that converts SIGTERM/SIGINT to TaskInterrupted.</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="sd">    Restores the original signal handlers on exit.</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">    Examples</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">    --------</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    &gt;&gt;&gt; with graceful_shutdown():</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">    ...     result = expensive_computation()</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">    """</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="n">old_sigterm</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">getsignal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="n">old_sigint</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">getsignal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">)</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">_signal_handler</span><span class="p">)</span>
-<a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">_signal_handler</span><span class="p">)</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="k">yield</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="k">finally</span><span class="p">:</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">old_sigterm</span><span class="p">)</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">old_sigint</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-66">66</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#reflow.signals.graceful_shutdown--source--__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.signals.graceful_shutdown--source--__codelineno-0-51" name="reflow.signals.graceful_shutdown--source--__codelineno-0-51"></a><span class="nd">@contextmanager</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-52" name="reflow.signals.graceful_shutdown--source--__codelineno-0-52"></a><span class="k">def</span><span class="w"> </span><span class="nf">graceful_shutdown</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-53" name="reflow.signals.graceful_shutdown--source--__codelineno-0-53"></a><span class="w">    </span><span class="sd">"""Context manager that converts SIGTERM/SIGINT to TaskInterrupted.</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-54" name="reflow.signals.graceful_shutdown--source--__codelineno-0-54"></a>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-55" name="reflow.signals.graceful_shutdown--source--__codelineno-0-55"></a><span class="sd">    Restores the original signal handlers on exit.</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-56" name="reflow.signals.graceful_shutdown--source--__codelineno-0-56"></a>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-57" name="reflow.signals.graceful_shutdown--source--__codelineno-0-57"></a><span class="sd">    Examples</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-58" name="reflow.signals.graceful_shutdown--source--__codelineno-0-58"></a><span class="sd">    --------</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-59" name="reflow.signals.graceful_shutdown--source--__codelineno-0-59"></a><span class="sd">    &gt;&gt;&gt; with graceful_shutdown():</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-60" name="reflow.signals.graceful_shutdown--source--__codelineno-0-60"></a><span class="sd">    ...     result = expensive_computation()</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-61" name="reflow.signals.graceful_shutdown--source--__codelineno-0-61"></a>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-62" name="reflow.signals.graceful_shutdown--source--__codelineno-0-62"></a><span class="sd">    """</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-63" name="reflow.signals.graceful_shutdown--source--__codelineno-0-63"></a>    <span class="n">old_sigterm</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">getsignal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-64" name="reflow.signals.graceful_shutdown--source--__codelineno-0-64"></a>    <span class="n">old_sigint</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">getsignal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">)</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-65" name="reflow.signals.graceful_shutdown--source--__codelineno-0-65"></a>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-66" name="reflow.signals.graceful_shutdown--source--__codelineno-0-66"></a>    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">_signal_handler</span><span class="p">)</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-67" name="reflow.signals.graceful_shutdown--source--__codelineno-0-67"></a>    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">_signal_handler</span><span class="p">)</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-68" name="reflow.signals.graceful_shutdown--source--__codelineno-0-68"></a>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-69" name="reflow.signals.graceful_shutdown--source--__codelineno-0-69"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-70" name="reflow.signals.graceful_shutdown--source--__codelineno-0-70"></a>        <span class="k">yield</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-71" name="reflow.signals.graceful_shutdown--source--__codelineno-0-71"></a>    <span class="k">finally</span><span class="p">:</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-72" name="reflow.signals.graceful_shutdown--source--__codelineno-0-72"></a>        <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">old_sigterm</span><span class="p">)</span>
+<a id="reflow.signals.graceful_shutdown--source--__codelineno-0-73" name="reflow.signals.graceful_shutdown--source--__codelineno-0-73"></a>        <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">old_sigint</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1459,17 +1459,17 @@ to the backend's native vocabulary.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>src/reflow/config.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-270">270</a></span>
-<span class="normal"><a href="#__codelineno-0-271">271</a></span>
-<span class="normal"><a href="#__codelineno-0-272">272</a></span>
-<span class="normal"><a href="#__codelineno-0-273">273</a></span>
-<span class="normal"><a href="#__codelineno-0-274">274</a></span>
-<span class="normal"><a href="#__codelineno-0-275">275</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-270" name="__codelineno-0-270"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">or</span> <span class="p">{}</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">submit_options</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a>        <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"executor"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"submit_options"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a>    <span class="p">}</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.config.Config--source--__codelineno-0-270">270</a></span>
+<span class="normal"><a href="#reflow.config.Config--source--__codelineno-0-271">271</a></span>
+<span class="normal"><a href="#reflow.config.Config--source--__codelineno-0-272">272</a></span>
+<span class="normal"><a href="#reflow.config.Config--source--__codelineno-0-273">273</a></span>
+<span class="normal"><a href="#reflow.config.Config--source--__codelineno-0-274">274</a></span>
+<span class="normal"><a href="#reflow.config.Config--source--__codelineno-0-275">275</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.config.Config--source--__codelineno-0-270" name="reflow.config.Config--source--__codelineno-0-270"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="reflow.config.Config--source--__codelineno-0-271" name="reflow.config.Config--source--__codelineno-0-271"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">or</span> <span class="p">{}</span>
+<a id="reflow.config.Config--source--__codelineno-0-272" name="reflow.config.Config--source--__codelineno-0-272"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">submit_options</span> <span class="o">=</span> <span class="p">{</span>
+<a id="reflow.config.Config--source--__codelineno-0-273" name="reflow.config.Config--source--__codelineno-0-273"></a>        <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
+<a id="reflow.config.Config--source--__codelineno-0-274" name="reflow.config.Config--source--__codelineno-0-274"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"executor"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"submit_options"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="reflow.config.Config--source--__codelineno-0-275" name="reflow.config.Config--source--__codelineno-0-275"></a>    <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -1636,111 +1636,111 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/manifest.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-148">148</a></span>
-<span class="normal"><a href="#__codelineno-0-149">149</a></span>
-<span class="normal"><a href="#__codelineno-0-150">150</a></span>
-<span class="normal"><a href="#__codelineno-0-151">151</a></span>
-<span class="normal"><a href="#__codelineno-0-152">152</a></span>
-<span class="normal"><a href="#__codelineno-0-153">153</a></span>
-<span class="normal"><a href="#__codelineno-0-154">154</a></span>
-<span class="normal"><a href="#__codelineno-0-155">155</a></span>
-<span class="normal"><a href="#__codelineno-0-156">156</a></span>
-<span class="normal"><a href="#__codelineno-0-157">157</a></span>
-<span class="normal"><a href="#__codelineno-0-158">158</a></span>
-<span class="normal"><a href="#__codelineno-0-159">159</a></span>
-<span class="normal"><a href="#__codelineno-0-160">160</a></span>
-<span class="normal"><a href="#__codelineno-0-161">161</a></span>
-<span class="normal"><a href="#__codelineno-0-162">162</a></span>
-<span class="normal"><a href="#__codelineno-0-163">163</a></span>
-<span class="normal"><a href="#__codelineno-0-164">164</a></span>
-<span class="normal"><a href="#__codelineno-0-165">165</a></span>
-<span class="normal"><a href="#__codelineno-0-166">166</a></span>
-<span class="normal"><a href="#__codelineno-0-167">167</a></span>
-<span class="normal"><a href="#__codelineno-0-168">168</a></span>
-<span class="normal"><a href="#__codelineno-0-169">169</a></span>
-<span class="normal"><a href="#__codelineno-0-170">170</a></span>
-<span class="normal"><a href="#__codelineno-0-171">171</a></span>
-<span class="normal"><a href="#__codelineno-0-172">172</a></span>
-<span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span>
-<span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span>
-<span class="normal"><a href="#__codelineno-0-177">177</a></span>
-<span class="normal"><a href="#__codelineno-0-178">178</a></span>
-<span class="normal"><a href="#__codelineno-0-179">179</a></span>
-<span class="normal"><a href="#__codelineno-0-180">180</a></span>
-<span class="normal"><a href="#__codelineno-0-181">181</a></span>
-<span class="normal"><a href="#__codelineno-0-182">182</a></span>
-<span class="normal"><a href="#__codelineno-0-183">183</a></span>
-<span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span>
-<span class="normal"><a href="#__codelineno-0-186">186</a></span>
-<span class="normal"><a href="#__codelineno-0-187">187</a></span>
-<span class="normal"><a href="#__codelineno-0-188">188</a></span>
-<span class="normal"><a href="#__codelineno-0-189">189</a></span>
-<span class="normal"><a href="#__codelineno-0-190">190</a></span>
-<span class="normal"><a href="#__codelineno-0-191">191</a></span>
-<span class="normal"><a href="#__codelineno-0-192">192</a></span>
-<span class="normal"><a href="#__codelineno-0-193">193</a></span>
-<span class="normal"><a href="#__codelineno-0-194">194</a></span>
-<span class="normal"><a href="#__codelineno-0-195">195</a></span>
-<span class="normal"><a href="#__codelineno-0-196">196</a></span>
-<span class="normal"><a href="#__codelineno-0-197">197</a></span>
-<span class="normal"><a href="#__codelineno-0-198">198</a></span>
-<span class="normal"><a href="#__codelineno-0-199">199</a></span>
-<span class="normal"><a href="#__codelineno-0-200">200</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-148" name="__codelineno-0-148"></a><span class="k">def</span><span class="w"> </span><span class="nf">dump_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<a id="__codelineno-0-149" name="__codelineno-0-149"></a><span class="w">    </span><span class="sd">"""Convert a Python value into a JSON-safe representation."""</span>
-<a id="__codelineno-0-150" name="__codelineno-0-150"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-<a id="__codelineno-0-151" name="__codelineno-0-151"></a>        <span class="k">return</span> <span class="p">{</span>
-<a id="__codelineno-0-152" name="__codelineno-0-152"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">marker_key</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-153" name="__codelineno-0-153"></a>            <span class="n">_TYPE</span><span class="p">:</span> <span class="s2">"enum"</span><span class="p">,</span>
-<a id="__codelineno-0-154" name="__codelineno-0-154"></a>            <span class="n">_CLASS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)),</span>
-<a id="__codelineno-0-155" name="__codelineno-0-155"></a>            <span class="n">_VALUE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
-<a id="__codelineno-0-156" name="__codelineno-0-156"></a>        <span class="p">}</span>
-<a id="__codelineno-0-157" name="__codelineno-0-157"></a>
-<a id="__codelineno-0-158" name="__codelineno-0-158"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_scalar_types</span><span class="p">):</span>
-<a id="__codelineno-0-159" name="__codelineno-0-159"></a>        <span class="k">return</span> <span class="n">value</span>
-<a id="__codelineno-0-160" name="__codelineno-0-160"></a>
-<a id="__codelineno-0-161" name="__codelineno-0-161"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
-<a id="__codelineno-0-162" name="__codelineno-0-162"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"path"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-<a id="__codelineno-0-163" name="__codelineno-0-163"></a>
-<a id="__codelineno-0-164" name="__codelineno-0-164"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
-<a id="__codelineno-0-165" name="__codelineno-0-165"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"datetime"</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
-<a id="__codelineno-0-166" name="__codelineno-0-166"></a>
-<a id="__codelineno-0-167" name="__codelineno-0-167"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">UUID</span><span class="p">):</span>
-<a id="__codelineno-0-168" name="__codelineno-0-168"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"uuid"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a>    <span class="k">if</span> <span class="n">is_dataclass</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a>        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a>            <span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a>            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a>        <span class="p">}</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="k">return</span> <span class="p">{</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">marker_key</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a>            <span class="n">_TYPE</span><span class="p">:</span> <span class="s2">"dataclass"</span><span class="p">,</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>            <span class="n">_CLASS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)),</span>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>            <span class="n">_FIELDS</span><span class="p">:</span> <span class="n">payload</span><span class="p">,</span>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a>        <span class="p">}</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"tuple"</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">])</span>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a>        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
-<a id="__codelineno-0-187" name="__codelineno-0-187"></a>
-<a id="__codelineno-0-188" name="__codelineno-0-188"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a>        <span class="n">bad_key</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">value</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)),</span> <span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a>        <span class="k">if</span> <span class="n">bad_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a>                <span class="s2">"Manifest dictionaries must use string keys; "</span>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a>                <span class="sa">f</span><span class="s2">"got key </span><span class="si">{</span><span class="n">bad_key</span><span class="si">!r}</span><span class="s2"> of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">bad_key</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a>            <span class="p">)</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a>        <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a>    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a>        <span class="s2">"Unsupported manifest value type: "</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a>        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">"</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-148">148</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-149">149</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-150">150</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-151">151</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-152">152</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-153">153</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-154">154</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-155">155</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-156">156</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-157">157</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-161">161</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-162">162</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-180">180</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-181">181</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-182">182</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-192">192</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-193">193</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-194">194</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-200">200</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-148" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-148"></a><span class="k">def</span><span class="w"> </span><span class="nf">dump_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-149" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-149"></a><span class="w">    </span><span class="sd">"""Convert a Python value into a JSON-safe representation."""</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-150" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-150"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-151" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-151"></a>        <span class="k">return</span> <span class="p">{</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-152" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-152"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">marker_key</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-153" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-153"></a>            <span class="n">_TYPE</span><span class="p">:</span> <span class="s2">"enum"</span><span class="p">,</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-154" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-154"></a>            <span class="n">_CLASS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)),</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-155" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-155"></a>            <span class="n">_VALUE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">),</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-156" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-156"></a>        <span class="p">}</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-157" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-157"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-158" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-158"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_scalar_types</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-159" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-159"></a>        <span class="k">return</span> <span class="n">value</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-160" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-160"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-161" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-161"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-162" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-162"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"path"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-163" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-163"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-164" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-164"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-165" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-165"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"datetime"</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-166" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-166"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-167" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-167"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">UUID</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-168" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-168"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"uuid"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-169" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-169"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-170" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-170"></a>    <span class="k">if</span> <span class="n">is_dataclass</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-171" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-171"></a>        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-172" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-172"></a>            <span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-173" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-173"></a>            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-174" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-174"></a>        <span class="p">}</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-175" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-175"></a>        <span class="k">return</span> <span class="p">{</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-176" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-176"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">marker_key</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-177" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-177"></a>            <span class="n">_TYPE</span><span class="p">:</span> <span class="s2">"dataclass"</span><span class="p">,</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-178" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-178"></a>            <span class="n">_CLASS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qualname</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)),</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-179" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-179"></a>            <span class="n">_FIELDS</span><span class="p">:</span> <span class="n">payload</span><span class="p">,</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-180" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-180"></a>        <span class="p">}</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-181" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-181"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-182" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-182"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-183" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-183"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">(</span><span class="s2">"tuple"</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">])</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-184" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-184"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-185" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-185"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-186" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-186"></a>        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-187" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-187"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-188" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-188"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-189" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-189"></a>        <span class="n">bad_key</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">value</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)),</span> <span class="kc">None</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-190" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-190"></a>        <span class="k">if</span> <span class="n">bad_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-191" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-191"></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-192" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-192"></a>                <span class="s2">"Manifest dictionaries must use string keys; "</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-193" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-193"></a>                <span class="sa">f</span><span class="s2">"got key </span><span class="si">{</span><span class="n">bad_key</span><span class="si">!r}</span><span class="s2"> of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">bad_key</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-194" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-194"></a>            <span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-195" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-195"></a>        <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-196" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-196"></a>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-197" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-197"></a>    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-198" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-198"></a>        <span class="s2">"Unsupported manifest value type: "</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-199" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-199"></a>        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">"</span>
+<a id="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-200" name="reflow.manifest.ManifestCodec.dump_value--source--__codelineno-0-200"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1763,83 +1763,83 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/manifest.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-202">202</a></span>
-<span class="normal"><a href="#__codelineno-0-203">203</a></span>
-<span class="normal"><a href="#__codelineno-0-204">204</a></span>
-<span class="normal"><a href="#__codelineno-0-205">205</a></span>
-<span class="normal"><a href="#__codelineno-0-206">206</a></span>
-<span class="normal"><a href="#__codelineno-0-207">207</a></span>
-<span class="normal"><a href="#__codelineno-0-208">208</a></span>
-<span class="normal"><a href="#__codelineno-0-209">209</a></span>
-<span class="normal"><a href="#__codelineno-0-210">210</a></span>
-<span class="normal"><a href="#__codelineno-0-211">211</a></span>
-<span class="normal"><a href="#__codelineno-0-212">212</a></span>
-<span class="normal"><a href="#__codelineno-0-213">213</a></span>
-<span class="normal"><a href="#__codelineno-0-214">214</a></span>
-<span class="normal"><a href="#__codelineno-0-215">215</a></span>
-<span class="normal"><a href="#__codelineno-0-216">216</a></span>
-<span class="normal"><a href="#__codelineno-0-217">217</a></span>
-<span class="normal"><a href="#__codelineno-0-218">218</a></span>
-<span class="normal"><a href="#__codelineno-0-219">219</a></span>
-<span class="normal"><a href="#__codelineno-0-220">220</a></span>
-<span class="normal"><a href="#__codelineno-0-221">221</a></span>
-<span class="normal"><a href="#__codelineno-0-222">222</a></span>
-<span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span>
-<span class="normal"><a href="#__codelineno-0-225">225</a></span>
-<span class="normal"><a href="#__codelineno-0-226">226</a></span>
-<span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span>
-<span class="normal"><a href="#__codelineno-0-229">229</a></span>
-<span class="normal"><a href="#__codelineno-0-230">230</a></span>
-<span class="normal"><a href="#__codelineno-0-231">231</a></span>
-<span class="normal"><a href="#__codelineno-0-232">232</a></span>
-<span class="normal"><a href="#__codelineno-0-233">233</a></span>
-<span class="normal"><a href="#__codelineno-0-234">234</a></span>
-<span class="normal"><a href="#__codelineno-0-235">235</a></span>
-<span class="normal"><a href="#__codelineno-0-236">236</a></span>
-<span class="normal"><a href="#__codelineno-0-237">237</a></span>
-<span class="normal"><a href="#__codelineno-0-238">238</a></span>
-<span class="normal"><a href="#__codelineno-0-239">239</a></span>
-<span class="normal"><a href="#__codelineno-0-240">240</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="w">    </span><span class="sd">"""Reconstruct a Python value from a JSON-safe representation."""</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_scalar_types</span><span class="p">):</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a>        <span class="k">return</span> <span class="n">value</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a>        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported manifest payload: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a>    <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">marker_key</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a>        <span class="n">type_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_TYPE</span><span class="p">)</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"path"</span><span class="p">:</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a>            <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"datetime"</span><span class="p">:</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a>            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"uuid"</span><span class="p">:</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>            <span class="k">return</span> <span class="n">UUID</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"tuple"</span><span class="p">:</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a>            <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a>            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">)</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"enum"</span><span class="p">:</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a>            <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_VALUE</span><span class="p">))</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a>            <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_CLASS</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a>            <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a>                <span class="k">return</span> <span class="n">raw</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a>            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"dataclass"</span><span class="p">:</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a>            <span class="n">cls_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_CLASS</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a>            <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_FIELDS</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a>            <span class="n">restored</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">payload</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a>            <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_type</span><span class="p">(</span><span class="n">cls_name</span><span class="p">)</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a>            <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a>                <span class="k">return</span> <span class="n">restored</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a>            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">restored</span><span class="p">)</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown manifest payload type </span><span class="si">{</span><span class="n">type_name</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-207">207</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-208">208</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-209">209</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-210">210</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-214">214</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-215">215</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-216">216</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-217">217</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-218">218</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-219">219</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-220">220</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-229">229</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-230">230</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-231">231</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-232">232</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-233">233</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-234">234</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-235">235</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-236">236</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-237">237</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-238">238</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-239">239</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-240">240</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-202" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-202"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-203" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-203"></a><span class="w">    </span><span class="sd">"""Reconstruct a Python value from a JSON-safe representation."""</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-204" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-204"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_json_scalar_types</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-205" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-205"></a>        <span class="k">return</span> <span class="n">value</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-206" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-206"></a>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-207" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-207"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-208" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-208"></a>        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-209" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-209"></a>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-210" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-210"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-211" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-211"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported manifest payload: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-212" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-212"></a>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-213" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-213"></a>    <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">marker_key</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-214" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-214"></a>        <span class="n">type_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_TYPE</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-215" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-215"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"path"</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-216" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-216"></a>            <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-217" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-217"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"datetime"</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-218" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-218"></a>            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-219" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-219"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"uuid"</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-220" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-220"></a>            <span class="k">return</span> <span class="n">UUID</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-221" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-221"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"tuple"</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-222" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-222"></a>            <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_VALUE</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-223" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-223"></a>            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-224" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-224"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"enum"</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-225" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-225"></a>            <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_VALUE</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-226" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-226"></a>            <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_CLASS</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-227" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-227"></a>            <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-228" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-228"></a>                <span class="k">return</span> <span class="n">raw</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-229" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-229"></a>            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-230" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-230"></a>        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">"dataclass"</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-231" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-231"></a>            <span class="n">cls_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_CLASS</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-232" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-232"></a>            <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_FIELDS</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-233" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-233"></a>            <span class="n">restored</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">payload</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-234" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-234"></a>            <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_type</span><span class="p">(</span><span class="n">cls_name</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-235" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-235"></a>            <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-236" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-236"></a>                <span class="k">return</span> <span class="n">restored</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-237" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-237"></a>            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">restored</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-238" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-238"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown manifest payload type </span><span class="si">{</span><span class="n">type_name</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-239" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-239"></a>
+<a id="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-240" name="reflow.manifest.ManifestCodec.load_value--source--__codelineno-0-240"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1862,17 +1862,17 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/manifest.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-242">242</a></span>
-<span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span>
-<span class="normal"><a href="#__codelineno-0-245">245</a></span>
-<span class="normal"><a href="#__codelineno-0-246">246</a></span>
-<span class="normal"><a href="#__codelineno-0-247">247</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="k">def</span><span class="w"> </span><span class="nf">dumps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pretty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="w">    </span><span class="sd">"""Serialise a Python value to JSON using manifest typing."""</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a>    <span class="k">if</span> <span class="n">pretty</span><span class="p">:</span>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a>        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a>    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">":"</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-242">242</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-243">243</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-244">244</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-245">245</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-247">247</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-242" name="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-242"></a><span class="k">def</span><span class="w"> </span><span class="nf">dumps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pretty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-243" name="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-243"></a><span class="w">    </span><span class="sd">"""Serialise a Python value to JSON using manifest typing."""</span>
+<a id="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-244" name="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-244"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-245" name="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-245"></a>    <span class="k">if</span> <span class="n">pretty</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-246" name="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-246"></a>        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-247" name="reflow.manifest.ManifestCodec.dumps--source--__codelineno-0-247"></a>    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">":"</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1895,15 +1895,15 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/manifest.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span>
-<span class="normal"><a href="#__codelineno-0-251">251</a></span>
-<span class="normal"><a href="#__codelineno-0-252">252</a></span>
-<span class="normal"><a href="#__codelineno-0-253">253</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-249" name="__codelineno-0-249"></a><span class="k">def</span><span class="w"> </span><span class="nf">loads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="w">    </span><span class="sd">"""Load a value previously written with [`dumps`][dumps]."""</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
-<a id="__codelineno-0-252" name="__codelineno-0-252"></a>        <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
-<a id="__codelineno-0-253" name="__codelineno-0-253"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.manifest.ManifestCodec.loads--source--__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.loads--source--__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.loads--source--__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.loads--source--__codelineno-0-252">252</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.loads--source--__codelineno-0-253">253</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-249" name="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-249"></a><span class="k">def</span><span class="w"> </span><span class="nf">loads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-250" name="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-250"></a><span class="w">    </span><span class="sd">"""Load a value previously written with [`dumps`][dumps]."""</span>
+<a id="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-251" name="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-251"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
+<a id="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-252" name="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-252"></a>        <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+<a id="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-253" name="reflow.manifest.ManifestCodec.loads--source--__codelineno-0-253"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_value</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1926,11 +1926,11 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/manifest.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-255">255</a></span>
-<span class="normal"><a href="#__codelineno-0-256">256</a></span>
-<span class="normal"><a href="#__codelineno-0-257">257</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="k">def</span><span class="w"> </span><span class="nf">canonical_dumps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="w">    </span><span class="sd">"""Return canonical JSON for hashing."""</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">pretty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-257">257</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-255" name="reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-255"></a><span class="k">def</span><span class="w"> </span><span class="nf">canonical_dumps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-256" name="reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-256"></a><span class="w">    </span><span class="sd">"""Return canonical JSON for hashing."""</span>
+<a id="reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-257" name="reflow.manifest.ManifestCodec.canonical_dumps--source--__codelineno-0-257"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">pretty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2006,13 +2006,13 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/_types.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="k">def</span><span class="w"> </span><span class="nf">terminal</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="sd">"""States that will not change without intervention."""</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">})</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow._types.TaskState.terminal--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.terminal--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.terminal--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.terminal--source--__codelineno-0-22">22</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow._types.TaskState.terminal--source--__codelineno-0-19" name="reflow._types.TaskState.terminal--source--__codelineno-0-19"></a><span class="nd">@classmethod</span>
+<a id="reflow._types.TaskState.terminal--source--__codelineno-0-20" name="reflow._types.TaskState.terminal--source--__codelineno-0-20"></a><span class="k">def</span><span class="w"> </span><span class="nf">terminal</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
+<a id="reflow._types.TaskState.terminal--source--__codelineno-0-21" name="reflow._types.TaskState.terminal--source--__codelineno-0-21"></a><span class="w">    </span><span class="sd">"""States that will not change without intervention."""</span>
+<a id="reflow._types.TaskState.terminal--source--__codelineno-0-22" name="reflow._types.TaskState.terminal--source--__codelineno-0-22"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">})</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2039,13 +2039,13 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/_types.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="k">def</span><span class="w"> </span><span class="nf">active</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="w">    </span><span class="sd">"""States that represent in-progress work."""</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">RETRYING</span><span class="p">})</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow._types.TaskState.active--source--__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.active--source--__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.active--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.active--source--__codelineno-0-27">27</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow._types.TaskState.active--source--__codelineno-0-24" name="reflow._types.TaskState.active--source--__codelineno-0-24"></a><span class="nd">@classmethod</span>
+<a id="reflow._types.TaskState.active--source--__codelineno-0-25" name="reflow._types.TaskState.active--source--__codelineno-0-25"></a><span class="k">def</span><span class="w"> </span><span class="nf">active</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
+<a id="reflow._types.TaskState.active--source--__codelineno-0-26" name="reflow._types.TaskState.active--source--__codelineno-0-26"></a><span class="w">    </span><span class="sd">"""States that represent in-progress work."""</span>
+<a id="reflow._types.TaskState.active--source--__codelineno-0-27" name="reflow._types.TaskState.active--source--__codelineno-0-27"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">RETRYING</span><span class="p">})</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2072,13 +2072,13 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/_types.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancellable</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="w">    </span><span class="sd">"""States from which cancellation is meaningful."""</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">})</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow._types.TaskState.cancellable--source--__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.cancellable--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.cancellable--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.cancellable--source--__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow._types.TaskState.cancellable--source--__codelineno-0-29" name="reflow._types.TaskState.cancellable--source--__codelineno-0-29"></a><span class="nd">@classmethod</span>
+<a id="reflow._types.TaskState.cancellable--source--__codelineno-0-30" name="reflow._types.TaskState.cancellable--source--__codelineno-0-30"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancellable</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
+<a id="reflow._types.TaskState.cancellable--source--__codelineno-0-31" name="reflow._types.TaskState.cancellable--source--__codelineno-0-31"></a><span class="w">    </span><span class="sd">"""States from which cancellation is meaningful."""</span>
+<a id="reflow._types.TaskState.cancellable--source--__codelineno-0-32" name="reflow._types.TaskState.cancellable--source--__codelineno-0-32"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">})</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2105,13 +2105,13 @@ can reconstruct them on load.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/reflow/_types.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="k">def</span><span class="w"> </span><span class="nf">retriable</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="w">    </span><span class="sd">"""States from which a retry can be triggered."""</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">})</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow._types.TaskState.retriable--source--__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.retriable--source--__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.retriable--source--__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#reflow._types.TaskState.retriable--source--__codelineno-0-37">37</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow._types.TaskState.retriable--source--__codelineno-0-34" name="reflow._types.TaskState.retriable--source--__codelineno-0-34"></a><span class="nd">@classmethod</span>
+<a id="reflow._types.TaskState.retriable--source--__codelineno-0-35" name="reflow._types.TaskState.retriable--source--__codelineno-0-35"></a><span class="k">def</span><span class="w"> </span><span class="nf">retriable</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">TaskState</span><span class="p">]:</span>
+<a id="reflow._types.TaskState.retriable--source--__codelineno-0-36" name="reflow._types.TaskState.retriable--source--__codelineno-0-36"></a><span class="w">    </span><span class="sd">"""States from which a retry can be triggered."""</span>
+<a id="reflow._types.TaskState.retriable--source--__codelineno-0-37" name="reflow._types.TaskState.retriable--source--__codelineno-0-37"></a>    <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="bp">cls</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">})</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2271,10 +2271,10 @@ can reconstruct them on load.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.code.annotate", "content.tabs.link", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "search.highlight", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
