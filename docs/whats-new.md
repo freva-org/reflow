@@ -1,6 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v2610.0.0
+- **Fix: parameters are part of the cache identity.** A task's cache
+  identity now includes the `Param` values its function takes (CLI
+  parameters and task-local overrides). Before, a task was reused from
+  the cache even when called with different parameter values, e.g. a
+  changed `--target` returned the previous result. Parameters a task
+  does not take, and `RunDir`, are still ignored, so unrelated flags or
+  a new run directory keep the cache.
+- Local runner and scheduler dispatch now compute the identity through
+  one shared helper, so both paths always agree.
+
 ## v2604.4.0
 - **Improved `runs` command**: shows the last 20 runs by default instead
   of all. New flags `--last N`, `--all`, `--since`, `--until`, and
