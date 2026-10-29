@@ -197,6 +197,21 @@ class Executor(abc.ABC):
     def job_state(self, job_id: str) -> str | None:
         """Query the current state of a job."""
 
+    def element_job_ids(self, job_id: str, indices: list[int]) -> dict[int, str] | None:
+        """Split an array submission into one job id per element.
+
+        Backends whose arrays are a single scheduler job (Slurm, PBS, LSF,
+        SGE) return ``None``: every element shares *job_id*.  Backends
+        that create one job per element (Flux ``--cc``) return
+        ``{index: element_job_id}`` so each instance can store its own.
+        """
+        return None
+
+    def cancel_many(self, job_ids: list[str]) -> None:
+        """Cancel several jobs; backends may batch this into one call."""
+        for job_id in job_ids:
+            self.cancel(job_id)
+
     def job_states(self, job_id: str) -> JobStates:
         """Return the normalised state of every element of *job_id*.
 
@@ -207,7 +222,7 @@ class Executor(abc.ABC):
         """
         return JobStates()
 
-    def dependency_options(self, job_ids: list[str]) -> dict[str, str]:
+    def dependency_options(self, job_ids: list[str]) -> dict[str, Any]:
         """Return *submit_options* entries for depending on *job_ids*.
 
         The dispatch loop calls this to build the dependency specification

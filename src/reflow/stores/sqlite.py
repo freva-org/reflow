@@ -653,6 +653,33 @@ class SqliteStore(Store):
         self.conn.commit()
 
     @_retry_on_locked
+    def update_task_submitted_each(
+        self, run_id: str, task_name: str, job_ids: dict[int, str]
+    ) -> None:
+        if not job_ids:
+            return
+        now = _utcnow()
+        self.conn.executemany(
+            "UPDATE task_instances SET state = ?, job_id = ?, updated_at = ? "
+            "WHERE run_id = ? AND task_name = ? AND array_index = ? "
+            "AND state IN (?, ?)",
+            [
+                (
+                    TaskState.SUBMITTED.value,
+                    job_id,
+                    now,
+                    run_id,
+                    task_name,
+                    index,
+                    TaskState.PENDING.value,
+                    TaskState.RETRYING.value,
+                )
+                for index, job_id in job_ids.items()
+            ],
+        )
+        self.conn.commit()
+
+    @_retry_on_locked
     def fail_pending_tasks(
         self,
         run_id: str,

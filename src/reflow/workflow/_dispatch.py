@@ -521,7 +521,11 @@ class DispatchMixin:
         )
         if job_id is None:
             return None
-        store.update_task_submitted(run_id, spec.name, job_id, indices=wave)
+        per_element = executor.element_job_ids(job_id, wave)
+        if per_element:
+            store.update_task_submitted_each(run_id, spec.name, per_element)
+        else:
+            store.update_task_submitted(run_id, spec.name, job_id, indices=wave)
         return job_id
 
     def _dispatch_array(

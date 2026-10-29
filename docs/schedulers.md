@@ -134,7 +134,7 @@ to build the dependency specification for follow-up dispatch jobs:
 | PBS | `-W depend=afterany:ID1:ID2` |
 | LSF | `-w "ended(ID1) && ended(ID2)"` |
 | SGE | `-hold_jid ID1,ID2` |
-| Flux | `--dependency=afterany:ID1,ID2` |
+| Flux | `--dependency=afterany:ID1 --dependency=afterany:ID2` (one per job) |
 
 ## Array index resolution
 
@@ -161,6 +161,29 @@ output:
 
 You can override this with `array_flag="-t"` when constructing
 the executor manually.
+
+## Flux arrays
+
+Flux has no array job.  `flux submit --cc=0-9` creates ten separate
+jobs, one per index, each with the index in `FLUX_JOB_CC`.  reflow
+handles this as follows:
+
+- Array jobs are named `<name>.{cc}`, so each element's name ends in
+  its index (`wf-convert.0`, `wf-convert.1`, …).
+- reflow keeps every element's job id.  Each array instance stores its
+  own id, so `cancel` and status checks reach every element, not only
+  the last one submitted.
+- The follow-up dispatch job waits for every element: one
+  `--dependency=afterany:ID` per element, since Flux takes one id per
+  `--dependency`.
+- `flux cancel` is called once per 200 ids rather than once per job.
+- `array_parallelism` has no Flux equivalent and is ignored with a
+  warning.  Use `[executor] max_submit_jobs` (waves) to limit how many elements
+  are in the queue at once.
+
+A very large array gives the follow-up dispatch job one dependency per
+element.  If that becomes a problem, split the work into waves with
+`max_submit_jobs`.
 
 ## The `LocalExecutor`
 

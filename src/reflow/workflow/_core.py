@@ -402,13 +402,14 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             task_name=task_name,
             states=list(TaskState.cancellable()),
         )
-        seen: set[str] = set()
+        # Distinct ids in order; Flux arrays give every element its own.
+        job_ids = list(
+            dict.fromkeys(str(i["job_id"]) for i in instances if i.get("job_id"))
+        )
+        if job_ids:
+            exc.cancel_many(job_ids)
         cancelled = 0
         for inst in instances:
-            jid = inst.get("job_id")
-            if jid and str(jid) not in seen:
-                exc.cancel(str(jid))
-                seen.add(str(jid))
             store.update_task_cancelled(int(inst["id"]))
             cancelled += 1
         if task_name is None:

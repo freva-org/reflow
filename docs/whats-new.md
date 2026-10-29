@@ -1,6 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## v2610.1.0
+- **Fix: Flux array jobs.** `--cc` creates one job per element, but
+  reflow kept only the last id, so `cancel` stopped one element and the
+  follow-up dispatch waited for one element only.  reflow now keeps
+  every element's id, names elements `<name>.<index>`, writes one
+  `--dependency=afterany:ID` per job (the comma form was invalid), and
+  cancels in batches.  `array_parallelism` is ignored with a warning,
+  since Flux has no such limit.
+
 ## v2610.0.0
 - **Fix: parameters are part of the cache identity.** A task's cache
   identity now includes the `Param` values its function takes (CLI

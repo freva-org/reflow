@@ -203,6 +203,16 @@ class Store(abc.ABC):
         """
 
     @abc.abstractmethod
+    def update_task_submitted_each(
+        self, run_id: str, task_name: str, job_ids: dict[int, str]
+    ) -> None:
+        """Mark array instances SUBMITTED, each with its own job id.
+
+        For backends that create one scheduler job per array element.
+        Only pending/retrying instances are updated, in one transaction.
+        """
+
+    @abc.abstractmethod
     def update_task_running(self, instance_id: int) -> None:
         """Mark one instance as running."""
 
