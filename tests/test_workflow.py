@@ -946,4 +946,4 @@ class TestCancelRunsJobId:
 
             mock_exc = MagicMock()
             wf.cancel_run(run_id, st, executor=mock_exc)
-            mock_exc.cancel.assert_called_once_with("fake-job-42")
+            mock_exc.cancel_many.assert_called_once_with(["fake-job-42"])

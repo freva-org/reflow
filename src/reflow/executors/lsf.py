@@ -14,7 +14,7 @@ import shlex
 import sys
 
 from ..config import Config
-from . import Executor, JobResources
+from . import ElementState, Executor, JobResources, JobStatus, summarise
 from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
@@ -126,6 +126,29 @@ class LSFExecutor(Executor):
         }
         return _STATE_MAP.get(state, state)
 
+    def job_status(self, job_id: str) -> ElementState:
+        """Ask ``bjobs`` whether any element of *job_id* is alive.
+
+        ``bjobs`` prints one line per array element.  A job it does not
+        find has ended (LSF forgets finished jobs after CLEAN_PERIOD).
+        """
+        if job_id == "DRYRUN":
+            return ElementState(JobStatus.ENDED, "dry-run")
+        try:
+            output = run_cmd(
+                [self.bjobs, "-noheader", "-o", "stat", job_id], check=False
+            )
+        except OSError:
+            return ElementState(JobStatus.UNKNOWN, "bjobs failed")
+        lines = [ln.strip().upper() for ln in output.stdout.splitlines() if ln.strip()]
+        states = [_lsf_status(ln) for ln in lines if "NOT FOUND" not in ln]
+        if states:
+            return summarise(states)
+        message = (output.stderr + output.stdout).lower()
+        if "not found" in message or output.returncode == 0:
+            return ElementState(JobStatus.ENDED)
+        return ElementState(JobStatus.UNKNOWN, "bjobs failed")
+
     def dependency_options(self, job_ids: list[str]) -> dict[str, str]:
         """LSF dependency: ``-w "ended(ID1) && ended(ID2)"``."""
         expr = " && ".join(f"ended({jid})" for jid in job_ids)
@@ -167,3 +190,19 @@ class LSFExecutor(Executor):
 
         parts.append(shlex.join(command))
         return parts
+
+
+_LSF_QUEUED = frozenset({"PEND", "WAIT", "PSUSP"})
+_LSF_RUNNING = frozenset({"RUN", "USUSP", "SSUSP", "PROV"})
+_LSF_ENDED = frozenset({"DONE", "EXIT", "ZOMBI"})
+
+
+def _lsf_status(stat: str) -> ElementState:
+    """Map an LSF ``STAT`` word to an `ElementState`."""
+    if stat in _LSF_QUEUED:
+        return ElementState(JobStatus.QUEUED, stat)
+    if stat in _LSF_RUNNING:
+        return ElementState(JobStatus.RUNNING, stat)
+    if stat in _LSF_ENDED:
+        return ElementState(JobStatus.ENDED, stat)
+    return ElementState(JobStatus.UNKNOWN, stat)

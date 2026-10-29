@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, get_type_hints
 
 from .._types import RunState, TaskState
+from ..claims import ExclusiveSpec, claim, resource_keys
 from ..config import Config, load_config
 from ..executors import Executor, JobResources
 from ..flow import Flow, TaskSpec
@@ -66,6 +67,14 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
     config : Config or None
         User configuration.  Loaded from
         ``~/.config/reflow/config.toml`` when ``None``.
+    exclusive : list[str], callable, or None
+        Parameters whose values no two active runs may share, typically
+        an output location: ``exclusive=["target"]``.  A new run whose
+        values are claimed by an active run (of any workflow using the
+        same store) is refused with
+        [`RunConflictError`][reflow.RunConflictError].  A callable gets
+        the run parameters and returns the values to claim.  See
+        [`reflow.claims`][reflow.claims].
 
     Examples
     --------
@@ -90,9 +99,17 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
 
     """
 
-    def __init__(self, name: str, config: Config | None = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        config: Config | None = None,
+        exclusive: ExclusiveSpec | None = None,
+    ) -> None:
         super().__init__(name)
         self.config: Config = config or load_config()
+        if isinstance(exclusive, str):
+            exclusive = [exclusive]
+        self.exclusive: ExclusiveSpec | None = exclusive
 
     # --- include -----------------------------------------------------------
 
@@ -175,6 +192,53 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
 
         self._topological_order()
 
+        if self.exclusive is not None and not callable(self.exclusive):
+            known = {rp.name for rp in self._resolved_params()}
+            unknown = [name for name in self.exclusive if name not in known]
+            if unknown:
+                raise ValueError(
+                    f"exclusive={unknown!r} names no parameter of workflow "
+                    f"{self.name!r}; known parameters: {sorted(known)}"
+                )
+
+    # --- exclusive resources -------------------------------------------------
+
+    def _resolved_params(self) -> list[Any]:
+        resolved = []
+        for spec in self.tasks.values():
+            resolved.extend(collect_cli_params(spec.name, spec.func, spec.signature))
+        return list(merge_resolved_params(resolved))
+
+    def _exclusive_keys(self, parameters: dict[str, Any]) -> dict[str, str]:
+        """Resource keys of a run with *parameters* (defaults filled in)."""
+        if self.exclusive is None:
+            return {}
+        values = {
+            rp.name: rp.default for rp in self._resolved_params() if not rp.required
+        }
+        values.update(parameters)
+        return resource_keys(self.exclusive, values)
+
+    def _claim_exclusive(
+        self,
+        run_id: str,
+        parameters: dict[str, Any],
+        store: Store,
+        executor: Executor | None,
+        *,
+        local: bool = False,
+    ) -> None:
+        keys = self._exclusive_keys(parameters)
+        if keys:
+            claim(
+                store,
+                run_id,
+                keys,
+                executor or default_executor(self.config),
+                workflow=self.name,
+                local=local,
+            )
+
     # --- dependency resolution ---------------------------------------------
 
     def _effective_dependencies(self, spec: TaskSpec) -> list[str]:
@@ -190,9 +254,7 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             for dep in self._effective_dependencies(spec):
                 if dep not in self.tasks:
                     hint = _suggest_name(dep, self.tasks)
-                    raise ValueError(
-                        f"Task {name!r} depends on unknown {dep!r}.{hint}"
-                    )
+                    raise ValueError(f"Task {name!r} depends on unknown {dep!r}.{hint}")
                 in_degree[name] += 1
                 children[dep].append(name)
 
@@ -290,33 +352,59 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         if force_tasks:
             params["__force_tasks__"] = force_tasks
 
-        st.insert_run(run_id, self.name, user_id, params)
-
-        for spec in self.tasks.values():
-            st.insert_task_spec(
-                run_id,
-                spec.name,
-                spec.config.array,
-                asdict(spec.config),
-                self._effective_dependencies(spec),
-            )
-
-        for spec in self.tasks.values():
-            if self._effective_dependencies(spec) or spec.config.array:
-                continue
-            st.insert_task_instance(
-                run_id,
-                spec.name,
-                None,
-                TaskState.PENDING,
-                {},
-            )
-
         exc = real_executor or default_executor(self.config)
-        self._submit_dispatch(exc, run_id, rd, st, verify=verify)
+        self._start_run(st, exc, run_id, rd, user_id, params, verify=verify)
 
         logger.info("Created run %s in %s", run_id, rd)
         return Run(workflow=self, run_id=run_id, run_dir=rd, store=st)
+
+    def _start_run(
+        self,
+        st: Store,
+        exc: Executor,
+        run_id: str,
+        rd: Path,
+        user_id: str,
+        params: dict[str, Any],
+        verify: bool = False,
+    ) -> None:
+        """Claim targets, create the run and submit its first dispatch job.
+
+        If anything after the claim fails, the claim is released, so a
+        run that never got going does not block its targets.
+        """
+        self._claim_exclusive(run_id, params, st, exc)
+        try:
+            st.insert_run(run_id, self.name, user_id, params)
+        except BaseException:
+            st.release_resources(run_id)
+            raise
+        try:
+            for spec in self.tasks.values():
+                st.insert_task_spec(
+                    run_id,
+                    spec.name,
+                    spec.config.array,
+                    asdict(spec.config),
+                    self._effective_dependencies(spec),
+                )
+
+            for spec in self.tasks.values():
+                if self._effective_dependencies(spec) or spec.config.array:
+                    continue
+                st.insert_task_instance(
+                    run_id,
+                    spec.name,
+                    None,
+                    TaskState.PENDING,
+                    {},
+                )
+
+            self._submit_dispatch(exc, run_id, rd, st, verify=verify)
+        except BaseException:
+            st.update_run_status(run_id, RunState.FAILED)
+            st.release_resources(run_id)
+            raise
 
     def _check_submit_params(self, parameters: dict[str, Any]) -> None:
         all_resolved = []
@@ -361,30 +449,8 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         params = dict(parameters)
         params["run_dir"] = str(rd)
 
-        st.insert_run(run_id, self.name, user_id, params)
-
-        for spec in self.tasks.values():
-            st.insert_task_spec(
-                run_id,
-                spec.name,
-                spec.config.array,
-                asdict(spec.config),
-                self._effective_dependencies(spec),
-            )
-
-        for spec in self.tasks.values():
-            if self._effective_dependencies(spec) or spec.config.array:
-                continue
-            st.insert_task_instance(
-                run_id,
-                spec.name,
-                None,
-                TaskState.PENDING,
-                {},
-            )
-
         exc = executor or default_executor(self.config)
-        self._submit_dispatch(exc, run_id, rd, st)
+        self._start_run(st, exc, run_id, rd, user_id, params)
         return run_id
 
     # --- cancel / retry / status -------------------------------------------
@@ -402,17 +468,19 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             task_name=task_name,
             states=list(TaskState.cancellable()),
         )
-        seen: set[str] = set()
+        # Distinct ids in order; Flux arrays give every element its own.
+        job_ids = list(
+            dict.fromkeys(str(i["job_id"]) for i in instances if i.get("job_id"))
+        )
+        if job_ids:
+            exc.cancel_many(job_ids)
         cancelled = 0
         for inst in instances:
-            jid = inst.get("job_id")
-            if jid and str(jid) not in seen:
-                exc.cancel(str(jid))
-                seen.add(str(jid))
             store.update_task_cancelled(int(inst["id"]))
             cancelled += 1
         if task_name is None:
             store.update_run_status(run_id, RunState.CANCELLED)
+            store.release_resources(run_id)
         return cancelled
 
     def cancel_runs(
@@ -444,7 +512,10 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         total = 0
         for run_id in run_ids:
             total += self.cancel_run(
-                run_id, store, task_name=task_name, executor=executor,
+                run_id,
+                store,
+                task_name=task_name,
+                executor=executor,
             )
         return total
 
@@ -458,6 +529,10 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         verify: bool = True,
     ) -> int:
         """Retry failed/cancelled instances and re-dispatch.
+
+        Instances whose job has ended without a result (worker killed)
+        are failed first, so they are retried too; the live queue is
+        asked via `Executor.job_status`.
 
         Parameters
         ----------
@@ -477,20 +552,34 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             stale intermediate files that were deleted after the
             original run.
 
+
         """
+        from ..results import ingest_results
+        from ._reconcile import reconcile_ended
+
+        exc = executor or default_executor(self.config)
+        ingest_results(run_id, store)
+        reconcile_ended(run_id, store, exc, task_name=task_name)
         instances = store.list_task_instances(
             run_id,
             task_name=task_name,
             states=list(TaskState.retriable()),
         )
+        if instances:
+            # The run becomes active again: it needs its claims back.
+            self._claim_exclusive(run_id, store.get_run_parameters(run_id), store, exc)
         retried = 0
         for inst in instances:
             store.mark_for_retry(int(inst["id"]))
             retried += 1
-        store.update_run_status(run_id, RunState.RUNNING)
         if retried > 0:
-            exc = executor or default_executor(self.config)
-            self._submit_dispatch(exc, run_id, run_dir, store, verify=verify)
+            store.update_run_status(run_id, RunState.RUNNING)
+            try:
+                self._submit_dispatch(exc, run_id, run_dir, store, verify=verify)
+            except BaseException:
+                store.update_run_status(run_id, RunState.FAILED)
+                store.release_resources(run_id)
+                raise
         return retried
 
     def run_status(self, run_id: str, store: Store) -> dict[str, Any]:
@@ -610,9 +699,15 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         run_dir: Path,
         store: Store,
         verify: bool = False,
-        dependency_options: dict[str, str] | None = None,
+        dependency_options: dict[str, Any] | None = None,
+        after_ref: str | None = None,
     ) -> str:
-        """Submit a dispatch job, optionally with scheduler dependencies."""
+        """Submit a dispatch job, optionally with scheduler dependencies.
+
+        *after_ref* names the awaited jobs (see `Store.record_jobs`) that
+        *dependency_options* waits for; the dispatch pass checks their
+        instances for lost results.
+        """
         python = (
             os.getenv("REFLOW_PYTHON") or self.config.executor_python or sys.executable
         )
@@ -641,7 +736,13 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             cmd.extend(["--store-path", str(store.path)])
         if verify:
             cmd.append("--verify")
-        return executor.submit(resources, cmd)
+        if after_ref:
+            cmd.extend(["--after-ref", after_ref])
+        job_id = executor.submit(resources, cmd)
+        # Recorded so that it can be told later whether the run still has
+        # a dispatch pass queued (e.g. between waves).
+        store.record_jobs(run_id, [job_id], "dispatch")
+        return job_id
 
     def _single_resources(self, run_dir: Path, spec: TaskSpec) -> JobResources:
         submit_options = dict(self.config.executor_submit_options)

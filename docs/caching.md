@@ -102,6 +102,61 @@ $ python pipeline.py retry RUN_ID --task process
 On retry, upstream cache hits are verified by default so stale
 intermediate files are detected.
 
+## Workers that die without a result
+
+A worker reports its outcome by writing a result file, which the next
+dispatch pass ingests.  A worker that is killed hard never writes one:
+out of memory, a time limit followed by `SIGKILL`, a node failure, or
+`scancel`.  Without help its instance would stay `SUBMITTED` or
+`RUNNING` forever: nothing downstream starts and the run never
+finishes.
+
+reflow catches this on every backend, without asking the scheduler
+anything.  After each pass, the follow-up dispatch job is submitted
+with an "after any" dependency on the jobs of that pass:
+
+| Backend | Dependency |
+|---------|------------|
+| Slurm, PBS, Flux | `afterany` |
+| LSF | `ended()` |
+| SGE | `-hold_jid` |
+
+So when the follow-up pass starts, the scheduler has guaranteed that
+all those jobs have ended, successfully or not.  reflow stores their ids
+and hands the dispatch job a reference to them (`--after-ref`).  Any of
+their instances that still has no result never will, and is marked
+`FAILED`:
+
+```text
+Job 27152666_42 ended without writing a result (scheduler state:
+OUT_OF_MEMORY).  The worker was probably killed (out of memory, time
+limit, node failure or cancellation); see the job's log in <run_dir>/logs.
+```
+
+The scheduler state in the message is added where the backend can tell
+it (Slurm `sacct`, Flux `flux jobs`); otherwise it says `unknown`.  It
+is only text: the decision never depends on it.  If the scheduler does
+report the job as queued or running again (a requeued job), the
+instance is left alone.
+
+This works per instance: if 3 of 500 array elements were killed, only
+those 3 fail.  Downstream tasks do not start, the run finishes as
+`FAILED` instead of staying `RUNNING`, and `retry` resubmits exactly
+the failed elements.
+
+Before failing anything, the dispatcher waits a few seconds and looks
+for results again, because result files written on compute nodes can
+take a moment to become visible elsewhere.  Set `REFLOW_RESULT_GRACE`
+(seconds, default 10, `0` to disable) to change the wait.
+
+### `retry` and killed workers
+
+`retry` runs outside that dependency chain, so it asks the live queue
+instead (`Executor.job_status`, see [Schedulers](schedulers.md)).
+Instances whose job the queue no longer holds are failed and retried
+with the rest.  Jobs that are still queued or running, or whose status
+cannot be determined, are left alone.
+
 ## The manifest store
 
 Reflow keeps run metadata, task states, and cached outputs in a shared

@@ -203,6 +203,16 @@ class Store(abc.ABC):
         """
 
     @abc.abstractmethod
+    def update_task_submitted_each(
+        self, run_id: str, task_name: str, job_ids: dict[int, str]
+    ) -> None:
+        """Mark array instances SUBMITTED, each with its own job id.
+
+        For backends that create one scheduler job per array element.
+        Only pending/retrying instances are updated, in one transaction.
+        """
+
+    @abc.abstractmethod
     def update_task_running(self, instance_id: int) -> None:
         """Mark one instance as running."""
 
@@ -290,3 +300,44 @@ class Store(abc.ABC):
     @abc.abstractmethod
     def task_state_summary(self, run_id: str) -> dict[str, dict[str, int]]:
         """Per-task state counts: ``{task: {state: count}}``."""
+
+    # --- scheduler jobs of a run ---------------------------------------------
+
+    @abc.abstractmethod
+    def record_jobs(
+        self, run_id: str, job_ids: list[str], kind: str, ref: str = ""
+    ) -> None:
+        """Remember scheduler jobs of *run_id* that are not task instances.
+
+        ``kind="dispatch"``: a dispatch job.  ``kind="awaited"``: the jobs
+        a follow-up dispatch job waits for, stored under *ref*, which the
+        dispatch job is given as ``--after-ref``.
+        """
+
+    @abc.abstractmethod
+    def list_jobs(
+        self, run_id: str, kind: str | None = None, ref: str | None = None
+    ) -> list[str]:
+        """Job ids recorded with `record_jobs`, oldest first."""
+
+    # --- exclusive resources --------------------------------------------------
+
+    @abc.abstractmethod
+    def claim_resources(
+        self, run_id: str, keys: dict[str, str], owner: dict[str, Any]
+    ) -> dict[str, dict[str, Any]]:
+        """Atomically claim *keys* (key -> label) for *run_id*.
+
+        Either all keys are claimed and ``{}`` is returned, or none is and
+        the result maps each key held by *another* run to that claim
+        (``run_id``, ``label``, ``user``, ``host``, ``pid``,
+        ``created_at``).  Keys *run_id* already holds count as claimed.
+        """
+
+    @abc.abstractmethod
+    def release_resources(self, run_id: str) -> None:
+        """Release every claim of *run_id*."""
+
+    @abc.abstractmethod
+    def list_claims(self, run_id: str | None = None) -> list[dict[str, Any]]:
+        """Claims of *run_id*, or all claims."""

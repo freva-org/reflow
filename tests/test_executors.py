@@ -506,7 +506,7 @@ class TestFluxExecutor:
     def test_dependency_options(self) -> None:
         exc = FluxExecutor(mode="dry-run")
         opts = exc.dependency_options(["f123", "f456"])
-        assert opts == {"dependency": "afterany:f123,f456"}
+        assert opts == {"dependency": ["afterany:f123", "afterany:f456"]}
 
     def test_array_index_var(self) -> None:
         assert FluxExecutor.array_index_env_var == "FLUX_JOB_CC"
@@ -540,12 +540,15 @@ class TestFluxExecutor:
         exc = FluxExecutor(mode="dry-run")
         res = JobResources(
             job_name="test",
-            submit_options={"dependency": "afterany:f1,f2"},
+            submit_options=exc.dependency_options(["f1", "f2,f3"]),
         )
         cmd = exc._build_submit(res, ["echo"])
         dep_flags = [c for c in cmd if c.startswith("--dependency=")]
-        assert len(dep_flags) == 1
-        assert "afterany:f1,f2" in dep_flags[0]
+        assert dep_flags == [
+            "--dependency=afterany:f1",
+            "--dependency=afterany:f2",
+            "--dependency=afterany:f3",
+        ]
 
     def test_build_submit_queue_and_account(self) -> None:
         exc = FluxExecutor(mode="dry-run")

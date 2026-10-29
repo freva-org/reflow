@@ -189,6 +189,25 @@ class SqliteStore(Store):
                 updated_at   TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS run_jobs (
+                run_id       TEXT NOT NULL,
+                kind         TEXT NOT NULL,
+                ref          TEXT NOT NULL DEFAULT '',
+                job_id       TEXT NOT NULL,
+                created_at   TEXT NOT NULL,
+                PRIMARY KEY (run_id, kind, ref, job_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS run_claims (
+                key          TEXT PRIMARY KEY,
+                run_id       TEXT NOT NULL,
+                label        TEXT NOT NULL,
+                user         TEXT NOT NULL DEFAULT '',
+                host         TEXT NOT NULL DEFAULT '',
+                pid          INTEGER NOT NULL DEFAULT 0,
+                created_at   TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_instances_run
                 ON task_instances(run_id, task_name);
             CREATE INDEX IF NOT EXISTS idx_instances_identity
@@ -653,6 +672,33 @@ class SqliteStore(Store):
         self.conn.commit()
 
     @_retry_on_locked
+    def update_task_submitted_each(
+        self, run_id: str, task_name: str, job_ids: dict[int, str]
+    ) -> None:
+        if not job_ids:
+            return
+        now = _utcnow()
+        self.conn.executemany(
+            "UPDATE task_instances SET state = ?, job_id = ?, updated_at = ? "
+            "WHERE run_id = ? AND task_name = ? AND array_index = ? "
+            "AND state IN (?, ?)",
+            [
+                (
+                    TaskState.SUBMITTED.value,
+                    job_id,
+                    now,
+                    run_id,
+                    task_name,
+                    index,
+                    TaskState.PENDING.value,
+                    TaskState.RETRYING.value,
+                )
+                for index, job_id in job_ids.items()
+            ],
+        )
+        self.conn.commit()
+
+    @_retry_on_locked
     def fail_pending_tasks(
         self,
         run_id: str,
@@ -790,5 +836,96 @@ class SqliteStore(Store):
         for task_name, state, n in rows:
             summary.setdefault(task_name, {})[state] = n
         return summary
+
+    # --- scheduler jobs of a run -------------------------------------------
+
+    @_retry_on_locked
+    def record_jobs(
+        self, run_id: str, job_ids: list[str], kind: str, ref: str = ""
+    ) -> None:
+        if not job_ids:
+            return
+        now = _utcnow()
+        self.conn.executemany(
+            "INSERT OR IGNORE INTO run_jobs (run_id, kind, ref, job_id, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            [(run_id, kind, ref, job_id, now) for job_id in job_ids],
+        )
+        self.conn.commit()
+
+    def list_jobs(
+        self, run_id: str, kind: str | None = None, ref: str | None = None
+    ) -> list[str]:
+        sql = "SELECT job_id FROM run_jobs WHERE run_id = ?"
+        params: list[Any] = [run_id]
+        if kind is not None:
+            sql += " AND kind = ?"
+            params.append(kind)
+        if ref is not None:
+            sql += " AND ref = ?"
+            params.append(ref)
+        rows = self.conn.execute(sql + " ORDER BY created_at, rowid", params).fetchall()
+        return [str(row[0]) for row in rows]
+
+    # --- exclusive resources -------------------------------------------------
+
+    @_retry_on_locked
+    def claim_resources(
+        self, run_id: str, keys: dict[str, str], owner: dict[str, Any]
+    ) -> dict[str, dict[str, Any]]:
+        if not keys:
+            return {}
+        conn = self.conn
+        if conn.in_transaction:
+            conn.commit()
+        # IMMEDIATE takes the write lock up front: no other process can
+        # claim between our check and our insert.
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            marks = ",".join("?" * len(keys))
+            rows = conn.execute(
+                "SELECT key, run_id, label, user, host, pid, created_at "
+                f"FROM run_claims WHERE key IN ({marks}) AND run_id != ?",
+                (*keys, run_id),
+            ).fetchall()
+            if rows:
+                conn.rollback()
+                return {str(row["key"]): dict(row) for row in rows}
+            now = _utcnow()
+            conn.executemany(
+                "INSERT OR IGNORE INTO run_claims "
+                "(key, run_id, label, user, host, pid, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        key,
+                        run_id,
+                        label,
+                        str(owner.get("user", "")),
+                        str(owner.get("host", "")),
+                        int(owner.get("pid", 0) or 0),
+                        now,
+                    )
+                    for key, label in keys.items()
+                ],
+            )
+            conn.commit()
+        except BaseException:
+            conn.rollback()
+            raise
+        return {}
+
+    @_retry_on_locked
+    def release_resources(self, run_id: str) -> None:
+        self.conn.execute("DELETE FROM run_claims WHERE run_id = ?", (run_id,))
+        self.conn.commit()
+
+    def list_claims(self, run_id: str | None = None) -> list[dict[str, Any]]:
+        sql = "SELECT key, run_id, label, user, host, pid, created_at FROM run_claims"
+        params: tuple[Any, ...] = ()
+        if run_id is not None:
+            sql += " WHERE run_id = ?"
+            params = (run_id,)
+        return [dict(row) for row in self.conn.execute(sql + " ORDER BY key", params)]
 
     # --- helpers ------------------------------------------------------------

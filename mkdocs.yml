@@ -85,6 +85,7 @@ nav:
       - User guide: guide.md
       - Schedulers: schedulers.md
       - Caching and retries: caching.md
+      - One run per target: exclusive-runs.md
   - Usage Reference:
       - CLI: cli-reference.md
       - Python API: python-reference.md

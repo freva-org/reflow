@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import abc
+import enum
 import sys
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -78,6 +80,96 @@ class JobResources:
         return self.submit_options.get("signal")
 
 
+class JobStatus(str, enum.Enum):
+    """Scheduler-independent state of a job or array element."""
+
+    QUEUED = "QUEUED"
+    """Waiting to start (pending, held, requeued, suspended)."""
+    RUNNING = "RUNNING"
+    """Executing, or finishing up."""
+    ENDED = "ENDED"
+    """Finished, whatever the outcome; see ``ElementState.reason``."""
+    UNKNOWN = "UNKNOWN"
+    """The scheduler could not tell, or the backend cannot query this."""
+
+
+@dataclass(frozen=True)
+class ElementState:
+    """State of one job or array element.
+
+    Attributes
+    ----------
+    status : JobStatus
+        Normalised state.
+    reason : str
+        The scheduler's own word for it, e.g. ``"OUT_OF_MEMORY"`` or
+        ``"TIMEOUT"``; empty if the scheduler gave none.
+
+    """
+
+    status: JobStatus
+    reason: str = ""
+
+    @property
+    def active(self) -> bool:
+        """Whether the job may still run or is running."""
+        return self.status in (JobStatus.QUEUED, JobStatus.RUNNING)
+
+
+UNKNOWN_STATE = ElementState(JobStatus.UNKNOWN)
+
+
+@dataclass(frozen=True)
+class JobStates:
+    """States of all elements of one submitted job.
+
+    Attributes
+    ----------
+    elements : Mapping[int | None, ElementState]
+        Per array index; key ``None`` for a job that is not an array.
+    default : ElementState
+        State of elements the scheduler did not list.  ``UNKNOWN`` unless
+        the backend knows that unlisted elements have ended (e.g. a
+        queue listing, which only shows live jobs).
+
+    """
+
+    elements: Mapping[int | None, ElementState] = field(default_factory=dict)
+    default: ElementState = UNKNOWN_STATE
+
+    def get(self, index: int | None) -> ElementState:
+        """State of array element *index* (``None`` for a non-array job)."""
+        if index in self.elements:
+            return self.elements[index]
+        if index is not None and None in self.elements:
+            # A non-array listing covers every index of the job.
+            return self.elements[None]
+        return self.default
+
+    def overall(self) -> ElementState:
+        """Combine all elements into one state: is any still alive.
+
+        ``RUNNING`` if any element runs, else ``QUEUED`` if any is
+        queued.  Otherwise ``UNKNOWN`` if any listed element is unknown,
+        ``ENDED`` if every listed element ended, and `default` if the
+        scheduler listed nothing.  Listings are taken to be complete
+        (``sacct``, a queue listing, or one entry per Flux job).
+        """
+        return summarise(self.elements.values(), self.default)
+
+
+def summarise(
+    states: Iterable[ElementState], default: ElementState = UNKNOWN_STATE
+) -> ElementState:
+    """Combine the states of several elements, as in `JobStates.overall`."""
+    listed = list(states)
+    for status in (JobStatus.RUNNING, JobStatus.QUEUED, JobStatus.UNKNOWN):
+        for state in listed:
+            if state.status is status:
+                return state
+    return listed[0] if listed else default
+
+
 class Executor(abc.ABC):
     """Base class for workload-manager executors.
 
@@ -128,7 +220,65 @@ class Executor(abc.ABC):
     def job_state(self, job_id: str) -> str | None:
         """Query the current state of a job."""
 
-    def dependency_options(self, job_ids: list[str]) -> dict[str, str]:
+    def element_job_ids(self, job_id: str, indices: list[int]) -> dict[int, str] | None:
+        """Split an array submission into one job id per element.
+
+        Backends whose arrays are a single scheduler job (Slurm, PBS, LSF,
+        SGE) return ``None``: every element shares *job_id*.  Backends
+        that create one job per element (Flux ``--cc``) return
+        ``{index: element_job_id}`` so each instance can store its own.
+        """
+        return None
+
+    def cancel_many(self, job_ids: list[str]) -> None:
+        """Cancel several jobs; backends may batch this into one call."""
+        for job_id in job_ids:
+            self.cancel(job_id)
+
+    def job_states(self, job_id: str) -> JobStates:
+        """Return the normalised state of every element of *job_id*.
+
+        Used to find task instances whose job ended without a result and
+        to decide whether a run is still alive.  The default knows
+        nothing (every element ``UNKNOWN``), which callers must treat as
+        "may still be running".  Backends override this.
+        """
+        return JobStates()
+
+    def job_status(self, job_id: str) -> ElementState:
+        """Tell whether *job_id* is still in the scheduler or has ended.
+
+        Unlike `job_states` this needs no accounting database: backends
+        ask the live queue (``squeue``, ``qstat``, ``bjobs``,
+        ``flux jobs``).  The answer is
+
+        - ``QUEUED`` / ``RUNNING`` if any element may still run;
+        - ``ENDED`` if the queue was asked and does not hold the job
+          (any more), whether it ran or not;
+        - ``UNKNOWN`` if the query itself failed.
+
+        Callers treat ``UNKNOWN`` as "may still be running".  The
+        default combines `job_states`; backends override it.
+        """
+        if job_id == "DRYRUN":
+            return ElementState(JobStatus.ENDED, "dry-run")
+        return self.job_states(job_id).overall()
+
+    def jobs_status(self, job_ids: list[str]) -> ElementState:
+        """Return the combined `job_status` of several jobs: alive if any is.
+
+        Stops at the first job that is queued or running.  Backends that
+        can ask about many jobs in one call (Flux) override this.
+        """
+        states: list[ElementState] = []
+        for job_id in job_ids:
+            state = self.job_status(job_id)
+            if state.active:
+                return state
+            states.append(state)
+        return summarise(states)
+
+    def dependency_options(self, job_ids: list[str]) -> dict[str, Any]:
         """Return *submit_options* entries for depending on *job_ids*.
 
         The dispatch loop calls this to build the dependency specification

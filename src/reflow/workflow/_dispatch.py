@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, get_type_hints
 
@@ -27,6 +28,7 @@ from ..params import (
 )
 from ..stores import Store
 from ._helpers import default_executor, task_input_hash
+from ._reconcile import reconcile_awaited
 
 if TYPE_CHECKING:
     from ..config import Config
@@ -73,6 +75,7 @@ class DispatchMixin:
         run_dir: Path,
         executor: Executor | None = None,
         verify: bool = False,
+        after_ref: str | None = None,
     ) -> None:
         """Inspect the manifest and submit runnable tasks.
 
@@ -94,6 +97,10 @@ class DispatchMixin:
         verify : bool
             If ``True``, verify cached outputs before accepting
             cache hits.
+        after_ref : str or None
+            Set when this pass runs as a follow-up dispatch job: names
+            the jobs it waited for.  Their instances that still have no
+            result were lost (worker killed) and are marked ``FAILED``.
 
         """
         from ..results import ingest_results
@@ -104,6 +111,10 @@ class DispatchMixin:
 
         config: Config = self.config  # type: ignore[attr-defined]
         exc = executor or default_executor(config)
+        if after_ref:
+            # The scheduler started us only after these jobs ended, so an
+            # instance of theirs without a result will never get one.
+            reconcile_awaited(run_id, store, exc, after_ref)
 
         submitted_job_ids: list[str] = []
         for task_name in self._topological_order():  # type: ignore[attr-defined]
@@ -133,12 +144,17 @@ class DispatchMixin:
 
         if submitted_job_ids:
             dep_opts = exc.dependency_options(submitted_job_ids)
+            ref = uuid.uuid4().hex[:12]
+            # Flux returns one id per array element, comma separated.
+            awaited = [j for jid in submitted_job_ids for j in jid.split(",") if j]
+            store.record_jobs(run_id, awaited, "awaited", ref=ref)
             self._submit_dispatch(  # type: ignore[attr-defined]
                 exc,
                 run_id,
                 run_dir,
                 store,
                 dependency_options=dep_opts,
+                after_ref=ref,
             )
 
     # --- dependency helpers ------------------------------------------------
@@ -521,7 +537,11 @@ class DispatchMixin:
         )
         if job_id is None:
             return None
-        store.update_task_submitted(run_id, spec.name, job_id, indices=wave)
+        per_element = executor.element_job_ids(job_id, wave)
+        if per_element:
+            store.update_task_submitted_each(run_id, spec.name, per_element)
+        else:
+            store.update_task_submitted(run_id, spec.name, job_id, indices=wave)
         return job_id
 
     def _dispatch_array(
@@ -663,5 +683,7 @@ class DispatchMixin:
             return
         if all_ok:
             store.update_run_status(run_id, RunState.SUCCESS)
+            store.release_resources(run_id)
         elif any_fail:
             store.update_run_status(run_id, RunState.FAILED)
+            store.release_resources(run_id)

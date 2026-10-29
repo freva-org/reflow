@@ -1,5 +1,11 @@
 # Other
 
+## `reflow.claims`
+
+::: reflow.claims
+    options:
+      show_source: true
+
 ## `reflow.signals.TaskInterrupted`
 
 ::: reflow.signals.TaskInterrupted
