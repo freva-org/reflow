@@ -262,6 +262,11 @@ def _build_dispatch_parser(prog: str) -> argparse.ArgumentParser:
         default=False,
         help="Verify cached outputs before accepting cache hits.",
     )
+    p.add_argument(
+        "--after-ref",
+        default=None,
+        help="Reference of the jobs this dispatch pass waited for.",
+    )
     p.set_defaults(_command="dispatch")
     return p
 
@@ -601,6 +606,7 @@ def _cmd_dispatch(wf: Any, args: argparse.Namespace) -> int:
         store,
         _resolve_run_dir(args, store),
         verify=getattr(args, "verify", False),
+        after_ref=getattr(args, "after_ref", None),
     )
     return 0
 

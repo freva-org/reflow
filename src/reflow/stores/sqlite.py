@@ -189,6 +189,15 @@ class SqliteStore(Store):
                 updated_at   TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS run_jobs (
+                run_id       TEXT NOT NULL,
+                kind         TEXT NOT NULL,
+                ref          TEXT NOT NULL DEFAULT '',
+                job_id       TEXT NOT NULL,
+                created_at   TEXT NOT NULL,
+                PRIMARY KEY (run_id, kind, ref, job_id)
+            );
+
             CREATE INDEX IF NOT EXISTS idx_instances_run
                 ON task_instances(run_id, task_name);
             CREATE INDEX IF NOT EXISTS idx_instances_identity
@@ -817,5 +826,35 @@ class SqliteStore(Store):
         for task_name, state, n in rows:
             summary.setdefault(task_name, {})[state] = n
         return summary
+
+    # --- scheduler jobs of a run -------------------------------------------
+
+    @_retry_on_locked
+    def record_jobs(
+        self, run_id: str, job_ids: list[str], kind: str, ref: str = ""
+    ) -> None:
+        if not job_ids:
+            return
+        now = _utcnow()
+        self.conn.executemany(
+            "INSERT OR IGNORE INTO run_jobs (run_id, kind, ref, job_id, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            [(run_id, kind, ref, job_id, now) for job_id in job_ids],
+        )
+        self.conn.commit()
+
+    def list_jobs(
+        self, run_id: str, kind: str | None = None, ref: str | None = None
+    ) -> list[str]:
+        sql = "SELECT job_id FROM run_jobs WHERE run_id = ?"
+        params: list[Any] = [run_id]
+        if kind is not None:
+            sql += " AND kind = ?"
+            params.append(kind)
+        if ref is not None:
+            sql += " AND ref = ?"
+            params.append(ref)
+        rows = self.conn.execute(sql + " ORDER BY created_at, rowid", params).fetchall()
+        return [str(row[0]) for row in rows]
 
     # --- helpers ------------------------------------------------------------

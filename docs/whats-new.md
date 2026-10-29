@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 - New `Executor.job_status(job_id)`: whether a job is still queued or
   running, from the live queue of every backend (`squeue`, `qstat`,
   `bjobs`, `qstat -j`, `flux jobs`).  No accounting database needed.
+- **Fix: killed workers no longer leave a run hanging.** A worker killed
+  without writing a result (out of memory, time limit, node failure)
+  left its instance `SUBMITTED`/`RUNNING` forever.  The follow-up
+  dispatch job, which the scheduler only starts after the awaited jobs
+  ended, now marks such instances `FAILED` with the scheduler's reason
+  where available.  Works on every backend.  `retry` also picks them up
+  (via `job_status`).  `REFLOW_RESULT_GRACE` sets how long to wait for
+  late result files (default 10 s).
 
 ## v2610.0.0
 - **Fix: parameters are part of the cache identity.** A task's cache

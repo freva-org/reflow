@@ -300,3 +300,22 @@ class Store(abc.ABC):
     @abc.abstractmethod
     def task_state_summary(self, run_id: str) -> dict[str, dict[str, int]]:
         """Per-task state counts: ``{task: {state: count}}``."""
+
+    # --- scheduler jobs of a run ---------------------------------------------
+
+    @abc.abstractmethod
+    def record_jobs(
+        self, run_id: str, job_ids: list[str], kind: str, ref: str = ""
+    ) -> None:
+        """Remember scheduler jobs of *run_id* that are not task instances.
+
+        ``kind="dispatch"``: a dispatch job.  ``kind="awaited"``: the jobs
+        a follow-up dispatch job waits for, stored under *ref*, which the
+        dispatch job is given as ``--after-ref``.
+        """
+
+    @abc.abstractmethod
+    def list_jobs(
+        self, run_id: str, kind: str | None = None, ref: str | None = None
+    ) -> list[str]:
+        """Job ids recorded with `record_jobs`, oldest first."""

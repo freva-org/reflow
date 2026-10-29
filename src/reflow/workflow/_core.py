@@ -478,7 +478,17 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             stale intermediate files that were deleted after the
             original run.
 
+        Instances whose job has ended without a result (worker killed)
+        are failed first, so they are retried too; the live queue is
+        asked via `Executor.job_status`.
+
         """
+        from ..results import ingest_results
+        from ._reconcile import reconcile_ended
+
+        exc = executor or default_executor(self.config)
+        ingest_results(run_id, store)
+        reconcile_ended(run_id, store, exc, task_name=task_name)
         instances = store.list_task_instances(
             run_id,
             task_name=task_name,
@@ -490,7 +500,6 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             retried += 1
         store.update_run_status(run_id, RunState.RUNNING)
         if retried > 0:
-            exc = executor or default_executor(self.config)
             self._submit_dispatch(exc, run_id, run_dir, store, verify=verify)
         return retried
 
@@ -611,9 +620,15 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         run_dir: Path,
         store: Store,
         verify: bool = False,
-        dependency_options: dict[str, str] | None = None,
+        dependency_options: dict[str, Any] | None = None,
+        after_ref: str | None = None,
     ) -> str:
-        """Submit a dispatch job, optionally with scheduler dependencies."""
+        """Submit a dispatch job, optionally with scheduler dependencies.
+
+        *after_ref* names the awaited jobs (see `Store.record_jobs`) that
+        *dependency_options* waits for; the dispatch pass checks their
+        instances for lost results.
+        """
         python = (
             os.getenv("REFLOW_PYTHON") or self.config.executor_python or sys.executable
         )
@@ -642,7 +657,13 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             cmd.extend(["--store-path", str(store.path)])
         if verify:
             cmd.append("--verify")
-        return executor.submit(resources, cmd)
+        if after_ref:
+            cmd.extend(["--after-ref", after_ref])
+        job_id = executor.submit(resources, cmd)
+        # Recorded so that it can be told later whether the run still has
+        # a dispatch pass queued (e.g. between waves).
+        store.record_jobs(run_id, [job_id], "dispatch")
+        return job_id
 
     def _single_resources(self, run_dir: Path, spec: TaskSpec) -> JobResources:
         submit_options = dict(self.config.executor_submit_options)
