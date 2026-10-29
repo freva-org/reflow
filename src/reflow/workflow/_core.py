@@ -254,9 +254,7 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             for dep in self._effective_dependencies(spec):
                 if dep not in self.tasks:
                     hint = _suggest_name(dep, self.tasks)
-                    raise ValueError(
-                        f"Task {name!r} depends on unknown {dep!r}.{hint}"
-                    )
+                    raise ValueError(f"Task {name!r} depends on unknown {dep!r}.{hint}")
                 in_degree[name] += 1
                 children[dep].append(name)
 
@@ -514,7 +512,10 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         total = 0
         for run_id in run_ids:
             total += self.cancel_run(
-                run_id, store, task_name=task_name, executor=executor,
+                run_id,
+                store,
+                task_name=task_name,
+                executor=executor,
             )
         return total
 
@@ -528,6 +529,10 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
         verify: bool = True,
     ) -> int:
         """Retry failed/cancelled instances and re-dispatch.
+
+        Instances whose job has ended without a result (worker killed)
+        are failed first, so they are retried too; the live queue is
+        asked via `Executor.job_status`.
 
         Parameters
         ----------
@@ -547,9 +552,6 @@ class Workflow(DispatchMixin, WorkerMixin, LocalRunMixin, Flow):
             stale intermediate files that were deleted after the
             original run.
 
-        Instances whose job has ended without a result (worker killed)
-        are failed first, so they are retried too; the live queue is
-        asked via `Executor.job_status`.
 
         """
         from ..results import ingest_results
