@@ -476,6 +476,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../exclusive-runs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    One run per target
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -831,6 +859,122 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#reflowclaims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reflow.claims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reflow.claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;claims
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" claims">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.RunConflictError" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RunConflictError
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.Conflict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Conflict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.Liveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Liveness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.normalise_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;normalise_key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.resource_keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;resource_keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.owner_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;owner_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.run_liveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;run_liveness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reflow.claims.claim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;claim
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#reflowsignalstaskinterrupted" class="md-nav__link">
@@ -1253,7 +1397,706 @@
 
 
 <h1 id="other">Other<a class="headerlink" href="#other" title="Permanent link">&para;</a></h1>
-<h2 id="reflowsignalstaskinterrupted"><code>reflow.signals.TaskInterrupted</code><a class="headerlink" href="#reflowsignalstaskinterrupted" title="Permanent link">&para;</a></h2>
+<h2 id="reflowclaims"><code>reflow.claims</code><a class="headerlink" href="#reflowclaims" title="Permanent link">&para;</a></h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="reflow.claims" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>reflow.claims</code>
+
+
+<a href="#reflow.claims" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Exclusive resources: at most one active run per target.</p>
+<p>A workflow declares which parameters name resources that two runs must
+never use at the same time, typically an output location::</p>
+<div class="highlight"><pre><span></span><code>wf = Workflow("era5-healpix", exclusive=["target"])
+</code></pre></div>
+<p>When a run starts, reflow <em>claims</em> the normalised values of those
+parameters in the manifest store.  The check and the claim happen in one
+transaction, so of two runs started at the same moment only one gets a
+key.  Keys are global: a run of <em>another</em> workflow that claims the same
+target conflicts too.  A claim is released when its run finishes,
+fails or is cancelled.</p>
+<p>If a run dies without finishing (its dispatch job was cancelled or
+killed along with its tasks), its claim would block the target forever.
+So before a conflict is reported, the holding run is checked with
+<code>Executor.job_status</code>, which asks the live queue of any backend: if
+neither its dispatch jobs nor its task jobs are queued or running, the
+run is marked <code>FAILED</code> and its claims are released.  If the scheduler
+cannot tell, the claim is respected and the conflict reported: resolve
+it with <code>cancel</code>.</p>
+<p>Claims only protect runs that use the same manifest store.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="reflow.claims.RunConflictError" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class="highlight language-python"><span class="n">RunConflictError</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">conflicts</span><span class="p">)</span></code>
+
+<a href="#reflow.claims.RunConflictError" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="RuntimeError">RuntimeError</span></code></p>
+
+
+
+        <p>A resource the new run needs is held by another active run.</p>
+
+
+
+
+
+
+
+
+                  <details class="mkdocstrings-source">
+                    <summary>Source code in <code>src/reflow/claims.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.claims.RunConflictError--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#reflow.claims.RunConflictError--source--__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#reflow.claims.RunConflictError--source--__codelineno-0-57">57</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.claims.RunConflictError--source--__codelineno-0-55" name="reflow.claims.RunConflictError--source--__codelineno-0-55"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">conflicts</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Conflict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="reflow.claims.RunConflictError--source--__codelineno-0-56" name="reflow.claims.RunConflictError--source--__codelineno-0-56"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<a id="reflow.claims.RunConflictError--source--__codelineno-0-57" name="reflow.claims.RunConflictError--source--__codelineno-0-57"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">conflicts</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">conflicts</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="reflow.claims.Conflict" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class="highlight language-python"><span class="n">Conflict</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">holder</span><span class="p">,</span> <span class="n">detail</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#reflow.claims.Conflict" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>One key held by another run.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="reflow.claims.Liveness" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>              <code class="highlight language-python"><span class="n">Liveness</span><span class="p">(</span><span class="n">alive</span><span class="p">,</span> <span class="n">detail</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#reflow.claims.Liveness" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Whether a holding run may still be working.</p>
+<p><code>alive</code> is <code>True</code> (jobs queued or running), <code>False</code> (nothing
+can run any more) or <code>None</code> (cannot tell).</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="reflow.claims.normalise_key" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">normalise_key</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></code>
+
+<a href="#reflow.claims.normalise_key" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the canonical form of a resource value.</p>
+<p>URLs (<code>s3://bucket/x/</code>) lose trailing slashes; anything else is
+treated as a local path and resolved, so <code>./out</code> and the absolute
+path of the same directory are the same key.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/claims.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-78">78</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-79">79</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-80">80</a></span>
+<span class="normal"><a href="#reflow.claims.normalise_key--source--__codelineno-0-81">81</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.claims.normalise_key--source--__codelineno-0-70" name="reflow.claims.normalise_key--source--__codelineno-0-70"></a><span class="k">def</span><span class="w"> </span><span class="nf">normalise_key</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-71" name="reflow.claims.normalise_key--source--__codelineno-0-71"></a><span class="w">    </span><span class="sd">"""Return the canonical form of a resource value.</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-72" name="reflow.claims.normalise_key--source--__codelineno-0-72"></a>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-73" name="reflow.claims.normalise_key--source--__codelineno-0-73"></a><span class="sd">    URLs (``s3://bucket/x/``) lose trailing slashes; anything else is</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-74" name="reflow.claims.normalise_key--source--__codelineno-0-74"></a><span class="sd">    treated as a local path and resolved, so ``./out`` and the absolute</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-75" name="reflow.claims.normalise_key--source--__codelineno-0-75"></a><span class="sd">    path of the same directory are the same key.</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-76" name="reflow.claims.normalise_key--source--__codelineno-0-76"></a><span class="sd">    """</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-77" name="reflow.claims.normalise_key--source--__codelineno-0-77"></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-78" name="reflow.claims.normalise_key--source--__codelineno-0-78"></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-79" name="reflow.claims.normalise_key--source--__codelineno-0-79"></a>    <span class="k">if</span> <span class="n">_URL</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-80" name="reflow.claims.normalise_key--source--__codelineno-0-80"></a>        <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+<a id="reflow.claims.normalise_key--source--__codelineno-0-81" name="reflow.claims.normalise_key--source--__codelineno-0-81"></a>    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="reflow.claims.resource_keys" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">resource_keys</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span></code>
+
+<a href="#reflow.claims.resource_keys" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Map normalised keys to labels such as <code>"target=/scratch/out"</code>.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If a named parameter is missing from <em>parameters</em>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/claims.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-84"> 84</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-85"> 85</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-86"> 86</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-87"> 87</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-88"> 88</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-89"> 89</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-90"> 90</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-91"> 91</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-92"> 92</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-93"> 93</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-94"> 94</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-95"> 95</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#reflow.claims.resource_keys--source--__codelineno-0-114">114</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.claims.resource_keys--source--__codelineno-0-84" name="reflow.claims.resource_keys--source--__codelineno-0-84"></a><span class="k">def</span><span class="w"> </span><span class="nf">resource_keys</span><span class="p">(</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-85" name="reflow.claims.resource_keys--source--__codelineno-0-85"></a>    <span class="n">spec</span><span class="p">:</span> <span class="n">ExclusiveSpec</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-86" name="reflow.claims.resource_keys--source--__codelineno-0-86"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-87" name="reflow.claims.resource_keys--source--__codelineno-0-87"></a><span class="w">    </span><span class="sd">"""Map normalised keys to labels such as ``"target=/scratch/out"``.</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-88" name="reflow.claims.resource_keys--source--__codelineno-0-88"></a>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-89" name="reflow.claims.resource_keys--source--__codelineno-0-89"></a><span class="sd">    Raises</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-90" name="reflow.claims.resource_keys--source--__codelineno-0-90"></a><span class="sd">    ------</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-91" name="reflow.claims.resource_keys--source--__codelineno-0-91"></a><span class="sd">    ValueError</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-92" name="reflow.claims.resource_keys--source--__codelineno-0-92"></a><span class="sd">        If a named parameter is missing from *parameters*.</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-93" name="reflow.claims.resource_keys--source--__codelineno-0-93"></a>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-94" name="reflow.claims.resource_keys--source--__codelineno-0-94"></a><span class="sd">    """</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-95" name="reflow.claims.resource_keys--source--__codelineno-0-95"></a>    <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-96" name="reflow.claims.resource_keys--source--__codelineno-0-96"></a>        <span class="k">return</span> <span class="p">{}</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-97" name="reflow.claims.resource_keys--source--__codelineno-0-97"></a>    <span class="n">keys</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-98" name="reflow.claims.resource_keys--source--__codelineno-0-98"></a>    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">spec</span><span class="p">):</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-99" name="reflow.claims.resource_keys--source--__codelineno-0-99"></a>        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">spec</span><span class="p">(</span><span class="n">parameters</span><span class="p">):</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-100" name="reflow.claims.resource_keys--source--__codelineno-0-100"></a>            <span class="n">key</span> <span class="o">=</span> <span class="n">normalise_key</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-101" name="reflow.claims.resource_keys--source--__codelineno-0-101"></a>            <span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-102" name="reflow.claims.resource_keys--source--__codelineno-0-102"></a>        <span class="k">return</span> <span class="n">keys</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-103" name="reflow.claims.resource_keys--source--__codelineno-0-103"></a>    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">spec</span><span class="p">:</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-104" name="reflow.claims.resource_keys--source--__codelineno-0-104"></a>        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span> <span class="ow">or</span> <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-105" name="reflow.claims.resource_keys--source--__codelineno-0-105"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-106" name="reflow.claims.resource_keys--source--__codelineno-0-106"></a>                <span class="sa">f</span><span class="s2">"exclusive parameter </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> has no value; it must be a "</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-107" name="reflow.claims.resource_keys--source--__codelineno-0-107"></a>                <span class="s2">"parameter of the workflow"</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-108" name="reflow.claims.resource_keys--source--__codelineno-0-108"></a>            <span class="p">)</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-109" name="reflow.claims.resource_keys--source--__codelineno-0-109"></a>        <span class="n">value</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-110" name="reflow.claims.resource_keys--source--__codelineno-0-110"></a>        <span class="n">values</span> <span class="o">=</span> <span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">))</span> <span class="k">else</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-111" name="reflow.claims.resource_keys--source--__codelineno-0-111"></a>        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-112" name="reflow.claims.resource_keys--source--__codelineno-0-112"></a>            <span class="n">key</span> <span class="o">=</span> <span class="n">normalise_key</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-113" name="reflow.claims.resource_keys--source--__codelineno-0-113"></a>            <span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
+<a id="reflow.claims.resource_keys--source--__codelineno-0-114" name="reflow.claims.resource_keys--source--__codelineno-0-114"></a>    <span class="k">return</span> <span class="n">keys</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="reflow.claims.owner_info" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">owner_info</span><span class="p">(</span><span class="n">local</span><span class="p">)</span></code>
+
+<a href="#reflow.claims.owner_info" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Who holds a claim; host and pid only matter for local runs.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/claims.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.claims.owner_info--source--__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#reflow.claims.owner_info--source--__codelineno-0-118">118</a></span>
+<span class="normal"><a href="#reflow.claims.owner_info--source--__codelineno-0-119">119</a></span>
+<span class="normal"><a href="#reflow.claims.owner_info--source--__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#reflow.claims.owner_info--source--__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#reflow.claims.owner_info--source--__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#reflow.claims.owner_info--source--__codelineno-0-123">123</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.claims.owner_info--source--__codelineno-0-117" name="reflow.claims.owner_info--source--__codelineno-0-117"></a><span class="k">def</span><span class="w"> </span><span class="nf">owner_info</span><span class="p">(</span><span class="n">local</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<a id="reflow.claims.owner_info--source--__codelineno-0-118" name="reflow.claims.owner_info--source--__codelineno-0-118"></a><span class="w">    </span><span class="sd">"""Who holds a claim; host and pid only matter for local runs."""</span>
+<a id="reflow.claims.owner_info--source--__codelineno-0-119" name="reflow.claims.owner_info--source--__codelineno-0-119"></a>    <span class="k">return</span> <span class="p">{</span>
+<a id="reflow.claims.owner_info--source--__codelineno-0-120" name="reflow.claims.owner_info--source--__codelineno-0-120"></a>        <span class="s2">"user"</span><span class="p">:</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">(),</span>
+<a id="reflow.claims.owner_info--source--__codelineno-0-121" name="reflow.claims.owner_info--source--__codelineno-0-121"></a>        <span class="s2">"host"</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span> <span class="k">if</span> <span class="n">local</span> <span class="k">else</span> <span class="s2">""</span><span class="p">,</span>
+<a id="reflow.claims.owner_info--source--__codelineno-0-122" name="reflow.claims.owner_info--source--__codelineno-0-122"></a>        <span class="s2">"pid"</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span> <span class="k">if</span> <span class="n">local</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+<a id="reflow.claims.owner_info--source--__codelineno-0-123" name="reflow.claims.owner_info--source--__codelineno-0-123"></a>    <span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="reflow.claims.run_liveness" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">run_liveness</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">executor</span><span class="p">,</span> <span class="n">claim</span><span class="p">)</span></code>
+
+<a href="#reflow.claims.run_liveness" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check whether <em>run_id</em> (holding <em>claim</em>) is still active.</p>
+<p>Only reads: neither the run nor its instances are changed, because
+the holder may belong to another user whose result files cannot be
+read from here.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/claims.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-151">151</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-152">152</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-153">153</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-154">154</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-155">155</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-156">156</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-157">157</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-161">161</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-162">162</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-180">180</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-181">181</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-182">182</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-192">192</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-193">193</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-194">194</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#reflow.claims.run_liveness--source--__codelineno-0-206">206</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.claims.run_liveness--source--__codelineno-0-151" name="reflow.claims.run_liveness--source--__codelineno-0-151"></a><span class="k">def</span><span class="w"> </span><span class="nf">run_liveness</span><span class="p">(</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-152" name="reflow.claims.run_liveness--source--__codelineno-0-152"></a>    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">Store</span><span class="p">,</span> <span class="n">executor</span><span class="p">:</span> <span class="n">Executor</span><span class="p">,</span> <span class="n">claim</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-153" name="reflow.claims.run_liveness--source--__codelineno-0-153"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Liveness</span><span class="p">:</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-154" name="reflow.claims.run_liveness--source--__codelineno-0-154"></a><span class="w">    </span><span class="sd">"""Check whether *run_id* (holding *claim*) is still active.</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-155" name="reflow.claims.run_liveness--source--__codelineno-0-155"></a>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-156" name="reflow.claims.run_liveness--source--__codelineno-0-156"></a><span class="sd">    Only reads: neither the run nor its instances are changed, because</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-157" name="reflow.claims.run_liveness--source--__codelineno-0-157"></a><span class="sd">    the holder may belong to another user whose result files cannot be</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-158" name="reflow.claims.run_liveness--source--__codelineno-0-158"></a><span class="sd">    read from here.</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-159" name="reflow.claims.run_liveness--source--__codelineno-0-159"></a><span class="sd">    """</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-160" name="reflow.claims.run_liveness--source--__codelineno-0-160"></a>    <span class="n">run</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-161" name="reflow.claims.run_liveness--source--__codelineno-0-161"></a>    <span class="k">if</span> <span class="n">run</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">run</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"status"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">RunState</span><span class="o">.</span><span class="n">RUNNING</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-162" name="reflow.claims.run_liveness--source--__codelineno-0-162"></a>        <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s2">"the run is no longer running"</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-163" name="reflow.claims.run_liveness--source--__codelineno-0-163"></a>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-164" name="reflow.claims.run_liveness--source--__codelineno-0-164"></a>    <span class="n">pid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pid"</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-165" name="reflow.claims.run_liveness--source--__codelineno-0-165"></a>    <span class="k">if</span> <span class="n">pid</span><span class="p">:</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-166" name="reflow.claims.run_liveness--source--__codelineno-0-166"></a>        <span class="n">host</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">claim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"host"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-167" name="reflow.claims.run_liveness--source--__codelineno-0-167"></a>        <span class="k">if</span> <span class="n">host</span> <span class="o">!=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">():</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-168" name="reflow.claims.run_liveness--source--__codelineno-0-168"></a>            <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-169" name="reflow.claims.run_liveness--source--__codelineno-0-169"></a>                <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"it runs locally on host </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2"> (pid </span><span class="si">{</span><span class="n">pid</span><span class="si">}</span><span class="s2">); cannot check"</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-170" name="reflow.claims.run_liveness--source--__codelineno-0-170"></a>            <span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-171" name="reflow.claims.run_liveness--source--__codelineno-0-171"></a>        <span class="k">if</span> <span class="n">_pid_alive</span><span class="p">(</span><span class="n">pid</span><span class="p">):</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-172" name="reflow.claims.run_liveness--source--__codelineno-0-172"></a>            <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"it runs locally here (pid </span><span class="si">{</span><span class="n">pid</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-173" name="reflow.claims.run_liveness--source--__codelineno-0-173"></a>        <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"its local process </span><span class="si">{</span><span class="n">pid</span><span class="si">}</span><span class="s2"> is gone"</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-174" name="reflow.claims.run_liveness--source--__codelineno-0-174"></a>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-175" name="reflow.claims.run_liveness--source--__codelineno-0-175"></a>    <span class="c1"># A running run always has something in the scheduler: its newest</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-176" name="reflow.claims.run_liveness--source--__codelineno-0-176"></a>    <span class="c1"># dispatch job waits (afterany) for the task jobs of the last pass,</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-177" name="reflow.claims.run_liveness--source--__codelineno-0-177"></a>    <span class="c1"># and task jobs may outlive a cancelled dispatch job.  `job_status`</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-178" name="reflow.claims.run_liveness--source--__codelineno-0-178"></a>    <span class="c1"># asks the live queue, so this works on every backend.</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-179" name="reflow.claims.run_liveness--source--__codelineno-0-179"></a>    <span class="n">dispatch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">list_jobs</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">"dispatch"</span><span class="p">)))</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-180" name="reflow.claims.run_liveness--source--__codelineno-0-180"></a>    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-181" name="reflow.claims.run_liveness--source--__codelineno-0-181"></a>        <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-182" name="reflow.claims.run_liveness--source--__codelineno-0-182"></a>            <span class="nb">str</span><span class="p">(</span><span class="n">inst</span><span class="p">[</span><span class="s2">"job_id"</span><span class="p">])</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-183" name="reflow.claims.run_liveness--source--__codelineno-0-183"></a>            <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">list_task_instances</span><span class="p">(</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-184" name="reflow.claims.run_liveness--source--__codelineno-0-184"></a>                <span class="n">run_id</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="p">[</span><span class="n">TaskState</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="p">,</span> <span class="n">TaskState</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">]</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-185" name="reflow.claims.run_liveness--source--__codelineno-0-185"></a>            <span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-186" name="reflow.claims.run_liveness--source--__codelineno-0-186"></a>            <span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"job_id"</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-187" name="reflow.claims.run_liveness--source--__codelineno-0-187"></a>        <span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-188" name="reflow.claims.run_liveness--source--__codelineno-0-188"></a>    <span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-189" name="reflow.claims.run_liveness--source--__codelineno-0-189"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">dispatch</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">tasks</span><span class="p">:</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-190" name="reflow.claims.run_liveness--source--__codelineno-0-190"></a>        <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"no scheduler jobs are recorded for it"</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-191" name="reflow.claims.run_liveness--source--__codelineno-0-191"></a>    <span class="n">unknown</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-192" name="reflow.claims.run_liveness--source--__codelineno-0-192"></a>    <span class="k">for</span> <span class="n">what</span><span class="p">,</span> <span class="n">job_ids</span> <span class="ow">in</span> <span class="p">(</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-193" name="reflow.claims.run_liveness--source--__codelineno-0-193"></a>        <span class="p">(</span><span class="s2">"a dispatch pass is queued or running"</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">),</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-194" name="reflow.claims.run_liveness--source--__codelineno-0-194"></a>        <span class="p">(</span><span class="s2">"task jobs are queued or running"</span><span class="p">,</span> <span class="n">tasks</span><span class="p">),</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-195" name="reflow.claims.run_liveness--source--__codelineno-0-195"></a>    <span class="p">):</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-196" name="reflow.claims.run_liveness--source--__codelineno-0-196"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">job_ids</span><span class="p">:</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-197" name="reflow.claims.run_liveness--source--__codelineno-0-197"></a>            <span class="k">continue</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-198" name="reflow.claims.run_liveness--source--__codelineno-0-198"></a>        <span class="n">state</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">jobs_status</span><span class="p">(</span><span class="n">job_ids</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-199" name="reflow.claims.run_liveness--source--__codelineno-0-199"></a>        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-200" name="reflow.claims.run_liveness--source--__codelineno-0-200"></a>            <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">what</span><span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-201" name="reflow.claims.run_liveness--source--__codelineno-0-201"></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="n">unknown</span> <span class="ow">or</span> <span class="n">state</span><span class="o">.</span><span class="n">status</span> <span class="ow">is</span> <span class="n">JobStatus</span><span class="o">.</span><span class="n">UNKNOWN</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-202" name="reflow.claims.run_liveness--source--__codelineno-0-202"></a>    <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-203" name="reflow.claims.run_liveness--source--__codelineno-0-203"></a>        <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-204" name="reflow.claims.run_liveness--source--__codelineno-0-204"></a>            <span class="kc">None</span><span class="p">,</span> <span class="s2">"the scheduler cannot tell whether its jobs are still running"</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-205" name="reflow.claims.run_liveness--source--__codelineno-0-205"></a>        <span class="p">)</span>
+<a id="reflow.claims.run_liveness--source--__codelineno-0-206" name="reflow.claims.run_liveness--source--__codelineno-0-206"></a>    <span class="k">return</span> <span class="n">Liveness</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s2">"none of its jobs is queued or running any more"</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="reflow.claims.claim" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">claim</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">run_id</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">executor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">workflow</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+<a href="#reflow.claims.claim" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Claim <em>keys</em> for <em>run_id</em>, freeing claims of dead runs on the way.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="              RunConflictError(message, conflicts) (reflow.claims.RunConflictError)" href="#reflow.claims.RunConflictError">RunConflictError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If a key is held by a run that is (or may be) still active.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/reflow/claims.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-214">214</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-215">215</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-216">216</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-217">217</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-218">218</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-219">219</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-220">220</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-229">229</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-230">230</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-231">231</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-232">232</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-233">233</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-234">234</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-235">235</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-236">236</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-237">237</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-238">238</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-239">239</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-240">240</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-241">241</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-242">242</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-243">243</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-244">244</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-245">245</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-247">247</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-248">248</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-252">252</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-253">253</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-257">257</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-258">258</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-259">259</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-261">261</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-262">262</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-263">263</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-265">265</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-266">266</a></span>
+<span class="normal"><a href="#reflow.claims.claim--source--__codelineno-0-267">267</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="reflow.claims.claim--source--__codelineno-0-212" name="reflow.claims.claim--source--__codelineno-0-212"></a><span class="k">def</span><span class="w"> </span><span class="nf">claim</span><span class="p">(</span>
+<a id="reflow.claims.claim--source--__codelineno-0-213" name="reflow.claims.claim--source--__codelineno-0-213"></a>    <span class="n">store</span><span class="p">:</span> <span class="n">Store</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-214" name="reflow.claims.claim--source--__codelineno-0-214"></a>    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-215" name="reflow.claims.claim--source--__codelineno-0-215"></a>    <span class="n">keys</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+<a id="reflow.claims.claim--source--__codelineno-0-216" name="reflow.claims.claim--source--__codelineno-0-216"></a>    <span class="n">executor</span><span class="p">:</span> <span class="n">Executor</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-217" name="reflow.claims.claim--source--__codelineno-0-217"></a>    <span class="o">*</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-218" name="reflow.claims.claim--source--__codelineno-0-218"></a>    <span class="n">workflow</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-219" name="reflow.claims.claim--source--__codelineno-0-219"></a>    <span class="n">local</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-220" name="reflow.claims.claim--source--__codelineno-0-220"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="reflow.claims.claim--source--__codelineno-0-221" name="reflow.claims.claim--source--__codelineno-0-221"></a><span class="w">    </span><span class="sd">"""Claim *keys* for *run_id*, freeing claims of dead runs on the way.</span>
+<a id="reflow.claims.claim--source--__codelineno-0-222" name="reflow.claims.claim--source--__codelineno-0-222"></a>
+<a id="reflow.claims.claim--source--__codelineno-0-223" name="reflow.claims.claim--source--__codelineno-0-223"></a><span class="sd">    Raises</span>
+<a id="reflow.claims.claim--source--__codelineno-0-224" name="reflow.claims.claim--source--__codelineno-0-224"></a><span class="sd">    ------</span>
+<a id="reflow.claims.claim--source--__codelineno-0-225" name="reflow.claims.claim--source--__codelineno-0-225"></a><span class="sd">    RunConflictError</span>
+<a id="reflow.claims.claim--source--__codelineno-0-226" name="reflow.claims.claim--source--__codelineno-0-226"></a><span class="sd">        If a key is held by a run that is (or may be) still active.</span>
+<a id="reflow.claims.claim--source--__codelineno-0-227" name="reflow.claims.claim--source--__codelineno-0-227"></a>
+<a id="reflow.claims.claim--source--__codelineno-0-228" name="reflow.claims.claim--source--__codelineno-0-228"></a><span class="sd">    """</span>
+<a id="reflow.claims.claim--source--__codelineno-0-229" name="reflow.claims.claim--source--__codelineno-0-229"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">keys</span><span class="p">:</span>
+<a id="reflow.claims.claim--source--__codelineno-0-230" name="reflow.claims.claim--source--__codelineno-0-230"></a>        <span class="k">return</span>
+<a id="reflow.claims.claim--source--__codelineno-0-231" name="reflow.claims.claim--source--__codelineno-0-231"></a>    <span class="n">owner</span> <span class="o">=</span> <span class="n">owner_info</span><span class="p">(</span><span class="n">local</span><span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-232" name="reflow.claims.claim--source--__codelineno-0-232"></a>    <span class="c1"># Each round either succeeds, reports live holders, or frees at least</span>
+<a id="reflow.claims.claim--source--__codelineno-0-233" name="reflow.claims.claim--source--__codelineno-0-233"></a>    <span class="c1"># one dead holder; a few rounds cover holders freed concurrently.</span>
+<a id="reflow.claims.claim--source--__codelineno-0-234" name="reflow.claims.claim--source--__codelineno-0-234"></a>    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+<a id="reflow.claims.claim--source--__codelineno-0-235" name="reflow.claims.claim--source--__codelineno-0-235"></a>        <span class="n">held</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">claim_resources</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">keys</span><span class="p">),</span> <span class="n">owner</span><span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-236" name="reflow.claims.claim--source--__codelineno-0-236"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">held</span><span class="p">:</span>
+<a id="reflow.claims.claim--source--__codelineno-0-237" name="reflow.claims.claim--source--__codelineno-0-237"></a>            <span class="k">return</span>
+<a id="reflow.claims.claim--source--__codelineno-0-238" name="reflow.claims.claim--source--__codelineno-0-238"></a>        <span class="n">conflicts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Conflict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="reflow.claims.claim--source--__codelineno-0-239" name="reflow.claims.claim--source--__codelineno-0-239"></a>        <span class="n">freed</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="reflow.claims.claim--source--__codelineno-0-240" name="reflow.claims.claim--source--__codelineno-0-240"></a>        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">held</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="reflow.claims.claim--source--__codelineno-0-241" name="reflow.claims.claim--source--__codelineno-0-241"></a>            <span class="n">holder</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">"run_id"</span><span class="p">])</span>
+<a id="reflow.claims.claim--source--__codelineno-0-242" name="reflow.claims.claim--source--__codelineno-0-242"></a>            <span class="n">liveness</span> <span class="o">=</span> <span class="n">run_liveness</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">executor</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-243" name="reflow.claims.claim--source--__codelineno-0-243"></a>            <span class="k">if</span> <span class="n">liveness</span><span class="o">.</span><span class="n">alive</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+<a id="reflow.claims.claim--source--__codelineno-0-244" name="reflow.claims.claim--source--__codelineno-0-244"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+<a id="reflow.claims.claim--source--__codelineno-0-245" name="reflow.claims.claim--source--__codelineno-0-245"></a>                    <span class="s2">"Run </span><span class="si">%s</span><span class="s2"> held </span><span class="si">%s</span><span class="s2"> but is no longer active (</span><span class="si">%s</span><span class="s2">); releasing it"</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-246" name="reflow.claims.claim--source--__codelineno-0-246"></a>                    <span class="n">holder</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-247" name="reflow.claims.claim--source--__codelineno-0-247"></a>                    <span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+<a id="reflow.claims.claim--source--__codelineno-0-248" name="reflow.claims.claim--source--__codelineno-0-248"></a>                    <span class="n">liveness</span><span class="o">.</span><span class="n">detail</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-249" name="reflow.claims.claim--source--__codelineno-0-249"></a>                <span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-250" name="reflow.claims.claim--source--__codelineno-0-250"></a>                <span class="n">run</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">holder</span><span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-251" name="reflow.claims.claim--source--__codelineno-0-251"></a>                <span class="k">if</span> <span class="n">run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">run</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"status"</span><span class="p">)</span> <span class="o">==</span> <span class="n">RunState</span><span class="o">.</span><span class="n">RUNNING</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+<a id="reflow.claims.claim--source--__codelineno-0-252" name="reflow.claims.claim--source--__codelineno-0-252"></a>                    <span class="n">store</span><span class="o">.</span><span class="n">update_run_status</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">RunState</span><span class="o">.</span><span class="n">FAILED</span><span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-253" name="reflow.claims.claim--source--__codelineno-0-253"></a>                <span class="n">store</span><span class="o">.</span><span class="n">release_resources</span><span class="p">(</span><span class="n">holder</span><span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-254" name="reflow.claims.claim--source--__codelineno-0-254"></a>                <span class="n">freed</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="reflow.claims.claim--source--__codelineno-0-255" name="reflow.claims.claim--source--__codelineno-0-255"></a>                <span class="k">continue</span>
+<a id="reflow.claims.claim--source--__codelineno-0-256" name="reflow.claims.claim--source--__codelineno-0-256"></a>            <span class="n">conflicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Conflict</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">keys</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">holder</span><span class="p">,</span> <span class="n">liveness</span><span class="o">.</span><span class="n">detail</span><span class="p">))</span>
+<a id="reflow.claims.claim--source--__codelineno-0-257" name="reflow.claims.claim--source--__codelineno-0-257"></a>        <span class="k">if</span> <span class="n">conflicts</span><span class="p">:</span>
+<a id="reflow.claims.claim--source--__codelineno-0-258" name="reflow.claims.claim--source--__codelineno-0-258"></a>            <span class="k">raise</span> <span class="n">RunConflictError</span><span class="p">(</span>
+<a id="reflow.claims.claim--source--__codelineno-0-259" name="reflow.claims.claim--source--__codelineno-0-259"></a>                <span class="n">_conflict_message</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">conflicts</span><span class="p">,</span> <span class="n">store</span><span class="p">),</span> <span class="n">conflicts</span>
+<a id="reflow.claims.claim--source--__codelineno-0-260" name="reflow.claims.claim--source--__codelineno-0-260"></a>            <span class="p">)</span>
+<a id="reflow.claims.claim--source--__codelineno-0-261" name="reflow.claims.claim--source--__codelineno-0-261"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">freed</span><span class="p">:</span>
+<a id="reflow.claims.claim--source--__codelineno-0-262" name="reflow.claims.claim--source--__codelineno-0-262"></a>            <span class="k">break</span>
+<a id="reflow.claims.claim--source--__codelineno-0-263" name="reflow.claims.claim--source--__codelineno-0-263"></a>    <span class="k">raise</span> <span class="n">RunConflictError</span><span class="p">(</span>
+<a id="reflow.claims.claim--source--__codelineno-0-264" name="reflow.claims.claim--source--__codelineno-0-264"></a>        <span class="sa">f</span><span class="s2">"Could not claim </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">keys</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="si">}</span><span class="s2"> for a new run of "</span>
+<a id="reflow.claims.claim--source--__codelineno-0-265" name="reflow.claims.claim--source--__codelineno-0-265"></a>        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">workflow</span><span class="si">!r}</span><span class="s2">: other runs keep claiming it."</span><span class="p">,</span>
+<a id="reflow.claims.claim--source--__codelineno-0-266" name="reflow.claims.claim--source--__codelineno-0-266"></a>        <span class="p">[],</span>
+<a id="reflow.claims.claim--source--__codelineno-0-267" name="reflow.claims.claim--source--__codelineno-0-267"></a>    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="reflowsignalstaskinterrupted"><code>reflow.signals.TaskInterrupted</code><a class="headerlink" href="#reflowsignalstaskinterrupted" title="Permanent link">&para;</a></h2>
 
 
 <div class="doc doc-object doc-class">

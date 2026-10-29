@@ -16,7 +16,7 @@
         <link rel="prev" href="../schedulers/">
       
       
-        <link rel="next" href="../cli-reference/">
+        <link rel="next" href="../exclusive-runs/">
       
       
         
@@ -581,6 +581,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#workers-that-die-without-a-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workers that die without a result
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workers that die without a result">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retry-and-killed-workers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        retry and killed workers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-manifest-store" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -595,6 +623,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exclusive-runs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    One run per target
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1114,17 +1170,77 @@ the whole pipeline:</p>
 </code></pre></div>
 <p>On retry, upstream cache hits are verified by default so stale
 intermediate files are detected.</p>
+<h2 id="workers-that-die-without-a-result">Workers that die without a result<a class="headerlink" href="#workers-that-die-without-a-result" title="Permanent link">&para;</a></h2>
+<p>A worker reports its outcome by writing a result file, which the next
+dispatch pass ingests.  A worker that is killed hard never writes one:
+out of memory, a time limit followed by <code>SIGKILL</code>, a node failure, or
+<code>scancel</code>.  Without help its instance would stay <code>SUBMITTED</code> or
+<code>RUNNING</code> forever: nothing downstream starts and the run never
+finishes.</p>
+<p>reflow catches this on every backend, without asking the scheduler
+anything.  After each pass, the follow-up dispatch job is submitted
+with an "after any" dependency on the jobs of that pass:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Dependency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Slurm, PBS, Flux</td>
+<td><code>afterany</code></td>
+</tr>
+<tr>
+<td>LSF</td>
+<td><code>ended()</code></td>
+</tr>
+<tr>
+<td>SGE</td>
+<td><code>-hold_jid</code></td>
+</tr>
+</tbody>
+</table>
+<p>So when the follow-up pass starts, the scheduler has guaranteed that
+all those jobs have ended, successfully or not.  reflow stores their ids
+and hands the dispatch job a reference to them (<code>--after-ref</code>).  Any of
+their instances that still has no result never will, and is marked
+<code>FAILED</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Job 27152666_42 ended without writing a result (scheduler state:
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>OUT_OF_MEMORY).  The worker was probably killed (out of memory, time
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>limit, node failure or cancellation); see the job's log in &lt;run_dir&gt;/logs.
+</code></pre></div>
+<p>The scheduler state in the message is added where the backend can tell
+it (Slurm <code>sacct</code>, Flux <code>flux jobs</code>); otherwise it says <code>unknown</code>.  It
+is only text: the decision never depends on it.  If the scheduler does
+report the job as queued or running again (a requeued job), the
+instance is left alone.</p>
+<p>This works per instance: if 3 of 500 array elements were killed, only
+those 3 fail.  Downstream tasks do not start, the run finishes as
+<code>FAILED</code> instead of staying <code>RUNNING</code>, and <code>retry</code> resubmits exactly
+the failed elements.</p>
+<p>Before failing anything, the dispatcher waits a few seconds and looks
+for results again, because result files written on compute nodes can
+take a moment to become visible elsewhere.  Set <code>REFLOW_RESULT_GRACE</code>
+(seconds, default 10, <code>0</code> to disable) to change the wait.</p>
+<h3 id="retry-and-killed-workers"><code>retry</code> and killed workers<a class="headerlink" href="#retry-and-killed-workers" title="Permanent link">&para;</a></h3>
+<p><code>retry</code> runs outside that dependency chain, so it asks the live queue
+instead (<code>Executor.job_status</code>, see <a href="../schedulers/">Schedulers</a>).
+Instances whose job the queue no longer holds are failed and retried
+with the rest.  Jobs that are still queued or running, or whose status
+cannot be determined, are left alone.</p>
 <h2 id="the-manifest-store">The manifest store<a class="headerlink" href="#the-manifest-store" title="Permanent link">&para;</a></h2>
 <p>Reflow keeps run metadata, task states, and cached outputs in a shared
 SQLite database at <code>~/.cache/reflow/manifest.db</code>. This gives you
 cross-run cache reuse and a single place to inspect workflow history.</p>
 <p>The path can be overridden:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="go">export REFLOW_STORE_PATH=/shared/team/manifest.db</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">export REFLOW_STORE_PATH=/shared/team/manifest.db</span>
 </code></pre></div>
 <p>Or in the config file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># ~/.config/reflow/config.toml</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">[defaults]</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">store_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/shared/team/manifest.db"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># ~/.config/reflow/config.toml</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">[defaults]</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">store_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/shared/team/manifest.db"</span>
 </code></pre></div>
 
 
@@ -1180,13 +1296,13 @@ cross-run cache reuse and a single place to inspect workflow history.</p>
         
         
           
-          <a href="../cli-reference/" class="md-footer__link md-footer__link--next" aria-label="Next: CLI">
+          <a href="../exclusive-runs/" class="md-footer__link md-footer__link--next" aria-label="Next: One run per target">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                CLI
+                One run per target
               </div>
             </div>
             <div class="md-footer__button md-icon">

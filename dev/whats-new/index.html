@@ -474,6 +474,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exclusive-runs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    One run per target
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -998,6 +1026,31 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <h2 id="v261000">v2610.0.0<a class="headerlink" href="#v261000" title="Permanent link">&para;</a></h2>
 <ul>
+<li><strong>One active run per target</strong>: <code>Workflow(..., exclusive=["target"])</code>
+  refuses a new run while another active run (of any workflow using the
+  same store) holds the same target.  Claims are released when a run
+  finishes, fails or is cancelled.  Claims of runs that have nothing
+  queued or running any more are released automatically; this check
+  uses <code>job_status</code> and so works on every backend.  See
+  <em>One run per target</em>.</li>
+<li><strong>Fix: Flux array jobs.</strong> <code>--cc</code> creates one job per element, but
+  reflow kept only the last id, so <code>cancel</code> stopped one element and the
+  follow-up dispatch waited for one element only.  reflow now keeps
+  every element's id, names elements <code>&lt;name&gt;.&lt;index&gt;</code>, writes one
+  <code>--dependency=afterany:ID</code> per job (the comma form was invalid), and
+  cancels in batches.  <code>array_parallelism</code> is ignored with a warning,
+  since Flux has no such limit.</li>
+<li>New <code>Executor.job_status(job_id)</code>: whether a job is still queued or
+  running, from the live queue of every backend (<code>squeue</code>, <code>qstat</code>,
+  <code>bjobs</code>, <code>qstat -j</code>, <code>flux jobs</code>).  No accounting database needed.</li>
+<li><strong>Fix: killed workers no longer leave a run hanging.</strong> A worker killed
+  without writing a result (out of memory, time limit, node failure)
+  left its instance <code>SUBMITTED</code>/<code>RUNNING</code> forever.  The follow-up
+  dispatch job, which the scheduler only starts after the awaited jobs
+  ended, now marks such instances <code>FAILED</code> with the scheduler's reason
+  where available.  Works on every backend.  <code>retry</code> also picks them up
+  (via <code>job_status</code>).  <code>REFLOW_RESULT_GRACE</code> sets how long to wait for
+  late result files (default 10 s).</li>
 <li><strong>Fix: parameters are part of the cache identity.</strong> A task's cache
   identity now includes the <code>Param</code> values its function takes (CLI
   parameters and task-local overrides). Before, a task was reused from

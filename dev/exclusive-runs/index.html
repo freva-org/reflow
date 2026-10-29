@@ -10,9 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://www.reflow-docs.org/latest/dev/stores/">
+        <link rel="canonical" href="https://www.reflow-docs.org/latest/dev/exclusive-runs/">
       
       
+        <link rel="prev" href="../caching/">
+      
+      
+        <link rel="next" href="../cli-reference/">
       
       
         
@@ -23,7 +27,7 @@
     
     
       
-        <title>Manifest store - Reflow</title>
+        <title>One run per target - Reflow</title>
       
     
     
@@ -59,17 +63,17 @@
     
   
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Manifest store - Reflow" />
+<meta property="og:title" content="One run per target - Reflow" />
 <meta property="og:description" content="Decorator-based HPC workflow engine with Result-based data wiring, reusable Flows, and an auto-generated CLI" />
-<meta property="og:image" content="https://www.reflow-docs.org/latest/dev/assets/images/social/stores.png" />
+<meta property="og:image" content="https://www.reflow-docs.org/latest/dev/assets/images/social/exclusive-runs.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:url" content="https://www.reflow-docs.org/latest/dev/stores/" />
+<meta property="og:url" content="https://www.reflow-docs.org/latest/dev/exclusive-runs/" />
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:title" content="Manifest store - Reflow" />
+<meta property="twitter:title" content="One run per target - Reflow" />
 <meta property="twitter:description" content="Decorator-based HPC workflow engine with Result-based data wiring, reusable Flows, and an auto-generated CLI" />
-<meta property="twitter:image" content="https://www.reflow-docs.org/latest/dev/assets/images/social/stores.png" />
+<meta property="twitter:image" content="https://www.reflow-docs.org/latest/dev/assets/images/social/exclusive-runs.png" />
 </head>
   
   
@@ -89,7 +93,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#manifest-store" class="md-skip">
+        <a href="#one-active-run-per-target" class="md-skip">
           Skip to content
         </a>
       
@@ -128,7 +132,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Manifest store
+              One run per target
             
           </span>
         </div>
@@ -338,8 +342,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -350,13 +356,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
@@ -377,7 +381,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -467,6 +471,125 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    One run per target
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    One run per target
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-counts-as-the-same-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What counts as the same target
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-a-claim-is-released" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a claim is released
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runs-that-died" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runs that died
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -869,6 +992,46 @@
   
 
 
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href=".." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../guide/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Guide
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
               
               <article class="md-content__inner md-typeset">
                 
@@ -879,69 +1042,78 @@
   
 
 
-<h1 id="manifest-store">Manifest store<a class="headerlink" href="#manifest-store" title="Permanent link">&para;</a></h1>
-<p>Reflow persists run metadata, task states, cache identities, and
-outputs in a <strong>shared SQLite manifest database</strong>.</p>
-<h2 id="why-a-shared-store">Why a shared store<a class="headerlink" href="#why-a-shared-store" title="Permanent link">&para;</a></h2>
-<p>Instead of creating one database inside every run directory, the
-default store lives in the user's cache directory:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>~/.cache/reflow/manifest.db
+<h1 id="one-active-run-per-target">One active run per target<a class="headerlink" href="#one-active-run-per-target" title="Permanent link">&para;</a></h1>
+<p>Some workflows must never run twice at the same time for the same
+target, for example two conversions writing into one output store.
+Declare the parameters that name such targets with <code>exclusive</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">"era5-healpix"</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="p">[</span><span class="s2">"target"</span><span class="p">])</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nd">@wf</span><span class="o">.</span><span class="n">job</span><span class="p">()</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Param</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Output location"</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="o">...</span>
 </code></pre></div>
-<p>This gives you:</p>
-<ul>
-<li>run inspection across multiple run directories</li>
-<li>cross-run cache reuse</li>
-<li>one place to look for workflow history</li>
-<li>an easier migration path to a future service-backed database</li>
-</ul>
-<h2 id="path-resolution">Path resolution<a class="headerlink" href="#path-resolution" title="Permanent link">&para;</a></h2>
-<p>The store path is resolved in order:</p>
-<ol>
-<li><code>REFLOW_STORE_PATH</code> environment variable</li>
-<li><code>defaults.store_path</code> in the config file</li>
-<li>XDG cache directory (<code>~/.cache/reflow/manifest.db</code>)</li>
-</ol>
-<h2 id="overriding-the-store-path">Overriding the store path<a class="headerlink" href="#overriding-the-store-path" title="Permanent link">&para;</a></h2>
-<p>For project-specific manifests or shared team databases:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[defaults]</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">store_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/scratch/shared/reflow/manifest.db"</span>
+<p>When a run starts, reflow <em>claims</em> the value of <code>target</code> in the
+manifest store.  A second run with the same value is refused while the
+first one is active:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>python<span class="w"> </span>convert.py<span class="w"> </span>submit<span class="w"> </span>--run-dir<span class="w"> </span>/scratch/r2<span class="w"> </span>--target<span class="w"> </span>/scratch/out/era5
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">Cannot start a new run of 'era5-healpix':</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">  target=/scratch/out/era5 is held by run era5-healpix-20261029-3f9c</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">  (user k204230, created 2026-10-29T01:12): a dispatch pass is queued or running.</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">Wait for that run to finish, or cancel it with `cancel &lt;run-id&gt;` if it</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">should not continue.</span>
 </code></pre></div>
-<p>From the CLI:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>flow.py<span class="w"> </span>submit<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--run-dir<span class="w"> </span>/scratch/run-001<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>--store-path<span class="w"> </span>/scratch/shared/reflow.db
+<p>The command exits with status 2.  In Python, <code>submit</code>, <code>run_local</code> and
+<code>retry_failed</code> raise <code>reflow.RunConflictError</code>.</p>
+<h2 id="what-counts-as-the-same-target">What counts as the same target<a class="headerlink" href="#what-counts-as-the-same-target" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Values are normalised: local paths are resolved (<code>./out</code> and the
+  absolute path of the same directory are one target), URLs such as
+  <code>s3://bucket/era5/</code> lose trailing slashes.</li>
+<li>Keys are <strong>global</strong>: a run of another workflow claiming the same
+  value conflicts too, even if its parameter has a different name.</li>
+<li>A list value claims every element.</li>
+<li>For derived targets, pass a function that maps the run parameters to
+  the values to claim:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">(</span><span class="s2">"yearly"</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"s3://bucket/</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'year'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">])</span>
 </code></pre></div>
-<p>From Python:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">reflow.stores.sqlite</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqliteStore</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">store</span> <span class="o">=</span> <span class="n">SqliteStore</span><span class="p">(</span><span class="s2">"/scratch/shared/reflow.db"</span><span class="p">)</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/scratch/run-001"</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"2026-01-01"</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="what-the-store-contains">What the store contains<a class="headerlink" href="#what-the-store-contains" title="Permanent link">&para;</a></h2>
-<p>The <code>SqliteStore</code> manages:</p>
+<h2 id="when-a-claim-is-released">When a claim is released<a class="headerlink" href="#when-a-claim-is-released" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Run records</strong> — run ID, workflow name, user, parameters, status</li>
-<li><strong>Task specs</strong> — per-run task configuration and dependencies</li>
-<li><strong>Task instances</strong> — state machine (<code>PENDING</code> → <code>RUNNING</code> → <code>SUCCESS</code> / <code>FAILED</code>), input payloads, output values, identity and output hashes</li>
-<li><strong>Cache lookups</strong> — find previous successful instances by identity hash</li>
+<li>When the run finishes, fails or is cancelled.</li>
+<li>When <code>run_local</code> returns or raises.</li>
+<li><code>retry</code> claims the targets again before resubmitting; if another run
+  holds them by then, the retry is refused.</li>
 </ul>
-<h2 id="typed-internal-records">Typed internal records<a class="headerlink" href="#typed-internal-records" title="Permanent link">&para;</a></h2>
-<p>The store uses dataclass records internally:</p>
+<h2 id="runs-that-died">Runs that died<a class="headerlink" href="#runs-that-died" title="Permanent link">&para;</a></h2>
+<p>A run whose dispatch job was cancelled or killed together with its
+tasks never finishes on its own, so its claim would block the target
+forever.  Before reporting a conflict, reflow therefore checks whether
+the holding run still has anything in the scheduler.</p>
+<p>A running run always does: after each pass, its next dispatch job sits
+in the queue, waiting for the task jobs of that pass.  So reflow asks
+the live queue (<code>job_status</code>, see <a href="../schedulers/">Schedulers</a>) about
+the run's recorded dispatch jobs, newest first, and about the jobs of
+its instances that have no result yet:</p>
 <ul>
-<li><code>RunRecord</code></li>
-<li><code>TaskSpecRecord</code></li>
-<li><code>TaskInstanceRecord</code></li>
+<li>If any of them is queued or running, the claim stands.</li>
+<li>If all of them have ended, the run is marked <code>FAILED</code>, its claims are
+  released, and the new run proceeds.  The holder's owner can still
+  <code>retry</code> it later.</li>
+<li>If the scheduler cannot tell (the query failed, or a <code>run_local</code> run
+  on another host), the claim stands and the conflict is reported.
+  Cancel the old run to release it.</li>
 </ul>
-<p>This keeps the persistence code strict without breaking the public
-store API.</p>
-<h2 id="run-directories-still-matter">Run directories still matter<a class="headerlink" href="#run-directories-still-matter" title="Permanent link">&para;</a></h2>
-<p>The run directory is still used for:</p>
-<ul>
-<li>task logs (stdout / stderr)</li>
-<li>task-produced files</li>
-<li>worker result files (ingested by the dispatcher)</li>
-</ul>
-<p>Only the manifest metadata moved out of the run directory.</p>
+<p>This works the same on Slurm, PBS, LSF, SGE and Flux, and needs no
+accounting database.</p>
+<p>The check only reads the holding run's state; it never touches its
+tasks, which may belong to another user.</p>
+<h2 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link">&para;</a></h2>
+<p>Claims only protect runs that use the <strong>same manifest store</strong>.  The
+default store is per user (<code>~/.cache/reflow/manifest.db</code>), so two
+people, each with their own store, do not see each other's claims.
+Point <code>REFLOW_STORE_PATH</code> at a shared location for team-wide protection.
+Runs started with reflow versions without claims hold none.</p>
 
 
 
@@ -974,6 +1146,44 @@ store API.</p>
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../caching/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Caching and retries">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Caching and retries
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../cli-reference/" class="md-footer__link md-footer__link--next" aria-label="Next: CLI">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                CLI
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">

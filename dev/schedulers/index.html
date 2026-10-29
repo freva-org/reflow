@@ -609,6 +609,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#asking-whether-a-job-is-still-alive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asking whether a job is still alive
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#array-index-resolution" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -624,6 +635,17 @@
     <span class="md-ellipsis">
       
         PBS Pro vs Torque
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flux-arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flux arrays
       
     </span>
   </a>
@@ -676,6 +698,34 @@
     
   
     Caching and retries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exclusive-runs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    One run per target
   
 
     
@@ -1364,10 +1414,60 @@ to build the dependency specification for follow-up dispatch jobs:</p>
 </tr>
 <tr>
 <td>Flux</td>
-<td><code>--dependency=afterany:ID1,ID2</code></td>
+<td><code>--dependency=afterany:ID1 --dependency=afterany:ID2</code> (one per job)</td>
 </tr>
 </tbody>
 </table>
+<h2 id="asking-whether-a-job-is-still-alive">Asking whether a job is still alive<a class="headerlink" href="#asking-whether-a-job-is-still-alive" title="Permanent link">&para;</a></h2>
+<p>Some decisions need one answer from the scheduler: is this job still
+queued or running, or has it ended?  <code>executor.job_status(job_id)</code>
+asks the live queue, so it works without an accounting database:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Command</th>
+<th>"Ended" when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Slurm</td>
+<td><code>squeue -j ID -r</code></td>
+<td>not listed, or "Invalid job id"</td>
+</tr>
+<tr>
+<td>PBS / Torque</td>
+<td><code>qstat -f ID</code></td>
+<td>"Unknown Job Id", "Job has finished", or state <code>F</code>/<code>X</code>/<code>C</code></td>
+</tr>
+<tr>
+<td>LSF</td>
+<td><code>bjobs -o stat ID</code></td>
+<td>"is not found", or every element <code>DONE</code>/<code>EXIT</code></td>
+</tr>
+<tr>
+<td>SGE / UGE</td>
+<td><code>qstat -j ID</code></td>
+<td>"do not exist"</td>
+</tr>
+<tr>
+<td>Flux</td>
+<td><code>flux jobs -a ID…</code></td>
+<td>every job <code>INACTIVE</code>, or reported unknown</td>
+</tr>
+<tr>
+<td>Local</td>
+<td>–</td>
+<td>always (local jobs run synchronously)</td>
+</tr>
+</tbody>
+</table>
+<p>The answer is <code>QUEUED</code> or <code>RUNNING</code> if any array element may still
+run, <code>ENDED</code> once the scheduler no longer holds the job, and <code>UNKNOWN</code>
+if the command itself failed (scheduler down, command missing).
+reflow treats <code>UNKNOWN</code> as "may still be running" and never acts on
+it.</p>
 <h2 id="array-index-resolution">Array index resolution<a class="headerlink" href="#array-index-resolution" title="Permanent link">&para;</a></h2>
 <p>Inside a running array job, each scheduler sets a different
 environment variable for the array task index.  Reflow checks all
@@ -1390,6 +1490,27 @@ output:</p>
 </ul>
 <p>You can override this with <code>array_flag="-t"</code> when constructing
 the executor manually.</p>
+<h2 id="flux-arrays">Flux arrays<a class="headerlink" href="#flux-arrays" title="Permanent link">&para;</a></h2>
+<p>Flux has no array job.  <code>flux submit --cc=0-9</code> creates ten separate
+jobs, one per index, each with the index in <code>FLUX_JOB_CC</code>.  reflow
+handles this as follows:</p>
+<ul>
+<li>Array jobs are named <code>&lt;name&gt;.{cc}</code>, so each element's name ends in
+  its index (<code>wf-convert.0</code>, <code>wf-convert.1</code>, …).</li>
+<li>reflow keeps every element's job id.  Each array instance stores its
+  own id, so <code>cancel</code> and status checks reach every element, not only
+  the last one submitted.</li>
+<li>The follow-up dispatch job waits for every element: one
+  <code>--dependency=afterany:ID</code> per element, since Flux takes one id per
+  <code>--dependency</code>.</li>
+<li><code>flux cancel</code> is called once per 200 ids rather than once per job.</li>
+<li><code>array_parallelism</code> has no Flux equivalent and is ignored with a
+  warning.  Use <code>[executor] max_submit_jobs</code> (waves) to limit how many elements
+  are in the queue at once.</li>
+</ul>
+<p>A very large array gives the follow-up dispatch job one dependency per
+element.  If that becomes a problem, split the work into waves with
+<code>max_submit_jobs</code>.</p>
 <h2 id="the-localexecutor">The <code>LocalExecutor</code><a class="headerlink" href="#the-localexecutor" title="Permanent link">&para;</a></h2>
 <p>For testing without a scheduler, use the local executor:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">run</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">run_dir</span><span class="o">=</span><span class="s2">"/tmp/test"</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="s2">"local"</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"2025-01-01"</span><span class="p">)</span>
