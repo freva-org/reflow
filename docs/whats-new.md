@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## v2610.1.0
+## v2610.0.0
 - **One active run per target**: `Workflow(..., exclusive=["target"])`
   refuses a new run while another active run (of any workflow using the
   same store) holds the same target.  Claims are released when a run
@@ -27,8 +27,6 @@ All notable changes to this project will be documented in this file.
   where available.  Works on every backend.  `retry` also picks them up
   (via `job_status`).  `REFLOW_RESULT_GRACE` sets how long to wait for
   late result files (default 10 s).
-
-## v2610.0.0
 - **Fix: parameters are part of the cache identity.** A task's cache
   identity now includes the `Param` values its function takes (CLI
   parameters and task-local overrides). Before, a task was reused from
