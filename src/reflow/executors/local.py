@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 
-from . import Executor, JobResources
+from . import ElementState, Executor, JobResources, JobStates, JobStatus
 from .util import CommandResult, run_cmd
 
 logger = logging.getLogger(__name__)
@@ -41,3 +41,17 @@ class LocalExecutor(Executor):
         if proc is None:
             return None
         return "COMPLETED" if proc.returncode == 0 else "FAILED"
+
+    def job_states(self, job_id: str) -> JobStates:
+        """Local jobs run synchronously: once an id exists, the job has ended.
+
+        `submit` only returns after the subprocess exited, so any process
+        that sees a ``local-…`` id (another dispatch pass, a status call)
+        sees a finished job.  The exit status is known only in the
+        process that ran it.
+        """
+        proc = self._procs.get(job_id)
+        reason = ""
+        if proc is not None:
+            reason = "COMPLETED" if proc.returncode == 0 else "FAILED"
+        return JobStates(default=ElementState(JobStatus.ENDED, reason))

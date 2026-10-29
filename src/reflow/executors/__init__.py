@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import abc
+import enum
 import sys
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -78,6 +80,73 @@ class JobResources:
         return self.submit_options.get("signal")
 
 
+class JobStatus(str, enum.Enum):
+    """Scheduler-independent state of a job or array element."""
+
+    QUEUED = "QUEUED"
+    """Waiting to start (pending, held, requeued, suspended)."""
+    RUNNING = "RUNNING"
+    """Executing, or finishing up."""
+    ENDED = "ENDED"
+    """Finished, whatever the outcome; see ``ElementState.reason``."""
+    UNKNOWN = "UNKNOWN"
+    """The scheduler could not tell, or the backend cannot query this."""
+
+
+@dataclass(frozen=True)
+class ElementState:
+    """State of one job or array element.
+
+    Attributes
+    ----------
+    status : JobStatus
+        Normalised state.
+    reason : str
+        The scheduler's own word for it, e.g. ``"OUT_OF_MEMORY"`` or
+        ``"TIMEOUT"``; empty if the scheduler gave none.
+
+    """
+
+    status: JobStatus
+    reason: str = ""
+
+    @property
+    def active(self) -> bool:
+        """Whether the job may still run or is running."""
+        return self.status in (JobStatus.QUEUED, JobStatus.RUNNING)
+
+
+UNKNOWN_STATE = ElementState(JobStatus.UNKNOWN)
+
+
+@dataclass(frozen=True)
+class JobStates:
+    """States of all elements of one submitted job.
+
+    Attributes
+    ----------
+    elements : Mapping[int | None, ElementState]
+        Per array index; key ``None`` for a job that is not an array.
+    default : ElementState
+        State of elements the scheduler did not list.  ``UNKNOWN`` unless
+        the backend knows that unlisted elements have ended (e.g. a
+        queue listing, which only shows live jobs).
+
+    """
+
+    elements: Mapping[int | None, ElementState] = field(default_factory=dict)
+    default: ElementState = UNKNOWN_STATE
+
+    def get(self, index: int | None) -> ElementState:
+        """State of array element *index* (``None`` for a non-array job)."""
+        if index in self.elements:
+            return self.elements[index]
+        if index is not None and None in self.elements:
+            # A non-array listing covers every index of the job.
+            return self.elements[None]
+        return self.default
+
+
 class Executor(abc.ABC):
     """Base class for workload-manager executors.
 
@@ -127,6 +196,16 @@ class Executor(abc.ABC):
     @abc.abstractmethod
     def job_state(self, job_id: str) -> str | None:
         """Query the current state of a job."""
+
+    def job_states(self, job_id: str) -> JobStates:
+        """Return the normalised state of every element of *job_id*.
+
+        Used to find task instances whose job ended without a result and
+        to decide whether a run is still alive.  The default knows
+        nothing (every element ``UNKNOWN``), which callers must treat as
+        "may still be running".  Backends override this.
+        """
+        return JobStates()
 
     def dependency_options(self, job_ids: list[str]) -> dict[str, str]:
         """Return *submit_options* entries for depending on *job_ids*.
