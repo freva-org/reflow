@@ -111,6 +111,16 @@ class SlurmExecutor(Executor):
             return states
         return self._squeue_states(base)
 
+    def job_status(self, job_id: str) -> ElementState:
+        """Ask ``squeue`` whether any element of *job_id* is still queued.
+
+        ``squeue`` only lists live jobs, so a job it does not list (or
+        calls an invalid job id) has ended.  No accounting needed.
+        """
+        if job_id == "DRYRUN":
+            return ElementState(JobStatus.ENDED, "dry-run")
+        return self._squeue_states(job_id.split(";", 1)[0].strip()).overall()
+
     def _sacct_states(self, job_id: str) -> JobStates | None:
         try:
             output = run_cmd(

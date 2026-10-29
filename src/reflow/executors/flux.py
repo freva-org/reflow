@@ -23,7 +23,7 @@ import sys
 from typing import Any
 
 from ..config import Config
-from . import ElementState, Executor, JobResources, JobStates, JobStatus
+from . import ElementState, Executor, JobResources, JobStates, JobStatus, summarise
 from .util import ExecutorError, run_cmd
 
 #: A Flux job id as printed by ``flux submit``: F58 (``ƒ…`` or, with
@@ -223,6 +223,59 @@ class FluxExecutor(Executor):
         }
         return _STATE_MAP.get(state, state)
 
+    def job_status(self, job_id: str) -> ElementState:
+        """Tell whether any job of *job_id* (one id or a group) is alive.
+
+        Asks ``flux jobs`` for each id.  Ids Flux reports as unknown
+        (purged from its job list) have ended.
+        """
+        ids = [i for i in job_id.split(",") if i and i != "DRYRUN"]
+        if not ids:
+            return ElementState(JobStatus.ENDED, "dry-run")
+        states: list[ElementState] = []
+        for start in range(0, len(ids), _BATCH):
+            batch = ids[start : start + _BATCH]
+            try:
+                output = run_cmd(
+                    [
+                        self.flux,
+                        "jobs",
+                        "-a",
+                        "--no-header",
+                        "-o",
+                        "{id.f58} {state} {result}",
+                        *batch,
+                    ],
+                    check=False,
+                )
+            except OSError:
+                return ElementState(JobStatus.UNKNOWN, "flux jobs failed")
+            listed = {}
+            for line in output.stdout.splitlines():
+                parts = line.split()
+                if len(parts) >= 2:
+                    result = parts[2] if len(parts) > 2 else ""
+                    listed[_ascii_id(parts[0])] = _normalise_state(parts[1], result)
+            # flux jobs reports each id it no longer knows on stderr
+            # ("JobID ƒ… unknown").  Anything else (broker unreachable)
+            # leaves the unlisted ids unknown.
+            purged = {
+                _ascii_id(word.strip(":,"))
+                for line in output.stderr.splitlines()
+                if "unknown" in line.lower()
+                for word in line.split()
+            }
+            for job in batch:
+                key = _ascii_id(job)
+                state = listed.get(key)
+                if state is None:
+                    ended = output.returncode == 0 or key in purged
+                    state = ElementState(
+                        JobStatus.ENDED if ended else JobStatus.UNKNOWN
+                    )
+                states.append(state)
+        return summarise(states)
+
     def dependency_options(self, job_ids: list[str]) -> dict[str, Any]:
         """One ``--dependency=afterany:ID`` per job; Flux takes one id each.
 
@@ -307,3 +360,8 @@ def _index_from_name(name: str) -> int | None:
     """Array index from a ``<name>.{cc}`` job name, if present."""
     head, _, tail = name.rpartition(".")
     return int(tail) if head and tail.isdigit() else None
+
+
+def _ascii_id(job_id: str) -> str:
+    """``ƒAbc`` and ``fAbc`` name the same job (``FLUX_F58_FORCE_ASCII``)."""
+    return "f" + job_id[1:] if job_id.startswith("ƒ") else job_id

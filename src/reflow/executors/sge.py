@@ -22,7 +22,7 @@ import shlex
 import sys
 
 from ..config import Config
-from . import Executor, JobResources
+from . import ElementState, Executor, JobResources, JobStatus
 from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
@@ -136,6 +136,28 @@ class SGEExecutor(Executor):
             if "e" in state:
                 return "FAILED"
         return "RUNNING"  # default: still in qstat → running
+
+    def job_status(self, job_id: str) -> ElementState:
+        """Ask ``qstat -j`` whether *job_id* is still in the queue.
+
+        ``qstat -j`` succeeds only while some task of the job is queued
+        or running; "do not exist" means it has ended.  A job in an error
+        state (``Eqw``) stays in the queue and so counts as queued.
+        """
+        if job_id == "DRYRUN":
+            return ElementState(JobStatus.ENDED, "dry-run")
+        try:
+            output = run_cmd([self.qstat, "-j", job_id], check=False)
+        except OSError:
+            return ElementState(JobStatus.UNKNOWN, "qstat failed")
+        if output.returncode != 0:
+            if "do not exist" in (output.stderr + output.stdout).lower():
+                return ElementState(JobStatus.ENDED)
+            return ElementState(JobStatus.UNKNOWN, "qstat failed")
+        codes = re.findall(r"^job_state\s+\d+:\s*(\S+)", output.stdout, re.MULTILINE)
+        if any("r" in c or "t" in c for c in codes):
+            return ElementState(JobStatus.RUNNING, codes[0])
+        return ElementState(JobStatus.QUEUED, codes[0] if codes else "")
 
     def _check_qacct(self, job_id: str) -> str | None:
         """Fall back to qacct for completed jobs."""

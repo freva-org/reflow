@@ -136,6 +136,27 @@ to build the dependency specification for follow-up dispatch jobs:
 | SGE | `-hold_jid ID1,ID2` |
 | Flux | `--dependency=afterany:ID1 --dependency=afterany:ID2` (one per job) |
 
+## Asking whether a job is still alive
+
+Some decisions need one answer from the scheduler: is this job still
+queued or running, or has it ended?  `executor.job_status(job_id)`
+asks the live queue, so it works without an accounting database:
+
+| Backend | Command | "Ended" when |
+|---------|---------|--------------|
+| Slurm | `squeue -j ID -r` | not listed, or "Invalid job id" |
+| PBS / Torque | `qstat -f ID` | "Unknown Job Id", "Job has finished", or state `F`/`X`/`C` |
+| LSF | `bjobs -o stat ID` | "is not found", or every element `DONE`/`EXIT` |
+| SGE / UGE | `qstat -j ID` | "do not exist" |
+| Flux | `flux jobs -a ID…` | every job `INACTIVE`, or reported unknown |
+| Local | – | always (local jobs run synchronously) |
+
+The answer is `QUEUED` or `RUNNING` if any array element may still
+run, `ENDED` once the scheduler no longer holds the job, and `UNKNOWN`
+if the command itself failed (scheduler down, command missing).
+reflow treats `UNKNOWN` as "may still be running" and never acts on
+it.
+
 ## Array index resolution
 
 Inside a running array job, each scheduler sets a different

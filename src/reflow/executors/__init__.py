@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import enum
 import sys
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -146,6 +146,29 @@ class JobStates:
             return self.elements[None]
         return self.default
 
+    def overall(self) -> ElementState:
+        """Combine all elements into one state: is any still alive.
+
+        ``RUNNING`` if any element runs, else ``QUEUED`` if any is
+        queued.  Otherwise ``UNKNOWN`` if any listed element is unknown,
+        ``ENDED`` if every listed element ended, and `default` if the
+        scheduler listed nothing.  Listings are taken to be complete
+        (``sacct``, a queue listing, or one entry per Flux job).
+        """
+        return summarise(self.elements.values(), self.default)
+
+
+def summarise(
+    states: Iterable[ElementState], default: ElementState = UNKNOWN_STATE
+) -> ElementState:
+    """Combine the states of several elements, as in `JobStates.overall`."""
+    listed = list(states)
+    for status in (JobStatus.RUNNING, JobStatus.QUEUED, JobStatus.UNKNOWN):
+        for state in listed:
+            if state.status is status:
+                return state
+    return listed[0] if listed else default
+
 
 class Executor(abc.ABC):
     """Base class for workload-manager executors.
@@ -221,6 +244,25 @@ class Executor(abc.ABC):
         "may still be running".  Backends override this.
         """
         return JobStates()
+
+    def job_status(self, job_id: str) -> ElementState:
+        """Tell whether *job_id* is still in the scheduler or has ended.
+
+        Unlike `job_states` this needs no accounting database: backends
+        ask the live queue (``squeue``, ``qstat``, ``bjobs``,
+        ``flux jobs``).  The answer is
+
+        - ``QUEUED`` / ``RUNNING`` if any element may still run;
+        - ``ENDED`` if the queue was asked and does not hold the job
+          (any more), whether it ran or not;
+        - ``UNKNOWN`` if the query itself failed.
+
+        Callers treat ``UNKNOWN`` as "may still be running".  The
+        default combines `job_states`; backends override it.
+        """
+        if job_id == "DRYRUN":
+            return ElementState(JobStatus.ENDED, "dry-run")
+        return self.job_states(job_id).overall()
 
     def dependency_options(self, job_ids: list[str]) -> dict[str, Any]:
         """Return *submit_options* entries for depending on *job_ids*.

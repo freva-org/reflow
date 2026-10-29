@@ -55,3 +55,7 @@ class LocalExecutor(Executor):
         if proc is not None:
             reason = "COMPLETED" if proc.returncode == 0 else "FAILED"
         return JobStates(default=ElementState(JobStatus.ENDED, reason))
+
+    def job_status(self, job_id: str) -> ElementState:
+        """Local jobs have always ended by the time anyone sees their id."""
+        return self.job_states(job_id).default

@@ -13,7 +13,7 @@ import re
 import sys
 
 from ..config import Config
-from . import Executor, JobResources
+from . import ElementState, Executor, JobResources, JobStatus
 from .util import ExecutorError, run_cmd
 
 logger = logging.getLogger(__name__)
@@ -147,6 +147,29 @@ class PBSExecutor(Executor):
         }
         return _STATE_MAP.get(state, state)
 
+    def job_status(self, job_id: str) -> ElementState:
+        """Ask ``qstat -f`` (live jobs only) whether *job_id* is alive.
+
+        A job ``qstat`` calls unknown or finished has ended.  Finished
+        jobs PBS still shows (Torque ``C``, PBS Pro ``F``/``X``) count as
+        ended too.  Array parents in state ``B`` (begun) are running.
+        """
+        if job_id == "DRYRUN":
+            return ElementState(JobStatus.ENDED, "dry-run")
+        try:
+            output = run_cmd([self.qstat, "-f", job_id], check=False)
+        except OSError:
+            return ElementState(JobStatus.UNKNOWN, "qstat failed")
+        if output.returncode != 0:
+            message = (output.stderr + output.stdout).lower()
+            if "unknown job" in message or "has finished" in message:
+                return ElementState(JobStatus.ENDED)
+            return ElementState(JobStatus.UNKNOWN, "qstat failed")
+        m = re.search(r"job_state\s*=\s*(\w)", output.stdout)
+        if m is None:
+            return ElementState(JobStatus.UNKNOWN)
+        return _pbs_status(m.group(1).upper())
+
     def dependency_options(self, job_ids: list[str]) -> dict[str, str]:
         """PBS dependency: ``-W depend=afterany:ID1:ID2``."""
         return {"depend": "afterany:" + ":".join(job_ids)}
@@ -188,3 +211,19 @@ class PBSExecutor(Executor):
         parts.append("--")
         parts.extend(command)
         return parts
+
+
+_PBS_QUEUED = frozenset("QHWTSU")
+_PBS_RUNNING = frozenset("REB")
+_PBS_ENDED = frozenset("FXC")
+
+
+def _pbs_status(code: str) -> ElementState:
+    """Map a PBS/Torque one-letter ``job_state`` to an `ElementState`."""
+    if code in _PBS_QUEUED:
+        return ElementState(JobStatus.QUEUED, code)
+    if code in _PBS_RUNNING:
+        return ElementState(JobStatus.RUNNING, code)
+    if code in _PBS_ENDED:
+        return ElementState(JobStatus.ENDED, code)
+    return ElementState(JobStatus.UNKNOWN, code)

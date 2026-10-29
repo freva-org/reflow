@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
   `--dependency=afterany:ID` per job (the comma form was invalid), and
   cancels in batches.  `array_parallelism` is ignored with a warning,
   since Flux has no such limit.
+- New `Executor.job_status(job_id)`: whether a job is still queued or
+  running, from the live queue of every backend (`squeue`, `qstat`,
+  `bjobs`, `qstat -j`, `flux jobs`).  No accounting database needed.
 
 ## v2610.0.0
 - **Fix: parameters are part of the cache identity.** A task's cache
