@@ -683,5 +683,7 @@ class DispatchMixin:
             return
         if all_ok:
             store.update_run_status(run_id, RunState.SUCCESS)
+            store.release_resources(run_id)
         elif any_fail:
             store.update_run_status(run_id, RunState.FAILED)
+            store.release_resources(run_id)

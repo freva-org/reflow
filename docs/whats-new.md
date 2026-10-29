@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 ## v2610.1.0
+- **One active run per target**: `Workflow(..., exclusive=["target"])`
+  refuses a new run while another active run (of any workflow using the
+  same store) holds the same target.  Claims are released when a run
+  finishes, fails or is cancelled.  Claims of runs that have nothing
+  queued or running any more are released automatically; this check
+  uses `job_status` and so works on every backend.  See
+  *One run per target*.
 - **Fix: Flux array jobs.** `--cc` creates one job per element, but
   reflow kept only the last id, so `cancel` stopped one element and the
   follow-up dispatch waited for one element only.  reflow now keeps

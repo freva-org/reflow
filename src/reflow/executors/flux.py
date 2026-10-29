@@ -276,6 +276,10 @@ class FluxExecutor(Executor):
                 states.append(state)
         return summarise(states)
 
+    def jobs_status(self, job_ids: list[str]) -> ElementState:
+        """Ask about all jobs together, 200 ids per ``flux jobs`` call."""
+        return self.job_status(",".join(job_ids))
+
     def dependency_options(self, job_ids: list[str]) -> dict[str, Any]:
         """One ``--dependency=afterany:ID`` per job; Flux takes one id each.
 

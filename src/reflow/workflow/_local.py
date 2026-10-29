@@ -111,8 +111,6 @@ class LocalRunMixin:
             If *on_error* is ``"stop"`` and any task fails.
 
         """
-        from ..run import Run
-
         self.validate()  # type: ignore[attr-defined]
         self._check_submit_params(parameters)  # type: ignore[attr-defined]
 
@@ -134,7 +132,39 @@ class LocalRunMixin:
         if force_tasks:
             params["__force_tasks__"] = force_tasks
 
-        st.insert_run(run_id, self.name, user_id, params)  # type: ignore[attr-defined]
+        self._claim_exclusive(  # type: ignore[attr-defined]
+            run_id, params, st, None, local=True
+        )
+        try:
+            st.insert_run(run_id, self.name, user_id, params)  # type: ignore[attr-defined]
+            return self._local_execute(
+                run_id,
+                rd,
+                st,
+                params,
+                max_workers,
+                force,
+                force_tasks,
+                verify,
+                on_error,
+            )
+        finally:
+            st.release_resources(run_id)
+
+    def _local_execute(
+        self,
+        run_id: str,
+        rd: Path,
+        st: Store,
+        params: dict[str, Any],
+        max_workers: int,
+        force: bool,
+        force_tasks: list[str] | None,
+        verify: bool,
+        on_error: str,
+    ) -> Run:
+        """Execute every task of a local run in topological order."""
+        from ..run import Run
 
         for spec in self.tasks.values():  # type: ignore[attr-defined]
             st.insert_task_spec(

@@ -198,6 +198,16 @@ class SqliteStore(Store):
                 PRIMARY KEY (run_id, kind, ref, job_id)
             );
 
+            CREATE TABLE IF NOT EXISTS run_claims (
+                key          TEXT PRIMARY KEY,
+                run_id       TEXT NOT NULL,
+                label        TEXT NOT NULL,
+                user         TEXT NOT NULL DEFAULT '',
+                host         TEXT NOT NULL DEFAULT '',
+                pid          INTEGER NOT NULL DEFAULT 0,
+                created_at   TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_instances_run
                 ON task_instances(run_id, task_name);
             CREATE INDEX IF NOT EXISTS idx_instances_identity
@@ -856,5 +866,66 @@ class SqliteStore(Store):
             params.append(ref)
         rows = self.conn.execute(sql + " ORDER BY created_at, rowid", params).fetchall()
         return [str(row[0]) for row in rows]
+
+    # --- exclusive resources -------------------------------------------------
+
+    @_retry_on_locked
+    def claim_resources(
+        self, run_id: str, keys: dict[str, str], owner: dict[str, Any]
+    ) -> dict[str, dict[str, Any]]:
+        if not keys:
+            return {}
+        conn = self.conn
+        if conn.in_transaction:
+            conn.commit()
+        # IMMEDIATE takes the write lock up front: no other process can
+        # claim between our check and our insert.
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            marks = ",".join("?" * len(keys))
+            rows = conn.execute(
+                "SELECT key, run_id, label, user, host, pid, created_at "
+                f"FROM run_claims WHERE key IN ({marks}) AND run_id != ?",
+                (*keys, run_id),
+            ).fetchall()
+            if rows:
+                conn.rollback()
+                return {str(row["key"]): dict(row) for row in rows}
+            now = _utcnow()
+            conn.executemany(
+                "INSERT OR IGNORE INTO run_claims "
+                "(key, run_id, label, user, host, pid, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        key,
+                        run_id,
+                        label,
+                        str(owner.get("user", "")),
+                        str(owner.get("host", "")),
+                        int(owner.get("pid", 0) or 0),
+                        now,
+                    )
+                    for key, label in keys.items()
+                ],
+            )
+            conn.commit()
+        except BaseException:
+            conn.rollback()
+            raise
+        return {}
+
+    @_retry_on_locked
+    def release_resources(self, run_id: str) -> None:
+        self.conn.execute("DELETE FROM run_claims WHERE run_id = ?", (run_id,))
+        self.conn.commit()
+
+    def list_claims(self, run_id: str | None = None) -> list[dict[str, Any]]:
+        sql = "SELECT key, run_id, label, user, host, pid, created_at FROM run_claims"
+        params: tuple[Any, ...] = ()
+        if run_id is not None:
+            sql += " WHERE run_id = ?"
+            params = (run_id,)
+        return [dict(row) for row in self.conn.execute(sql + " ORDER BY key", params)]
 
     # --- helpers ------------------------------------------------------------

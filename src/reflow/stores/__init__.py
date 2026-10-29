@@ -319,3 +319,25 @@ class Store(abc.ABC):
         self, run_id: str, kind: str | None = None, ref: str | None = None
     ) -> list[str]:
         """Job ids recorded with `record_jobs`, oldest first."""
+
+    # --- exclusive resources --------------------------------------------------
+
+    @abc.abstractmethod
+    def claim_resources(
+        self, run_id: str, keys: dict[str, str], owner: dict[str, Any]
+    ) -> dict[str, dict[str, Any]]:
+        """Atomically claim *keys* (key -> label) for *run_id*.
+
+        Either all keys are claimed and ``{}`` is returned, or none is and
+        the result maps each key held by *another* run to that claim
+        (``run_id``, ``label``, ``user``, ``host``, ``pid``,
+        ``created_at``).  Keys *run_id* already holds count as claimed.
+        """
+
+    @abc.abstractmethod
+    def release_resources(self, run_id: str) -> None:
+        """Release every claim of *run_id*."""
+
+    @abc.abstractmethod
+    def list_claims(self, run_id: str | None = None) -> list[dict[str, Any]]:
+        """Claims of *run_id*, or all claims."""

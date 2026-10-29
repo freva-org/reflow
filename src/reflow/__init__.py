@@ -7,6 +7,7 @@ annotations, and submit to HPC schedulers with an auto-generated CLI.
 __version__ = "2610.0.0"
 
 from ._types import RunState, TaskState
+from .claims import RunConflictError
 from .config import (
     Config,
     config_path,
@@ -41,6 +42,7 @@ __all__ = [
     "ensure_config_exists",
     "write_example_config",
     "TaskInterrupted",
+    "RunConflictError",
     "JobConfig",
     "TaskSpec",
     "RunState",

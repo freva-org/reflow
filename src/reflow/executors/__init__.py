@@ -264,6 +264,20 @@ class Executor(abc.ABC):
             return ElementState(JobStatus.ENDED, "dry-run")
         return self.job_states(job_id).overall()
 
+    def jobs_status(self, job_ids: list[str]) -> ElementState:
+        """Return the combined `job_status` of several jobs: alive if any is.
+
+        Stops at the first job that is queued or running.  Backends that
+        can ask about many jobs in one call (Flux) override this.
+        """
+        states: list[ElementState] = []
+        for job_id in job_ids:
+            state = self.job_status(job_id)
+            if state.active:
+                return state
+            states.append(state)
+        return summarise(states)
+
     def dependency_options(self, job_ids: list[str]) -> dict[str, Any]:
         """Return *submit_options* entries for depending on *job_ids*.
 

@@ -18,6 +18,7 @@ try:
 except ImportError:
     ArgFormatter = argparse.ArgumentDefaultsHelpFormatter
 
+from .claims import RunConflictError
 from .params import (
     ResolvedParam,
     collect_cli_params,
@@ -419,7 +420,11 @@ def _cmd_submit(wf: Any, args: argparse.Namespace) -> int:
     if force_tasks:
         parameters["__force_tasks__"] = force_tasks
 
-    run_id = wf.submit_run(run_dir=run_dir, parameters=parameters, store=store)
+    try:
+        run_id = wf.submit_run(run_dir=run_dir, parameters=parameters, store=store)
+    except RunConflictError as error:
+        print(error, file=sys.stderr)
+        return 2
     print(f"run_id   = {run_id}")
     print(f"run_dir  = {run_dir.expanduser().resolve()}")
     return 0
@@ -534,13 +539,17 @@ def _cmd_cancel(wf: Any, args: argparse.Namespace) -> int:
 def _cmd_retry(wf: Any, args: argparse.Namespace) -> int:
     store = _make_store(args, wf)
     store.init()
-    n = wf.retry_failed(
-        args.run_id,
-        store,
-        _resolve_run_dir(args, store),
-        task_name=getattr(args, "task", None),
-        verify=getattr(args, "verify", True),
-    )
+    try:
+        n = wf.retry_failed(
+            args.run_id,
+            store,
+            _resolve_run_dir(args, store),
+            task_name=getattr(args, "task", None),
+            verify=getattr(args, "verify", True),
+        )
+    except RunConflictError as error:
+        print(error, file=sys.stderr)
+        return 2
     print(f"Marked {n} task instance(s) for retry.")
     return 0
 
